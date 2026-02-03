@@ -428,19 +428,8 @@ function stylizeBaseLayers() {
       }
 
       if (layer.type === 'symbol' && (id.includes('shield') || id.includes('route') || id.includes('road-number'))) {
-        try {
-          map.setLayoutProperty(layer.id, 'text-size', 8);
-        } catch (err) {
-          // ignore
-        }
-        try {
-          map.setLayoutProperty(layer.id, 'icon-size', 0.55);
-        } catch (err) {
-          // ignore
-        }
-        map.setPaintProperty(layer.id, 'text-color', '#7b8c9a');
-        map.setPaintProperty(layer.id, 'text-opacity', 0.4);
-        map.setPaintProperty(layer.id, 'icon-opacity', 0.4);
+        map.setPaintProperty(layer.id, 'text-opacity', 0);
+        map.setPaintProperty(layer.id, 'icon-opacity', 0);
       }
     } catch (err) {
       // Some layers don't support these properties; safe to ignore.
