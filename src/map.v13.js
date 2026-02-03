@@ -391,6 +391,8 @@ function stylizeBaseLayers() {
   const suppressed = [];
   for (const layer of style.layers) {
     try {
+      const id = layer.id.toLowerCase();
+
       if (layer.type === 'background') {
         map.setPaintProperty(layer.id, 'background-color', '#07090f');
       }
@@ -457,9 +459,23 @@ function stylizeBaseLayers() {
       }
 
       if (layer.type === 'circle') {
+        map.setLayoutProperty(layer.id, 'visibility', 'none');
         map.setPaintProperty(layer.id, 'circle-opacity', 0);
         map.setPaintProperty(layer.id, 'circle-stroke-opacity', 0);
         map.setPaintProperty(layer.id, 'circle-radius', 0);
+      }
+
+      // Hide POI/marker fill layers (the gray circles)
+      if (layer.type === 'fill' && (id.includes('poi') || id.includes('marker') || id.includes('point') || id.includes('place') || id.includes('transit'))) {
+        map.setLayoutProperty(layer.id, 'visibility', 'none');
+        map.setPaintProperty(layer.id, 'fill-opacity', 0);
+      }
+
+      // Hide any symbol layer backgrounds
+      if (layer.type === 'symbol') {
+        try {
+          map.setLayoutProperty(layer.id, 'icon-allow-overlap', false);
+        } catch (e) {}
       }
 
       if (layer.type === 'symbol' && (id.includes('poi') || id.includes('transit'))) {
