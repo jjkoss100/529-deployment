@@ -458,6 +458,8 @@ function stylizeBaseLayers() {
 
       if (layer.type === 'circle') {
         map.setPaintProperty(layer.id, 'circle-opacity', 0);
+        map.setPaintProperty(layer.id, 'circle-stroke-opacity', 0);
+        map.setPaintProperty(layer.id, 'circle-radius', 0);
       }
 
       if (layer.type === 'symbol' && (id.includes('poi') || id.includes('transit'))) {
