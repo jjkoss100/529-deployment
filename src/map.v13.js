@@ -456,6 +456,10 @@ function stylizeBaseLayers() {
         map.setPaintProperty(layer.id, 'icon-opacity', 0);
       }
 
+      if (layer.type === 'circle') {
+        map.setPaintProperty(layer.id, 'circle-opacity', 0);
+      }
+
       if (layer.type === 'symbol' && (id.includes('poi') || id.includes('transit'))) {
         map.setPaintProperty(layer.id, 'text-opacity', 0);
         map.setPaintProperty(layer.id, 'icon-opacity', 0);
