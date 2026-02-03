@@ -541,11 +541,7 @@ function renderSuppressedOverlay(suppressed) {
     el.style.pointerEvents = 'none';
     document.body.appendChild(el);
   }
-  el.textContent = `Suppressed shield layers (${suppressed.length}):
-` + suppressed.join('
-');
-}
-  }
+  el.textContent = `Suppressed shield layers (${suppressed.length}):\n` + suppressed.join('\n');
 }
 
 function ensureEnergyTrails() {
