@@ -399,13 +399,15 @@ function stylizeBaseLayers() {
       const iconImageStr = typeof iconImage === 'string' ? iconImage : JSON.stringify(iconImage || '');
       const textField = layer.layout && layer.layout['text-field'];
       const textFieldStr = typeof textField === 'string' ? textField : JSON.stringify(textField || '');
+      const sourceLayer = (layer['source-layer'] || '').toLowerCase();
       const hasShieldIcon = iconImageStr.includes('shield') || iconImageStr.includes('route') || iconImageStr.includes('motorway') || iconImageStr.includes('interstate');
-      const hasRouteText = textFieldStr.includes('ref') || textFieldStr.includes('route') || textFieldStr.includes('shield');
+      const hasRouteText = textFieldStr.includes('ref') || textFieldStr.includes('route') || textFieldStr.includes('shield') || textFieldStr.includes('motorway');
       const isShield = (
         id.includes('shield') || id.includes('route') || id.includes('road-number') || id.includes('road_number') ||
         id.includes('road-number-shield') || id.includes('route-number') || id.includes('number-shield') ||
         id.includes('interstate') || id.includes('motorway-number') || id.includes('motorway') ||
         id.includes('junction') || id.includes('ref') || id.includes('road-shield') ||
+        sourceLayer.includes('road_label') || (sourceLayer.includes('road') && hasRouteText) ||
         hasShieldIcon || hasRouteText
       );
       if (isShield) {
