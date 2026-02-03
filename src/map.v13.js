@@ -24,8 +24,8 @@ export function initMap(containerId, mapboxToken) {
     maxZoom: 18
   });
 
-  // Expose map for debugging
-  window.map = map;
+  // Expose map for debugging (use _map to avoid collision with div#map)
+  window._map = map;
 
   map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
