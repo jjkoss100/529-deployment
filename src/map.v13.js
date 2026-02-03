@@ -428,7 +428,12 @@ function stylizeBaseLayers() {
         map.setPaintProperty(layer.id, 'icon-opacity', 0);
       }
 
-      if (layer.type === 'symbol' && (id.includes('shield') || id.includes('route') || id.includes('road-number'))) {
+      if (layer.type === 'symbol' && (id.includes('shield') || id.includes('route') || id.includes('road-number') || id.includes('road-shield') || id.includes('interstate') || id.includes('motorway-number') || id.includes('ref'))) {
+        try {
+          map.setLayoutProperty(layer.id, 'visibility', 'none');
+        } catch (err) {
+          // ignore
+        }
         map.setPaintProperty(layer.id, 'text-opacity', 0);
         map.setPaintProperty(layer.id, 'icon-opacity', 0);
       }
