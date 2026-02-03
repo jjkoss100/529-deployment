@@ -1,5 +1,3 @@
-import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js';
-
 const LNG_OFFSET = 0.00012; // Offset for dual markers side by side
 
 let map = null;
