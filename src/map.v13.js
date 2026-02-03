@@ -513,7 +513,10 @@ function stylizeBaseLayers() {
       }
     } catch (err) {
       // Some layers don't support these properties; safe to ignore.
-      if (suppressed.length) {
+    }
+  }
+
+  if (suppressed.length) {
     console.log(`Suppressed route layers (${suppressed.length}):`, suppressed);
   }
   renderSuppressedOverlay(suppressed);
