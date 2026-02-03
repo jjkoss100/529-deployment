@@ -424,7 +424,8 @@ function stylizeBaseLayers() {
       }
 
       if (layer.type === 'symbol' && id.includes('road') && id.includes('label')) {
-        map.setPaintProperty(layer.id, 'text-opacity', 0.5);
+        map.setPaintProperty(layer.id, 'text-opacity', 0);
+        map.setPaintProperty(layer.id, 'icon-opacity', 0);
       }
 
       if (layer.type === 'symbol' && (id.includes('shield') || id.includes('route') || id.includes('road-number'))) {
