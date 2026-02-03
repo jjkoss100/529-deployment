@@ -487,6 +487,34 @@ function stylizeBaseLayers() {
       if (suppressed.length) {
     console.log(`Suppressed route layers (${suppressed.length}):`, suppressed);
   }
+  renderSuppressedOverlay(suppressed);
+}
+
+function renderSuppressedOverlay(suppressed) {
+  let el = document.getElementById('suppressed-overlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'suppressed-overlay';
+    el.style.position = 'fixed';
+    el.style.top = '12px';
+    el.style.right = '12px';
+    el.style.zIndex = '10001';
+    el.style.maxWidth = '360px';
+    el.style.maxHeight = '40vh';
+    el.style.overflow = 'auto';
+    el.style.background = 'rgba(0,0,0,0.85)';
+    el.style.color = '#ff3b30';
+    el.style.padding = '10px 12px';
+    el.style.border = '2px solid #ff3b30';
+    el.style.fontFamily = 'monospace';
+    el.style.fontSize = '11px';
+    el.style.whiteSpace = 'pre-wrap';
+    el.style.pointerEvents = 'none';
+    document.body.appendChild(el);
+  }
+  el.textContent = `Suppressed shield layers (${suppressed.length}):
+` + suppressed.join('
+');
 }
   }
 }
