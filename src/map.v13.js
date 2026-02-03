@@ -388,6 +388,7 @@ function stylizeBaseLayers() {
   const style = map.getStyle();
   if (!style || !style.layers) return;
 
+  const suppressed = [];
   for (const layer of style.layers) {
     try {
       if (layer.type === 'background') {
@@ -395,6 +396,26 @@ function stylizeBaseLayers() {
       }
 
       const id = layer.id.toLowerCase();
+      const isShield = id.includes('shield') || id.includes('route') || id.includes('road-number') || id.includes('road_number') || id.includes('road-number-shield') || id.includes('route-number') || id.includes('number-shield') || id.includes('interstate') || id.includes('motorway-number') || id.includes('motorway') || id.includes('junction') || id.includes('ref') || id.includes('road-shield');
+      if (isShield) {
+        suppressed.push(layer.id);
+        try {
+          map.setLayoutProperty(layer.id, 'visibility', 'none');
+        } catch (err) {
+          // ignore
+        }
+        if (layer.type === 'symbol') {
+          map.setPaintProperty(layer.id, 'text-opacity', 0);
+          map.setPaintProperty(layer.id, 'icon-opacity', 0);
+        } else if (layer.type === 'circle') {
+          map.setPaintProperty(layer.id, 'circle-opacity', 0);
+        } else if (layer.type === 'line') {
+          map.setPaintProperty(layer.id, 'line-opacity', 0);
+        } else if (layer.type === 'fill') {
+          map.setPaintProperty(layer.id, 'fill-opacity', 0);
+        }
+        continue;
+      }
 
       if (layer.type === 'fill' && id.includes('water')) {
         map.setPaintProperty(layer.id, 'fill-color', '#08131f');
@@ -452,7 +473,10 @@ function stylizeBaseLayers() {
       }
     } catch (err) {
       // Some layers don't support these properties; safe to ignore.
-    }
+      if (suppressed.length) {
+    console.log(`Suppressed route layers (${suppressed.length}):`, suppressed);
+  }
+}
   }
 }
 
