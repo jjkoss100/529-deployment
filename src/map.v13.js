@@ -26,6 +26,9 @@ export function initMap(containerId, mapboxToken) {
     maxZoom: 18
   });
 
+  // Expose map for debugging
+  window.map = map;
+
   map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
   map.on('load', () => {
