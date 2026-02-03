@@ -395,8 +395,19 @@ function stylizeBaseLayers() {
         map.setPaintProperty(layer.id, 'background-color', '#07090f');
       }
 
-      const id = layer.id.toLowerCase();
-      const isShield = id.includes('shield') || id.includes('route') || id.includes('road-number') || id.includes('road_number') || id.includes('road-number-shield') || id.includes('route-number') || id.includes('number-shield') || id.includes('interstate') || id.includes('motorway-number') || id.includes('motorway') || id.includes('junction') || id.includes('ref') || id.includes('road-shield');
+      const iconImage = layer.layout && layer.layout['icon-image'];
+      const iconImageStr = typeof iconImage === 'string' ? iconImage : JSON.stringify(iconImage || '');
+      const textField = layer.layout && layer.layout['text-field'];
+      const textFieldStr = typeof textField === 'string' ? textField : JSON.stringify(textField || '');
+      const hasShieldIcon = iconImageStr.includes('shield') || iconImageStr.includes('route') || iconImageStr.includes('motorway') || iconImageStr.includes('interstate');
+      const hasRouteText = textFieldStr.includes('ref') || textFieldStr.includes('route') || textFieldStr.includes('shield');
+      const isShield = (
+        id.includes('shield') || id.includes('route') || id.includes('road-number') || id.includes('road_number') ||
+        id.includes('road-number-shield') || id.includes('route-number') || id.includes('number-shield') ||
+        id.includes('interstate') || id.includes('motorway-number') || id.includes('motorway') ||
+        id.includes('junction') || id.includes('ref') || id.includes('road-shield') ||
+        hasShieldIcon || hasRouteText
+      );
       if (isShield) {
         suppressed.push(layer.id);
         try {
