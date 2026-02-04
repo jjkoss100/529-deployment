@@ -109,7 +109,7 @@ function getMarkerLifecycleState(promotions) {
     }
 
     if (isInRange) {
-      // Active — constant size, fade out over duration (ease-out)
+      // Active — constant size, linear fade from 100% to 0%
       let elapsed;
       if (range.end > range.start) {
         elapsed = currentMinutes - range.start;
@@ -120,14 +120,14 @@ function getMarkerLifecycleState(promotions) {
           : (1440 - range.start) + currentMinutes;
       }
       const progress = Math.min(elapsed / duration, 1); // 0 at start, 1 at end
-      const opacity = Math.max(0.02, 0.4 * (1 - progress)); // subtle fade with low floor
+      const opacity = Math.max(0, 1 - progress);
       return { size: MAX_SIZE, opacity: parseFloat(opacity.toFixed(2)), phase: 'active' };
     }
 
     // Check if in preshow window (30min before start)
     if (currentMinutes >= preshowStart && currentMinutes < range.start) {
-      // Preshow: constant size with pulse animation
-      return { size: MAX_SIZE, opacity: 0.4, phase: 'preshow' };
+      // Preshow: constant size with pulse animation at 75% opacity
+      return { size: MAX_SIZE, opacity: 0.75, phase: 'preshow' };
     }
   }
 
@@ -141,15 +141,15 @@ function getMarkerLifecycleState(promotions) {
  * For special markers: uses fixed active/inactive sizes.
  */
 function createMarkerElement(type, opts) {
+  const container = document.createElement('div');
+  container.style.display = 'block';
+  container.style.cursor = 'pointer';
+
   const el = document.createElement('img');
   el.classList.add(type === 'hh' ? 'marker-hh' : 'marker-special');
   if (opts.phase === 'preshow') {
     el.classList.add('marker-preshow');
   }
-  if (opts.opacity !== undefined && opts.opacity < 0.2) {
-    el.classList.add('marker-fading');
-  }
-  el.style.cursor = 'pointer';
   el.style.display = 'block';
   el.style.background = 'transparent';
   el.style.border = 'none';
@@ -160,9 +160,7 @@ function createMarkerElement(type, opts) {
     const size = opts.size || MAX_SIZE;
     el.style.width = size + 'px';
     el.style.height = size + 'px';
-    const markerOpacity = (opts.opacity !== undefined ? opts.opacity : 1).toString();
-    el.style.setProperty('--marker-opacity', markerOpacity);
-    el.style.setProperty('opacity', markerOpacity, 'important');
+    el.style.opacity = (opts.opacity !== undefined ? opts.opacity : 1).toString();
     // Preshow: muted grey smiley; Active: bright yellow smiley
     const isActive = opts.phase === 'active';
     const faceColor = isActive ? '%23f9c922' : '%23777';
@@ -172,9 +170,7 @@ function createMarkerElement(type, opts) {
     const size = opts.size || MAX_SIZE;
     el.style.width = size + 'px';
     el.style.height = size + 'px';
-    const markerOpacity = (opts.opacity !== undefined ? opts.opacity : 1).toString();
-    el.style.setProperty('--marker-opacity', markerOpacity);
-    el.style.setProperty('opacity', markerOpacity, 'important');
+    el.style.opacity = (opts.opacity !== undefined ? opts.opacity : 1).toString();
     const isActive = opts.phase === 'active';
     // Preshow: muted grey star; Active: bold green star with dark outline
     const fillColor = isActive ? '%2315b312' : '%23666';
@@ -183,7 +179,8 @@ function createMarkerElement(type, opts) {
   }
 
   el.src = 'data:image/svg+xml,' + svgContent;
-  return el;
+  container.appendChild(el);
+  return container;
 }
 
 /**
@@ -724,7 +721,7 @@ function updateDebugPanel(venues) {
   const now = new Date();
   const dayName = getCurrentDayName();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const targets = ['The Butcher\'s Daughter', '26 Beach', 'Nalu Vida'];
+  const targets = ['The Butcher\'s Daughter', '26 Beach'];
 
   const lines = [];
   lines.push(`Time: ${now.toLocaleTimeString()} (${dayName})`);
@@ -740,48 +737,6 @@ function updateDebugPanel(venues) {
     lines.push(`  HH ranges: ${hhRanges.join(', ') || 'none'}`);
     lines.push(`  SP ranges: ${specialsRanges.join(', ') || 'none'}`);
     lines.push(`  hasActiveHH=${venue.hasActiveHappyHour} hasActiveSP=${venue.hasActiveSpecial}`);
-
-    const computeDebug = (promotions, label) => {
-      if (!promotions || promotions.length === 0) return;
-      const ranges = [];
-      for (const promo of promotions) {
-        const dayHours = promo.hours[dayName];
-        if (!dayHours || dayHours.length === 0) continue;
-        for (const rangeStr of dayHours) {
-          const range = parseTimeRange(rangeStr);
-          if (range) ranges.push(range);
-        }
-      }
-      if (ranges.length === 0) return;
-      for (const range of ranges) {
-        let isInRange = false;
-        let duration;
-        if (range.end > range.start) {
-          isInRange = currentMinutes >= range.start && currentMinutes < range.end;
-          duration = range.end - range.start;
-        } else {
-          isInRange = currentMinutes >= range.start || currentMinutes < range.end;
-          duration = (1440 - range.start) + range.end;
-        }
-        if (!isInRange) continue;
-        let elapsed;
-        if (range.end > range.start) {
-          elapsed = currentMinutes - range.start;
-        } else {
-          elapsed = currentMinutes >= range.start
-            ? currentMinutes - range.start
-            : (1440 - range.start) + currentMinutes;
-        }
-        const progress = Math.min(elapsed / duration, 1);
-        const opacity = Math.max(0, 0.9 * (1 - progress));
-        lines.push(`  ${label} active range: ${range.start}-${range.end}`);
-        lines.push(`  ${label} progress=${progress.toFixed(3)} opacity=${opacity.toFixed(3)}`);
-        break;
-      }
-    };
-
-    computeDebug(venue.happyHours, 'HH');
-    computeDebug(venue.specials, 'SP');
   }
   debugPanel.textContent = lines.join('\n');
 }
