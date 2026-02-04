@@ -1,5 +1,5 @@
 import { fetchVenues, updateAllVenueStatuses } from './data.js?v=12';
-import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=7';
+import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=8';
 
 // --- Configuration ---
 // Replace with your published Google Sheet CSV URL
@@ -474,5 +474,19 @@ function getSurfConditions(marineData) {
   return `Surf: ${waveFt}ft @ ${period}s • Sea ${temp}°F`;
 }
 
+// --- Weather toggle for mobile ---
+function setupWeatherToggle() {
+  const toggle = document.getElementById('weather-toggle');
+  const widget = document.getElementById('weather-widget');
+  if (!toggle || !widget) return;
+
+  toggle.addEventListener('click', () => {
+    widget.classList.toggle('expanded');
+  });
+}
+
 // --- Boot ---
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+  init();
+  setupWeatherToggle();
+});
