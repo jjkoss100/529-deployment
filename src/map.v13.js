@@ -120,8 +120,8 @@ function getMarkerLifecycleState(promotions) {
           : (1440 - range.start) + currentMinutes;
       }
       const progress = Math.min(elapsed / duration, 1); // 0 at start, 1 at end
-      const fade = Math.pow(1 - progress, 3); // faster fade
-      const opacity = Math.max(0, 0.7 * fade); // dimmer overall
+      const fade = Math.pow(1 - progress, 4); // faster fade
+      const opacity = Math.max(0, 0.5 * fade); // dimmer overall
       return { size: MAX_SIZE, opacity: parseFloat(opacity.toFixed(2)), phase: 'active' };
     }
 
