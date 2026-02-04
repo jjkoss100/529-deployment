@@ -725,7 +725,7 @@ function updateDebugPanel(venues) {
   const now = new Date();
   const dayName = getCurrentDayName();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const targets = ['The Butcher\'s Daughter', '26 Beach'];
+  const targets = ['The Butcher\'s Daughter', '26 Beach', 'Nalu Vida'];
 
   const lines = [];
   lines.push(`Time: ${now.toLocaleTimeString()} (${dayName})`);
@@ -741,6 +741,48 @@ function updateDebugPanel(venues) {
     lines.push(`  HH ranges: ${hhRanges.join(', ') || 'none'}`);
     lines.push(`  SP ranges: ${specialsRanges.join(', ') || 'none'}`);
     lines.push(`  hasActiveHH=${venue.hasActiveHappyHour} hasActiveSP=${venue.hasActiveSpecial}`);
+
+    const computeDebug = (promotions, label) => {
+      if (!promotions || promotions.length === 0) return;
+      const ranges = [];
+      for (const promo of promotions) {
+        const dayHours = promo.hours[dayName];
+        if (!dayHours || dayHours.length === 0) continue;
+        for (const rangeStr of dayHours) {
+          const range = parseTimeRange(rangeStr);
+          if (range) ranges.push(range);
+        }
+      }
+      if (ranges.length === 0) return;
+      for (const range of ranges) {
+        let isInRange = false;
+        let duration;
+        if (range.end > range.start) {
+          isInRange = currentMinutes >= range.start && currentMinutes < range.end;
+          duration = range.end - range.start;
+        } else {
+          isInRange = currentMinutes >= range.start || currentMinutes < range.end;
+          duration = (1440 - range.start) + range.end;
+        }
+        if (!isInRange) continue;
+        let elapsed;
+        if (range.end > range.start) {
+          elapsed = currentMinutes - range.start;
+        } else {
+          elapsed = currentMinutes >= range.start
+            ? currentMinutes - range.start
+            : (1440 - range.start) + currentMinutes;
+        }
+        const progress = Math.min(elapsed / duration, 1);
+        const opacity = Math.max(0, 0.9 * (1 - progress));
+        lines.push(`  ${label} active range: ${range.start}-${range.end}`);
+        lines.push(`  ${label} progress=${progress.toFixed(3)} opacity=${opacity.toFixed(3)}`);
+        break;
+      }
+    };
+
+    computeDebug(venue.happyHours, 'HH');
+    computeDebug(venue.specials, 'SP');
   }
   debugPanel.textContent = lines.join('\n');
 }
