@@ -1,5 +1,5 @@
 import { fetchVenues, updateAllVenueStatuses } from './data.js?v=12';
-import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=9';
+import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=10';
 
 // --- Configuration ---
 // Replace with your published Google Sheet CSV URL
@@ -21,6 +21,7 @@ let allVenues = [];
  */
 async function init() {
   try {
+  console.log('[version] map v10 fade-power4 cap0.5');
   ensureCovertOverlay();
   // Initialize map
   console.log('Initializing map...');
