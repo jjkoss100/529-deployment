@@ -230,7 +230,7 @@ function ensureCovertOverlay() {
   overlay.setAttribute('aria-hidden', 'true');
   overlay.innerHTML = `
     <div class="covert-overlay__inner">
-      <div class="covert-overlay__tag covert-overlay__tag--headline">SCANNING YOUR AREA...</div>
+      <div class="covert-overlay__tag covert-overlay__tag--headline">ULTRA DEEP SCAN...</div>
     </div>
   `;
   document.body.appendChild(overlay);
