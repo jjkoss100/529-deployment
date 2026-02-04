@@ -38,6 +38,11 @@
   transform: translateY(-2px);
 }
 
+/* Remove glow when markers are very faint */
+.marker-fading {
+  filter: none;
+}
+
 /* Preshow pulse */
 .marker-preshow {
   animation: markerPulse 1.6s ease-in-out infinite;

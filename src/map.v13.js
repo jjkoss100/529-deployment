@@ -121,6 +121,7 @@ function getMarkerLifecycleState(promotions) {
       }
       const progress = Math.min(elapsed / duration, 1); // 0 at start, 1 at end
       const opacity = Math.max(0, 0.9 * (1 - progress)); // linear, obvious fade
+      if (progress >= 0.9 || opacity <= 0.08) return null; // hard cutoff near end
       return { size: MAX_SIZE, opacity: parseFloat(opacity.toFixed(2)), phase: 'active' };
     }
 
@@ -145,6 +146,9 @@ function createMarkerElement(type, opts) {
   el.classList.add(type === 'hh' ? 'marker-hh' : 'marker-special');
   if (opts.phase === 'preshow') {
     el.classList.add('marker-preshow');
+  }
+  if (opts.opacity !== undefined && opts.opacity < 0.2) {
+    el.classList.add('marker-fading');
   }
   el.style.cursor = 'pointer';
   el.style.display = 'block';
