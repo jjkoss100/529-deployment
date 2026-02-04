@@ -39,6 +39,11 @@
   transform: translateY(-2px);
 }
 
+.mapboxgl-marker.marker-hh,
+.mapboxgl-marker.marker-special {
+  opacity: var(--marker-opacity, 1) !important;
+}
+
 /* Remove glow when markers are very faint */
 .marker-fading {
   filter: none;
