@@ -620,15 +620,7 @@ export function renderMarkers(venues, filters) {
   clearMarkers();
   updateEnergyTrails(venues);
 
-  const debugEnabled =
-    window.location.search.includes('debug=1') ||
-    window.location.search.includes('debug=true') ||
-    window.location.search.includes('debug') ||
-    window.location.hash.includes('debug') ||
-    window.localStorage.getItem('debug') === '1';
-  if (debugEnabled) {
-    updateDebugPanel(venues);
-  }
+  // Debug panel disabled
 
   for (const venue of venues) {
     const hasHH = venue.happyHours.length > 0;
@@ -710,50 +702,7 @@ export function renderMarkers(venues, filters) {
   }
 }
 
-function updateDebugPanel(venues) {
-  if (!debugPanel) {
-    debugPanel = document.createElement('div');
-    debugPanel.style.position = 'fixed';
-    debugPanel.style.bottom = '16px';
-    debugPanel.style.left = '16px';
-    debugPanel.style.right = 'auto';
-    debugPanel.style.zIndex = '10000';
-    debugPanel.style.background = 'rgba(0,0,0,0.85)';
-    debugPanel.style.color = '#00ff88';
-    debugPanel.style.padding = '8px 10px';
-    debugPanel.style.fontFamily = 'monospace';
-    debugPanel.style.fontSize = '11px';
-    debugPanel.style.border = '2px solid #ff3b30';
-    debugPanel.style.whiteSpace = 'pre';
-    debugPanel.style.boxSizing = 'border-box';
-    debugPanel.style.maxWidth = 'calc(100vw - 32px)';
-    debugPanel.style.maxHeight = 'calc(100vh - 32px)';
-    debugPanel.style.overflow = 'auto';
-    ensureUiLayer().appendChild(debugPanel);
-  }
-
-  const now = new Date();
-  const dayName = getCurrentDayName();
-  const currentMinutes = now.getHours() * 60 + now.getMinutes();
-  const targets = ['The Butcher\'s Daughter', '26 Beach'];
-
-  const lines = [];
-  lines.push(`Time: ${now.toLocaleTimeString()} (${dayName})`);
-  for (const name of targets) {
-    const venue = venues.find(v => v.name === name);
-    if (!venue) {
-      lines.push(`${name}: not found`);
-      continue;
-    }
-    const specialsRanges = (venue.specials || []).flatMap(p => (p.hours[dayName] || []));
-    const hhRanges = (venue.happyHours || []).flatMap(p => (p.hours[dayName] || []));
-    lines.push(`${name}:`);
-    lines.push(`  HH ranges: ${hhRanges.join(', ') || 'none'}`);
-    lines.push(`  SP ranges: ${specialsRanges.join(', ') || 'none'}`);
-    lines.push(`  hasActiveHH=${venue.hasActiveHappyHour} hasActiveSP=${venue.hasActiveSpecial}`);
-  }
-  debugPanel.textContent = lines.join('\n');
-}
+function updateDebugPanel() {}
 
 /**
  * Fit map bounds to show all given venues.
