@@ -205,15 +205,7 @@ export function parseCSV(csvText) {
     const { menuUrl, menuDescription } = parseMenuField(menuField);
     const promoDescription = getPromoDescription(row, currentVenue.description);
 
-    if (promotionType === 'Happy Hour') {
-      currentVenue.happyHours.push({
-        menuUrl,
-        menuDescription,
-        description: promoDescription,
-        notes,
-        hours
-      });
-    } else if (promotionType === 'Special') {
+    if (promotionType === 'Special') {
       const resolvedMenuUrl =
         currentVenue.name.toLowerCase() === 'cou cou' &&
         (menuDescription || menuField || notes || '').toLowerCase().includes('martini monday')
@@ -221,7 +213,18 @@ export function parseCSV(csvText) {
           : menuUrl;
       currentVenue.specials.push({
         name: menuDescription || menuField || notes || 'Special',
+        typeLabel: promotionType || 'Special',
         menuUrl: resolvedMenuUrl,
+        description: promoDescription,
+        notes,
+        hours
+      });
+    } else {
+      // Treat any other promotion type as a generic promo (rendered like HH)
+      currentVenue.happyHours.push({
+        typeLabel: promotionType || 'Promotion',
+        menuUrl,
+        menuDescription,
         description: promoDescription,
         notes,
         hours

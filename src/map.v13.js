@@ -317,7 +317,8 @@ function buildPopupContent(venue, type) {
   html += `</div>`;
 
   // Promotion type
-  html += `<div class="popup-promo-type">${typeLabel}</div>`;
+  const promoTypeLabel = (promotions[0] && promotions[0].typeLabel) ? promotions[0].typeLabel : typeLabel;
+  html += `<div class="popup-promo-type">${escapeHtml(promoTypeLabel)}</div>`;
 
   // Description
   if (venue.description) {
