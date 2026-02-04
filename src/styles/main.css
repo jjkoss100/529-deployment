@@ -553,9 +553,12 @@ body > .weather-widget {
   font-family: var(--font-mono);
 }
 
-/* Ensure contact block covers Mapbox attribution in bottom-right */
-.mapboxgl-ctrl-bottom-right {
-  z-index: 1;
+/* Hide Mapbox attribution and logo */
+.mapboxgl-ctrl-bottom-right,
+.mapboxgl-ctrl-bottom-left,
+.mapboxgl-ctrl-attrib,
+.mapboxgl-ctrl-logo {
+  display: none !important;
 }
 
 .contact-block svg {
