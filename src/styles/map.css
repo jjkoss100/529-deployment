@@ -160,15 +160,17 @@
   font-weight: 700;
   color: #222;
   margin: 0;
-  line-height: 1.2;
+  line-height: 1.15;
   font-family: var(--font-display);
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.02em;
   flex: 4 1 auto;
   min-width: 0;
-  white-space: nowrap;
+  white-space: normal;
   overflow: hidden;
-  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .popup-body-header .popup-ig-link {
