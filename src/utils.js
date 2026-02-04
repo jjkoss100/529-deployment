@@ -127,15 +127,33 @@ export function isPromotionActive(hours) {
  */
 export function isPromotionActiveForDayTime(hours, dayName, currentMinutes) {
   const dayHours = hours[dayName];
-  if (!dayHours || dayHours.length === 0) return false;
+  if (dayHours && dayHours.length > 0) {
+    for (const rangeStr of dayHours) {
+      const range = parseTimeRange(rangeStr);
+      if (range && isTimeInRange(currentMinutes, range)) {
+        return true;
+      }
+    }
+  }
 
-  for (const rangeStr of dayHours) {
-    const range = parseTimeRange(rangeStr);
-    if (range && isTimeInRange(currentMinutes, range)) {
-      return true;
+  // Check previous day for ranges that cross midnight (e.g., 16:30-03:30)
+  const prevDay = getPreviousDayName(dayName);
+  const prevHours = hours[prevDay];
+  if (prevHours && prevHours.length > 0) {
+    for (const rangeStr of prevHours) {
+      const range = parseTimeRange(rangeStr);
+      if (range && range.end < range.start && currentMinutes < range.end) {
+        return true;
+      }
     }
   }
   return false;
+}
+
+export function getPreviousDayName(dayName) {
+  const idx = DAY_NAMES.indexOf(dayName);
+  if (idx === -1) return DAY_NAMES[0];
+  return DAY_NAMES[(idx - 1 + DAY_NAMES.length) % DAY_NAMES.length];
 }
 
 /**

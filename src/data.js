@@ -1,4 +1,4 @@
-import { isPromotionActive, hasWeekendHours, getActiveDays, detectIs24h, normalizeTimeRange } from './utils.js?v=12';
+import { isPromotionActive, hasWeekendHours, getActiveDays, detectIs24h, normalizeTimeRange } from './utils.js?v=13';
 
 const DAY_COLUMNS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const PROMO_DESCRIPTION_COLUMNS = [

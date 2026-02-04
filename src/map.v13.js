@@ -1,4 +1,4 @@
-import { getCurrentDayName, parseTimeRange, formatTimeNoPeriod } from './utils.js';
+import { getCurrentDayName, parseTimeRange, formatTimeNoPeriod, getPreviousDayName } from './utils.js?v=13';
 
 const LNG_OFFSET = 0.00012; // Offset for dual markers side by side
 
@@ -85,6 +85,8 @@ function getMarkerLifecycleState(promotions) {
 
   // Collect all today's time ranges across all promotion entries
   const todayRanges = [];
+  const prevDayName = getPreviousDayName(dayName);
+  const prevCrossRanges = [];
   for (const promo of promotions) {
     const dayHours = promo.hours[dayName];
     if (dayHours && dayHours.length > 0) {
@@ -93,9 +95,16 @@ function getMarkerLifecycleState(promotions) {
         if (range) todayRanges.push(range);
       }
     }
+    const prevHours = promo.hours[prevDayName];
+    if (prevHours && prevHours.length > 0) {
+      for (const rangeStr of prevHours) {
+        const range = parseTimeRange(rangeStr);
+        if (range && range.end < range.start) prevCrossRanges.push(range);
+      }
+    }
   }
 
-  if (todayRanges.length === 0) return null;
+  if (todayRanges.length === 0 && prevCrossRanges.length === 0) return null;
 
   // Check each range for the marker lifecycle
   for (const range of todayRanges) {
@@ -137,6 +146,17 @@ function getMarkerLifecycleState(promotions) {
     if (currentMinutes >= preshowStart && currentMinutes < range.start) {
       // Preshow: constant size with pulse animation at 75% opacity
       return { size: MAX_SIZE, opacity: 0.75, phase: 'preshow' };
+    }
+  }
+
+  // Check previous day's cross-midnight ranges (active only)
+  for (const range of prevCrossRanges) {
+    if (currentMinutes >= 0 && currentMinutes < range.end) {
+      const elapsed = currentMinutes + (1440 - range.start);
+      const duration = (1440 - range.start) + range.end;
+      const progress = Math.min(elapsed / duration, 1);
+      const opacity = Math.max(0.2, 1 - progress);
+      return { size: MAX_SIZE, opacity: parseFloat(opacity.toFixed(2)), phase: 'active' };
     }
   }
 
@@ -204,6 +224,8 @@ function getTimeStatus(promotions) {
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
   const todayRanges = [];
+  const prevDayName = getPreviousDayName(dayName);
+  const prevCrossRanges = [];
   for (const promo of promotions) {
     const dayHours = promo.hours[dayName];
     if (dayHours && dayHours.length > 0) {
@@ -212,9 +234,26 @@ function getTimeStatus(promotions) {
         if (range) todayRanges.push(range);
       }
     }
+    const prevHours = promo.hours[prevDayName];
+    if (prevHours && prevHours.length > 0) {
+      for (const rangeStr of prevHours) {
+        const range = parseTimeRange(rangeStr);
+        if (range && range.end < range.start) prevCrossRanges.push(range);
+      }
+    }
   }
 
   if (todayRanges.length === 0) {
+    // Check previous day cross-midnight ranges for active status
+    for (const range of prevCrossRanges) {
+      if (currentMinutes < range.end) {
+        return {
+          active: true,
+          text: `ends at ${formatTimeNoPeriod(range.end)}`,
+          endsSoon: range.end <= 30
+        };
+      }
+    }
     return { active: false, text: 'No times today' };
   }
 
@@ -290,21 +329,32 @@ function buildPopupContent(venue, type) {
   const dayName = getCurrentDayName();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
+  const prevDayNameForFilter = getPreviousDayName(dayName);
   const relevantPromos = promotions.filter(promo => {
     const dayHours = promo.hours[dayName];
-    if (!dayHours || dayHours.length === 0) return false;
-    for (const rangeStr of dayHours) {
-      const range = parseTimeRange(rangeStr);
-      if (!range) continue;
-      const preshowStart = range.start - PRESHOW_MINUTES;
-      // Check active
-      if (range.end > range.start) {
-        if (currentMinutes >= range.start && currentMinutes < range.end) return true;
-      } else {
-        if (currentMinutes >= range.start || currentMinutes < range.end) return true;
+    if (dayHours && dayHours.length > 0) {
+      for (const rangeStr of dayHours) {
+        const range = parseTimeRange(rangeStr);
+        if (!range) continue;
+        const preshowStart = range.start - PRESHOW_MINUTES;
+        // Check active
+        if (range.end > range.start) {
+          if (currentMinutes >= range.start && currentMinutes < range.end) return true;
+        } else {
+          if (currentMinutes >= range.start || currentMinutes < range.end) return true;
+        }
+        // Check preshow
+        if (currentMinutes >= preshowStart && currentMinutes < range.start) return true;
       }
-      // Check preshow
-      if (currentMinutes >= preshowStart && currentMinutes < range.start) return true;
+    }
+    const prevHours = promo.hours[prevDayNameForFilter];
+    if (prevHours && prevHours.length > 0) {
+      for (const rangeStr of prevHours) {
+        const range = parseTimeRange(rangeStr);
+        if (range && range.end < range.start && currentMinutes < range.end) {
+          return true;
+        }
+      }
     }
     return false;
   });
