@@ -147,7 +147,7 @@
 
 .popup-body-header {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 6px;
@@ -178,15 +178,15 @@
 }
 
 .popup-body-header .popup-ig-link {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
   border-radius: 4px;
   padding: 0;
 }
 
 .popup-body-header .popup-ig-link svg {
-  width: 12px;
-  height: 12px;
+  width: 16px;
+  height: 16px;
 }
 
 .popup-promo-type {
