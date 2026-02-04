@@ -202,6 +202,7 @@
   color: #111;
   font-family: var(--font-mono);
   margin-bottom: 6px;
+  margin-left: 2px;
 }
 
 .popup-description {
