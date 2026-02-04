@@ -11,6 +11,15 @@ let debugPanel = null;
 const ENERGY_SOURCE_ID = 'energy-trails';
 const ENERGY_LAYER_ID = 'energy-trails-line';
 
+function ensureUiLayer() {
+  let layer = document.getElementById('ui-layer');
+  if (layer) return layer;
+  layer = document.createElement('div');
+  layer.id = 'ui-layer';
+  document.body.appendChild(layer);
+  return layer;
+}
+
 /**
  * Initialize the Mapbox GL JS map.
  */
@@ -715,7 +724,7 @@ function updateDebugPanel(venues) {
     debugPanel.style.fontSize = '11px';
     debugPanel.style.border = '2px solid #ff3b30';
     debugPanel.style.whiteSpace = 'pre';
-    document.body.appendChild(debugPanel);
+    ensureUiLayer().appendChild(debugPanel);
   }
 
   const now = new Date();

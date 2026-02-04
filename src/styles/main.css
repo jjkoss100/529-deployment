@@ -33,6 +33,18 @@ html, body {
   overflow: hidden;
 }
 
+/* --- UI Layer (widgets, debug, etc.) --- */
+#ui-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+#ui-layer > * {
+  pointer-events: auto;
+}
+
 /* --- Covert Overlay --- */
  .covert-overlay {
   position: fixed;

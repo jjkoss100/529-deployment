@@ -1,5 +1,5 @@
 import { fetchVenues, updateAllVenueStatuses } from './data.js?v=12';
-import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=24';
+import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=25';
 
 // --- Configuration ---
 // Replace with your published Google Sheet CSV URL
@@ -171,7 +171,17 @@ async function fetchWeather() {
   }
 }
 
+function ensureUiLayer() {
+  let layer = document.getElementById('ui-layer');
+  if (layer) return layer;
+  layer = document.createElement('div');
+  layer.id = 'ui-layer';
+  document.body.appendChild(layer);
+  return layer;
+}
+
 function ensureWeatherWidget() {
+  const layer = ensureUiLayer();
   let widget = document.getElementById('weather-widget');
   if (widget) {
     widget.style.position = 'fixed';
@@ -204,7 +214,7 @@ function ensureWeatherWidget() {
     </div>
   `;
 
-  document.body.appendChild(widget);
+  layer.appendChild(widget);
   widget.style.position = 'fixed';
   widget.style.top = '16px';
   widget.style.left = '16px';
