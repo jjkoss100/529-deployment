@@ -175,9 +175,11 @@
 
 .popup-body-header .popup-ig-link {
   flex: 1 0 auto;
-  margin-left: 8px;
+  margin-left: 12px;
   margin-right: 0;
-  margin-bottom: 2px;
+  margin-bottom: 0;
+  margin-top: -2px;
+  align-self: flex-start;
 }
 
 .popup-body-header .popup-ig-link {
