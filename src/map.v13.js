@@ -60,7 +60,7 @@ function clearMarkers() {
 }
 
 const PRESHOW_MINUTES = 30; // Show markers 30min before start
-const MAX_SIZE = 32;        // Consistent marker size
+const MAX_SIZE = 24;        // Consistent marker size
 
 /**
  * Compute the visual lifecycle state of a marker based on current time.
