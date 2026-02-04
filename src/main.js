@@ -57,18 +57,13 @@ async function init() {
     map.on('load', () => fitToVenues(allVenues));
   }
 
-  // Update local label from map center and keep in sync
-  updateLocalLabel(map, allVenues);
-  map.on('moveend', () => updateLocalLabel(map, allVenues));
-
   // Start auto-refresh timer
   startAutoRefresh();
 
   // Setup geolocation button
   setupGeolocation();
 
-  // Start weather widget
-  setupWeather();
+  // Weather widget removed
 
   // Soften the covert overlay once the UI is live
   const overlay = document.getElementById('covert-overlay');
@@ -140,12 +135,7 @@ function setupGeolocation() {
   });
 }
 
-function setupWeather() {
-  const widget = ensureWeatherWidget();
-  if (!widget) return;
-  fetchWeather();
-  setInterval(fetchWeather, WEATHER_REFRESH_MS);
-}
+function setupWeather() {}
 
 async function fetchWeather() {
   const widget = ensureWeatherWidget();
@@ -184,70 +174,7 @@ function ensureUiLayer() {
   return layer;
 }
 
-function ensureWeatherWidget() {
-  const layer = ensureUiLayer();
-  let widget = document.getElementById('weather-widget');
-  if (widget) {
-    widget.style.position = 'fixed';
-    widget.style.top = '16px';
-    widget.style.left = '16px';
-    widget.style.zIndex = '9999';
-    return widget;
-  }
-
-  widget = document.createElement('div');
-  widget.id = 'weather-widget';
-  widget.className = 'weather-widget';
-  widget.innerHTML = `
-    <div class="weather-title">529WORLD</div>
-    <div class="weather-local" id="weather-local">WESTSIDE</div>
-    <div class="weather-current">
-      <div class="weather-temp" id="weather-temp">--°</div>
-      <div class="weather-meta">
-        <div class="weather-summary" id="weather-summary">Loading...</div>
-        <div class="weather-details" id="weather-details"></div>
-      </div>
-    </div>
-    <div class="weather-third">
-      <div class="weather-tonight" id="weather-tonight"></div>
-      <div class="weather-extras">
-        <div class="weather-extra-row" id="sun-times"></div>
-        <div class="weather-extra-row" id="moon-phase"></div>
-        <div class="weather-extra-row" id="astro-tidbit"></div>
-        <div class="weather-extra-row" id="surf-conditions"></div>
-      </div>
-    </div>
-  `;
-
-  layer.appendChild(widget);
-  widget.style.position = 'fixed';
-  widget.style.top = '16px';
-  widget.style.left = '16px';
-  widget.style.zIndex = '9999';
-  return widget;
-}
-
-function updateLocalLabel(map, venues) {
-  const labelEl = document.getElementById('weather-local');
-  if (!labelEl || !map || !venues || venues.length === 0) return;
-
-  const center = map.getCenter();
-  let best = null;
-  let bestDist = Infinity;
-  for (const venue of venues) {
-    if (!venue.area || isNaN(venue.lat) || isNaN(venue.lng)) continue;
-    const dx = venue.lng - center.lng;
-    const dy = venue.lat - center.lat;
-    const d2 = dx * dx + dy * dy;
-    if (d2 < bestDist) {
-      bestDist = d2;
-      best = venue.area;
-    }
-  }
-
-  const label = (best || 'WESTSIDE').toString().trim();
-  labelEl.textContent = label ? label.toUpperCase() : 'WESTSIDE';
-}
+// Weather widget removed
 
 function ensureCovertOverlay() {
   if (document.getElementById('covert-overlay')) return;
