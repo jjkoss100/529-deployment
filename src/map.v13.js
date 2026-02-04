@@ -160,7 +160,7 @@ function createMarkerElement(type, opts) {
     const size = opts.size || MAX_SIZE;
     el.style.width = size + 'px';
     el.style.height = size + 'px';
-    el.style.opacity = (opts.opacity !== undefined ? opts.opacity : 1).toString();
+    el.style.setProperty('--marker-opacity', (opts.opacity !== undefined ? opts.opacity : 1).toString());
     // Preshow: muted grey smiley; Active: bright yellow smiley
     const isActive = opts.phase === 'active';
     const faceColor = isActive ? '%23f9c922' : '%23777';
@@ -170,7 +170,7 @@ function createMarkerElement(type, opts) {
     const size = opts.size || MAX_SIZE;
     el.style.width = size + 'px';
     el.style.height = size + 'px';
-    el.style.opacity = (opts.opacity !== undefined ? opts.opacity : 1).toString();
+    el.style.setProperty('--marker-opacity', (opts.opacity !== undefined ? opts.opacity : 1).toString());
     const isActive = opts.phase === 'active';
     // Preshow: muted grey star; Active: bold green star with dark outline
     const fillColor = isActive ? '%2315b312' : '%23666';
