@@ -716,6 +716,7 @@ function updateDebugPanel(venues) {
     debugPanel.style.position = 'fixed';
     debugPanel.style.bottom = '16px';
     debugPanel.style.left = '16px';
+    debugPanel.style.right = 'auto';
     debugPanel.style.zIndex = '10000';
     debugPanel.style.background = 'rgba(0,0,0,0.85)';
     debugPanel.style.color = '#00ff88';
@@ -724,6 +725,10 @@ function updateDebugPanel(venues) {
     debugPanel.style.fontSize = '11px';
     debugPanel.style.border = '2px solid #ff3b30';
     debugPanel.style.whiteSpace = 'pre';
+    debugPanel.style.boxSizing = 'border-box';
+    debugPanel.style.maxWidth = 'calc(100vw - 32px)';
+    debugPanel.style.maxHeight = 'calc(100vh - 32px)';
+    debugPanel.style.overflow = 'auto';
     ensureUiLayer().appendChild(debugPanel);
   }
 
