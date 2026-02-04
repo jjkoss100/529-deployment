@@ -320,6 +320,12 @@ function buildPopupContent(venue, type) {
   const promoTypeLabel = (promotions[0] && promotions[0].typeLabel) ? promotions[0].typeLabel : typeLabel;
   html += `<div class="popup-promo-type">${escapeHtml(promoTypeLabel)}</div>`;
 
+  // Notes
+  const notesText = displayPromos.map(p => p.notes).find(n => n && n.trim());
+  if (notesText) {
+    html += `<p class="popup-notes">${escapeHtml(notesText)}</p>`;
+  }
+
   // Description
   if (venue.description) {
     html += `<p class="popup-description">${escapeHtml(venue.description)}</p>`;
