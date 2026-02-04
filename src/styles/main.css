@@ -39,6 +39,8 @@ html, body {
   inset: 0;
   z-index: 10000;
   pointer-events: none;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 #ui-layer > * {
@@ -125,8 +127,8 @@ html, body {
 /* --- Weather Widget --- */
 .weather-widget {
   position: fixed;
-  top: 28px;
-  left: 16px;
+  top: 0;
+  left: 0;
   transform: none;
   z-index: 9999;
   pointer-events: auto;
