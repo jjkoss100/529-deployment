@@ -154,14 +154,19 @@
 }
 
 .popup-venue-name {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 700;
   color: #222;
   margin: 0;
   line-height: 1.2;
   font-family: var(--font-display);
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.04em;
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .popup-promo-type {
