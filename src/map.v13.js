@@ -120,8 +120,7 @@ function getMarkerLifecycleState(promotions) {
           : (1440 - range.start) + currentMinutes;
       }
       const progress = Math.min(elapsed / duration, 1); // 0 at start, 1 at end
-      const opacity = Math.max(0, 0.9 * (1 - progress)); // linear, obvious fade
-      if (progress >= 0.9 || opacity <= 0.08) return null; // hard cutoff near end
+      const opacity = Math.max(0.08, 0.9 * (1 - progress)); // linear, obvious fade with floor
       return { size: MAX_SIZE, opacity: parseFloat(opacity.toFixed(2)), phase: 'active' };
     }
 
