@@ -60,8 +60,7 @@ function clearMarkers() {
 }
 
 const PRESHOW_MINUTES = 30; // Show markers 30min before start
-const MAX_SIZE = 32;        // Full size at start
-const MIN_SIZE = 10;        // Tiny at end
+const MAX_SIZE = 32;        // Consistent marker size
 
 /**
  * Compute the visual lifecycle state of a marker based on current time.
@@ -110,7 +109,7 @@ function getMarkerLifecycleState(promotions) {
     }
 
     if (isInRange) {
-      // Active — shrink proportionally from full to min size
+      // Active — constant size, fade out over duration (ease-out)
       let elapsed;
       if (range.end > range.start) {
         elapsed = currentMinutes - range.start;
@@ -121,17 +120,15 @@ function getMarkerLifecycleState(promotions) {
           : (1440 - range.start) + currentMinutes;
       }
       const progress = Math.min(elapsed / duration, 1); // 0 at start, 1 at end
-      const size = MAX_SIZE - (MAX_SIZE - MIN_SIZE) * progress;
-      return { size: Math.round(size), opacity: 1, phase: 'active' };
+      const eased = 1 - Math.pow(1 - progress, 2); // ease-out
+      const opacity = Math.max(0, 1 - eased);
+      return { size: MAX_SIZE, opacity: parseFloat(opacity.toFixed(2)), phase: 'active' };
     }
 
     // Check if in preshow window (30min before start)
     if (currentMinutes >= preshowStart && currentMinutes < range.start) {
-      // Fade in: 0.15 at -30min → 0.5 at start (stays clearly faded until active)
-      const minutesTilStart = range.start - currentMinutes;
-      const fadeProgress = 1 - (minutesTilStart / PRESHOW_MINUTES); // 0→1
-      const opacity = 0.15 + 0.35 * fadeProgress; // 0.15 → 0.5
-      return { size: MAX_SIZE, opacity: parseFloat(opacity.toFixed(2)), phase: 'preshow' };
+      // Preshow: constant size with pulse animation
+      return { size: MAX_SIZE, opacity: 0.4, phase: 'preshow' };
     }
   }
 
@@ -147,6 +144,9 @@ function getMarkerLifecycleState(promotions) {
 function createMarkerElement(type, opts) {
   const el = document.createElement('img');
   el.classList.add(type === 'hh' ? 'marker-hh' : 'marker-special');
+  if (opts.phase === 'preshow') {
+    el.classList.add('marker-preshow');
+  }
   el.style.cursor = 'pointer';
   el.style.display = 'block';
   el.style.background = 'transparent';
