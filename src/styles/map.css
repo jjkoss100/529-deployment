@@ -35,7 +35,10 @@
 .marker-hh,
 .marker-special {
   opacity: var(--marker-opacity, 1);
-  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35)) drop-shadow(0 0 8px rgba(70, 180, 255, 0.15));
+  filter:
+    opacity(var(--marker-opacity, 1))
+    drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35))
+    drop-shadow(0 0 8px rgba(70, 180, 255, 0.15));
   transform: translateY(-2px);
 }
 
@@ -46,7 +49,7 @@
 
 /* Remove glow when markers are very faint */
 .marker-fading {
-  filter: none;
+  filter: opacity(var(--marker-opacity, 1));
 }
 
 /* Preshow pulse */
