@@ -151,6 +151,8 @@
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 6px;
+  padding-left: 2px;
+  padding-right: 2px;
 }
 
 .popup-venue-name {
@@ -162,11 +164,17 @@
   font-family: var(--font-display);
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  flex: 1 1 auto;
+  flex: 4 1 auto;
   min-width: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.popup-body-header .popup-ig-link {
+  flex: 1 0 auto;
+  margin-left: 6px;
+  margin-right: 2px;
 }
 
 .popup-promo-type {
