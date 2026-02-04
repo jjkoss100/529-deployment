@@ -670,30 +670,20 @@ export function renderMarkers(venues, filters) {
     const hasHH = venue.happyHours.length > 0;
     const hasSpecials = venue.specials.length > 0;
 
-    // Should we show this venue based on promotion type filter?
-    let showHH = hasHH && (filters.promotionType === 'all' || filters.promotionType === 'happy-hour');
-    let showSp = hasSpecials && (filters.promotionType === 'all' || filters.promotionType === 'special');
-
-    // When "Active Now" is on, only show markers for currently active promotions
-    if (filters.activeOnly && filters.selectedDay === 'today') {
-      if (showHH && !venue.hasActiveHappyHour) showHH = false;
-      if (showSp && !venue.hasActiveSpecial) showSp = false;
-    }
-
-    // Apply lifecycle: only show markers in preshow/active windows
+    // Only show markers when the lifecycle says preshow/active.
+    let showHH = false;
+    let showSp = false;
     let hhState = null;
     let spState = null;
 
-    if (showHH) {
+    if (hasHH) {
       hhState = getMarkerLifecycleState(venue.happyHours);
-      if (!hhState) showHH = false;
+      showHH = !!hhState;
     }
-    if (showSp) {
+    if (hasSpecials) {
       spState = getMarkerLifecycleState(venue.specials);
-      if (!spState) showSp = false;
+      showSp = !!spState;
     }
-
-    // Note: no fallback to full opacity; lifecycle controls visibility + fade.
 
     // Recalculate offsets after lifecycle filtering
     const bothVisible = showHH && showSp;
