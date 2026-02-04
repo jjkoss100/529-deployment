@@ -1,5 +1,5 @@
 import { fetchVenues, updateAllVenueStatuses } from './data.js?v=13';
-import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=35';
+import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=36';
 
 // --- Configuration ---
 // Replace with your published Google Sheet CSV URL
@@ -56,6 +56,10 @@ async function init() {
   } else {
     map.on('load', () => fitToVenues(allVenues));
   }
+
+  // Update local label from map center and keep in sync
+  updateLocalLabel(map, allVenues);
+  map.on('moveend', () => updateLocalLabel(map, allVenues));
 
   // Start auto-refresh timer
   startAutoRefresh();
@@ -195,7 +199,8 @@ function ensureWeatherWidget() {
   widget.id = 'weather-widget';
   widget.className = 'weather-widget';
   widget.innerHTML = `
-    <div class="weather-title">VENICE BEACH <span class="weather-title-sup">529</span></div>
+    <div class="weather-title">529WORLD</div>
+    <div class="weather-local" id="weather-local">WESTSIDE</div>
     <div class="weather-current">
       <div class="weather-temp" id="weather-temp">--°</div>
       <div class="weather-meta">
@@ -220,6 +225,28 @@ function ensureWeatherWidget() {
   widget.style.left = '16px';
   widget.style.zIndex = '9999';
   return widget;
+}
+
+function updateLocalLabel(map, venues) {
+  const labelEl = document.getElementById('weather-local');
+  if (!labelEl || !map || !venues || venues.length === 0) return;
+
+  const center = map.getCenter();
+  let best = null;
+  let bestDist = Infinity;
+  for (const venue of venues) {
+    if (!venue.area || isNaN(venue.lat) || isNaN(venue.lng)) continue;
+    const dx = venue.lng - center.lng;
+    const dy = venue.lat - center.lat;
+    const d2 = dx * dx + dy * dy;
+    if (d2 < bestDist) {
+      bestDist = d2;
+      best = venue.area;
+    }
+  }
+
+  const label = (best || 'WESTSIDE').toString().trim();
+  labelEl.textContent = label ? label.toUpperCase() : 'WESTSIDE';
 }
 
 function ensureCovertOverlay() {

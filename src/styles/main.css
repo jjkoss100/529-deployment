@@ -163,6 +163,15 @@ body > .weather-widget {
   font-family: var(--font-mono);
 }
 
+.weather-local {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: rgba(214, 222, 235, 0.9);
+  margin-bottom: 10px;
+  font-family: var(--font-display);
+}
+
 .weather-title-sup {
   font-size: 11px;
   vertical-align: sub;
