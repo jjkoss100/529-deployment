@@ -648,15 +648,7 @@ export function renderMarkers(venues, filters) {
       if (!spState) showSp = false;
     }
 
-    // Fallback: if active right now but lifecycle failed, still show at full size
-    if (!showHH && venue.hasActiveHappyHour) {
-      showHH = true;
-      hhState = { size: MAX_SIZE, opacity: 1, phase: 'active' };
-    }
-    if (!showSp && venue.hasActiveSpecial) {
-      showSp = true;
-      spState = { size: MAX_SIZE, opacity: 1, phase: 'active' };
-    }
+    // Note: no fallback to full opacity; lifecycle controls visibility + fade.
 
     // Recalculate offsets after lifecycle filtering
     const bothVisible = showHH && showSp;
