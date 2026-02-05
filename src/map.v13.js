@@ -416,6 +416,21 @@ function formatNotesForDisplay(notes) {
     { re: /🍸|🍹/u, label: 'Cocktails' }
   ];
 
+  const pairRegex = /(\$\s*\d+(?:\.\d+)?(?:\s*-\s*\$?\d+(?:\.\d+)?)?).*?(🍺|🍻|🥃|🍷|🍸|🍹)/gu;
+  const extracted = [];
+  let match;
+  while ((match = pairRegex.exec(notes)) !== null) {
+    const price = match[1] ? match[1].replace(/\s+/g, '') : '';
+    const emoji = match[2];
+    const labelEntry = emojiLabels.find(e => e.re.test(emoji));
+    if (labelEntry && price) {
+      extracted.push(`${labelEntry.label} ${price}`);
+    }
+  }
+  if (extracted.length >= 2) {
+    return extracted.join(' · ');
+  }
+
   const chunks = notes.split(',').map(s => s.trim()).filter(Boolean);
   if (chunks.length < 2) return notes;
 
