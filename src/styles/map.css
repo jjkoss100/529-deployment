@@ -37,7 +37,6 @@
   position: relative;
   width: fit-content;
   height: fit-content;
-  transform: translateY(-2px);
 }
 
 .marker-shell::after {
@@ -74,7 +73,6 @@
 }
 
 .marker-shell.marker-urgent {
-  animation: markerGlowPulse 1.4s ease-in-out infinite;
 }
 
 .marker-shell.marker-urgent::after,
@@ -88,12 +86,17 @@
   will-change: filter, transform;
 }
 
-@keyframes markerGlowPulse {
+ .marker-shell.marker-urgent .marker-hh,
+ .marker-shell.marker-urgent .marker-special {
+  animation: markerCoinPulse 1.4s ease-in-out infinite;
+ }
+
+@keyframes markerCoinPulse {
   0%, 100% {
-    transform: translateY(-2px) scale(1.04);
+    transform: scale(1.04);
   }
   50% {
-    transform: translateY(-2px) scale(1.12);
+    transform: scale(1.12);
   }
 }
 
