@@ -1,9 +1,10 @@
-import { fetchVenues, updateAllVenueStatuses } from './data.js?v=13';
-import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=61';
+import { fetchVenues, fetchLimitedOffers, updateAllVenueStatuses } from './data.js?v=15';
+import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=62';
 
 // --- Configuration ---
 // Replace with your published Google Sheet CSV URL
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQpj4lehM7ElDgkUxZHkQ_ZrZhGX4HwIkK-pBuA-siErJ0YG0ahpfYYJqSqoAq5-Fpj8tL6j0DyK-by/pub?gid=0&single=true&output=csv';
+const LIMITED_OFFERS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQpj4lehM7ElDgkUxZHkQ_ZrZhGX4HwIkK-pBuA-siErJ0YG0ahpfYYJqSqoAq5-Fpj8tL6j0DyK-by/pub?output=csv';
 
 // Replace with your Mapbox access token
 const MAPBOX_TOKEN = 'pk.eyJ1Ijoiamprb3NzMTAiLCJhIjoiY21rdWp1YWFhMjJ1djNjcTJjcjRpYWNhZSJ9.ExODQ-GDFl9NHFl7NE9IxQ';
@@ -15,6 +16,7 @@ const WEATHER_REFRESH_MS = 15 * 60 * 1000; // 15 minutes
 
 // --- State ---
 let allVenues = [];
+let limitedOffers = [];
 
 /**
  * Main app initialization.
@@ -29,6 +31,7 @@ async function init() {
 
   // Fetch and parse venue data
   allVenues = await fetchVenues(CSV_URL);
+  limitedOffers = await fetchLimitedOffers(LIMITED_OFFERS_URL);
 
   if (allVenues.length === 0) {
     console.warn('No venues loaded. Check CSV URL.');
@@ -48,7 +51,7 @@ async function init() {
   };
 
   // Initial render — show all venues
-  renderMarkers(allVenues, defaultFilters);
+  renderMarkers(allVenues, defaultFilters, limitedOffers);
 
   // Fit map to show all venues once loaded
   if (map.loaded()) {
@@ -106,7 +109,7 @@ function startAutoRefresh() {
   };
   setInterval(() => {
     updateAllVenueStatuses(allVenues);
-    renderMarkers(allVenues, defaultFilters);
+    renderMarkers(allVenues, defaultFilters, limitedOffers);
   }, REFRESH_INTERVAL);
 }
 

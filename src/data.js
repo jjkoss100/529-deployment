@@ -105,6 +105,24 @@ export async function fetchVenues(csvUrl) {
 }
 
 /**
+ * Fetch and parse limited-time offers CSV into offer objects.
+ */
+export async function fetchLimitedOffers(csvUrl) {
+  let csvText;
+
+  try {
+    const response = await fetch(csvUrl);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    csvText = await response.text();
+  } catch (err) {
+    console.warn('Failed to fetch limited offers CSV:', err);
+    return [];
+  }
+
+  return parseLimitedOffersCSV(csvText);
+}
+
+/**
  * Parse CSV text into normalized venue objects.
  * The Google Sheet CSV may have junk rows before the actual header row.
  * We detect the header row by looking for "Business DBA".
@@ -243,6 +261,44 @@ export function parseCSV(csvText) {
   }
 
   return venues.filter(v => !isNaN(v.lat) && !isNaN(v.lng));
+}
+
+function parseLimitedOffersCSV(csvText) {
+  const parsed = Papa.parse(csvText, {
+    header: true,
+    skipEmptyLines: true,
+    transformHeader: h => h.trim()
+  });
+
+  const rows = parsed.data || [];
+  const offers = [];
+  const dateColRegex = /^\d{1,2}\/\d{1,2}\/\d{2}$/;
+
+  for (const row of rows) {
+    const eventName = (row['Event Name'] || '').trim();
+    const lat = parseFloat(row['Lat']);
+    const lng = parseFloat(row['Long']);
+    if (!eventName || isNaN(lat) || isNaN(lng)) continue;
+
+    const times = {};
+    for (const key of Object.keys(row)) {
+      if (!dateColRegex.test(key)) continue;
+      const val = (row[key] || '').trim();
+      if (val) times[key] = val;
+    }
+
+    offers.push({
+      name: eventName,
+      description: (row['Description'] || '').trim(),
+      instagram: (row['Venue Instagram'] || '').trim(),
+      link: (row['Link'] || '').trim(),
+      lat,
+      lng,
+      times
+    });
+  }
+
+  return offers;
 }
 
 /**
