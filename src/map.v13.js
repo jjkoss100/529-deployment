@@ -208,7 +208,7 @@ function createMarkerElement(type, opts) {
   const rimColor = isActive ? '%23f8a257' : '%23824d33';
   const highlightColor = isActive ? '%23ffd1a8' : '%23c9b3a7';
   const shadowColor = isActive ? '%23862f1b' : '%235a2c1f';
-  svgContent = `
+  const svgContent = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
       <defs>
         <radialGradient id="coin-core" cx="35%" cy="30%" r="70%">
