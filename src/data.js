@@ -265,33 +265,43 @@ export function parseCSV(csvText) {
 
 function parseLimitedOffersCSV(csvText) {
   const parsed = Papa.parse(csvText, {
-    header: true,
-    skipEmptyLines: true,
-    transformHeader: h => h.trim()
+    skipEmptyLines: true
   });
 
   const rows = parsed.data || [];
+  if (rows.length === 0) return [];
+
+  const header = rows[0].map((h = '') => h.toString().trim());
   const offers = [];
   const dateColRegex = /^\d{1,2}\/\d{1,2}\/\d{2}$/;
 
-  for (const row of rows) {
-    const eventName = (row['Event Name'] || '').trim();
-    const lat = parseFloat(row['Lat']);
-    const lng = parseFloat(row['Long']);
+  for (let i = 1; i < rows.length; i += 1) {
+    const row = rows[i];
+    if (!row || row.length === 0) continue;
+
+    const get = (name) => {
+      const idx = header.indexOf(name);
+      return idx === -1 ? '' : (row[idx] || '').toString().trim();
+    };
+
+    const eventName = get('Event Name');
+    const lat = parseFloat(get('Lat'));
+    const lng = parseFloat(get('Long'));
     if (!eventName || isNaN(lat) || isNaN(lng)) continue;
 
     const times = {};
-    for (const key of Object.keys(row)) {
+    for (let c = 0; c < header.length; c += 1) {
+      const key = header[c];
       if (!dateColRegex.test(key)) continue;
-      const val = (row[key] || '').trim();
+      const val = (row[c] || '').toString().trim();
       if (val) times[key] = val;
     }
 
     offers.push({
       name: eventName,
-      description: (row['Description'] || '').trim(),
-      instagram: (row['Venue Instagram'] || '').trim(),
-      link: (row['Link'] || '').trim(),
+      description: get('Description'),
+      instagram: get('Venue Instagram'),
+      link: get('Link'),
       lat,
       lng,
       times
