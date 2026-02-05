@@ -552,6 +552,18 @@ function ensureOffersLayer() {
       data: { type: 'FeatureCollection', features: [] }
     });
   }
+  if (!map.getLayer('offers-debug')) {
+    map.addLayer({
+      id: 'offers-debug',
+      type: 'circle',
+      source: OFFERS_SOURCE_ID,
+      paint: {
+        'circle-color': '#00ffff',
+        'circle-radius': 4,
+        'circle-opacity': 0.8
+      }
+    });
+  }
   if (!map.getLayer(OFFERS_LAYER_ID)) {
     map.addLayer({
       id: OFFERS_LAYER_ID,
