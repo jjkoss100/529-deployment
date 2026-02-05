@@ -124,11 +124,34 @@ html, body {
   width: 100vw;
 }
 
+/* --- Brand Widget --- */
+.brand-widget {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  z-index: 9999;
+  pointer-events: none;
+  padding: 14px 18px;
+  background: rgba(12, 14, 22, 0.92);
+  border: 1px solid rgba(61, 209, 255, 0.35);
+  border-radius: 14px;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(10px);
+}
+
+.brand-title {
+  font-size: 34px;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: #e9f3ff;
+  font-family: var(--font-display);
+}
+
 /* --- Weather Widget --- */
 .weather-widget {
   position: fixed;
-  top: 0;
-  left: 0;
+  top: 92px;
+  left: 16px;
   transform: none;
   z-index: 9999;
   pointer-events: auto;
