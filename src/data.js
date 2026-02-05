@@ -264,11 +264,19 @@ export function parseCSV(csvText) {
 }
 
 function parseLimitedOffersCSV(csvText) {
-  const parsed = Papa.parse(csvText, {
+  let parsed = Papa.parse(csvText, {
     skipEmptyLines: true
   });
+  let rows = parsed.data || [];
+  const maxCols = rows.reduce((m, r) => Math.max(m, (r || []).length), 0);
+  if (maxCols <= 1) {
+    parsed = Papa.parse(csvText, {
+      skipEmptyLines: true,
+      delimiter: '\t'
+    });
+    rows = parsed.data || [];
+  }
 
-  const rows = parsed.data || [];
   if (rows.length === 0) return [];
 
   let headerIndex = -1;
@@ -279,6 +287,8 @@ function parseLimitedOffersCSV(csvText) {
       break;
     }
   }
+  window.__limitedOffersHeaderIndex = headerIndex;
+  window.__limitedOffersHeaderCols = headerIndex === -1 ? 0 : (rows[headerIndex] || []).length;
   if (headerIndex === -1) {
     console.warn('Limited offers header not found');
     return [];

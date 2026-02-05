@@ -1,5 +1,5 @@
-import { fetchVenues, fetchLimitedOffers, updateAllVenueStatuses } from './data.js?v=19';
-import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=72';
+import { fetchVenues, fetchLimitedOffers, updateAllVenueStatuses } from './data.js?v=20';
+import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=73';
 
 // --- Configuration ---
 // Replace with your published Google Sheet CSV URL
