@@ -274,17 +274,18 @@ function getTimeStatus(promotions) {
     }
   }
 
-  if (todayRanges.length === 0) {
-    // Check previous day cross-midnight ranges for active status
-    for (const range of prevCrossRanges) {
-      if (currentMinutes < range.end) {
-        return {
-          active: true,
-          text: `ends at ${formatTimeNoPeriod(range.end)}`,
-          endsSoon: (range.end - currentMinutes) <= 45
-        };
-      }
+  // Always honor previous day's cross-midnight ranges after midnight
+  for (const range of prevCrossRanges) {
+    if (currentMinutes < range.end) {
+      return {
+        active: true,
+        text: `ends at ${formatTimeNoPeriod(range.end)}`,
+        endsSoon: (range.end - currentMinutes) <= 45
+      };
     }
+  }
+
+  if (todayRanges.length === 0) {
     return { active: false, text: 'No times today' };
   }
 
@@ -302,17 +303,6 @@ function getTimeStatus(promotions) {
         endsSoon: (range.end > range.start)
           ? (range.end - currentMinutes) <= 45
           : ((1440 - currentMinutes) + range.end) <= 45
-      };
-    }
-  }
-
-  // If not active today, check previous day's cross-midnight ranges
-  for (const range of prevCrossRanges) {
-    if (currentMinutes < range.end) {
-      return {
-        active: true,
-        text: `ends at ${formatTimeNoPeriod(range.end)}`,
-        endsSoon: (range.end - currentMinutes) <= 45
       };
     }
   }
