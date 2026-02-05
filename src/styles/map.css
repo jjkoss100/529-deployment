@@ -34,15 +34,16 @@
 
 .marker-hh,
 .marker-special {
-  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.4)) drop-shadow(0 0 10px rgba(255, 120, 60, 0.25));
+  --marker-glow: 0;
+  filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.4));
+  box-shadow:
+    0 0 0 2px rgba(242, 107, 45, calc(var(--marker-glow) * 0.6)),
+    0 0 14px rgba(242, 107, 45, var(--marker-glow));
   transform: translateY(-2px);
 }
 
 .marker-ending {
   border-radius: 50%;
-  box-shadow:
-    0 0 0 2px rgba(235, 60, 60, 0.55),
-    0 0 10px rgba(235, 60, 60, 0.65);
 }
 
 /* Preshow vibrate */

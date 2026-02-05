@@ -75,7 +75,7 @@ const MAX_SIZE = 28;        // Consistent marker size
  * Compute the visual lifecycle state of a marker based on current time.
  * Works for both HH and special promotions.
  * @param {Array} promotions - array of promotion objects (happyHours or specials)
- * Returns null if marker should be hidden, or { size, opacity, phase, endingSoon } where:
+ * Returns null if marker should be hidden, or { size, opacity, phase, endingSoon, glow } where:
  *   phase: 'preshow' | 'active'
  */
 function getMarkerLifecycleState(promotions) {
@@ -127,7 +127,7 @@ function getMarkerLifecycleState(promotions) {
     }
 
     if (isInRange) {
-      // Active — constant size, linear fade from 100% to 0%
+      // Active — constant size, opacity + glow ramp as event progresses
       let elapsed;
       if (range.end > range.start) {
         elapsed = currentMinutes - range.start;
@@ -139,19 +139,31 @@ function getMarkerLifecycleState(promotions) {
       }
       const remaining = duration - elapsed;
       const progress = Math.min(elapsed / duration, 1); // 0 at start, 1 at end
-      const opacity = Math.max(0.2, 1 - progress);
+      const opacity = Math.min(1, 0.8 + (0.2 * progress));
+      let glow = 0;
+      if (duration <= 45) {
+        // Entire window is the "last 45" segment
+        glow = 0.5 + (0.5 * progress);
+      } else if (remaining > 45) {
+        const preProgress = (duration - remaining) / (duration - 45);
+        glow = 0.5 * Math.min(Math.max(preProgress, 0), 1);
+      } else {
+        const lastProgress = (45 - remaining) / 45;
+        glow = 0.5 + (0.5 * Math.min(Math.max(lastProgress, 0), 1));
+      }
       return {
         size: MAX_SIZE,
         opacity: parseFloat(opacity.toFixed(2)),
         phase: 'active',
-        endingSoon: remaining <= 45
+        endingSoon: remaining <= 45,
+        glow: parseFloat(glow.toFixed(2))
       };
     }
 
     // Check if in preshow window (30min before start)
     if (currentMinutes >= preshowStart && currentMinutes < range.start) {
       // Preshow: constant size with vibration animation
-      return { size: MAX_SIZE, opacity: 0.65, phase: 'preshow', endingSoon: false };
+      return { size: MAX_SIZE, opacity: 0.8, phase: 'preshow', endingSoon: false, glow: 0 };
     }
   }
 
@@ -162,12 +174,23 @@ function getMarkerLifecycleState(promotions) {
       const duration = (1440 - range.start) + range.end;
       const remaining = duration - elapsed;
       const progress = Math.min(elapsed / duration, 1);
-      const opacity = Math.max(0.2, 1 - progress);
+      const opacity = Math.min(1, 0.8 + (0.2 * progress));
+      let glow = 0;
+      if (duration <= 45) {
+        glow = 0.5 + (0.5 * progress);
+      } else if (remaining > 45) {
+        const preProgress = (duration - remaining) / (duration - 45);
+        glow = 0.5 * Math.min(Math.max(preProgress, 0), 1);
+      } else {
+        const lastProgress = (45 - remaining) / 45;
+        glow = 0.5 + (0.5 * Math.min(Math.max(lastProgress, 0), 1));
+      }
       return {
         size: MAX_SIZE,
         opacity: parseFloat(opacity.toFixed(2)),
         phase: 'active',
-        endingSoon: remaining <= 45
+        endingSoon: remaining <= 45,
+        glow: parseFloat(glow.toFixed(2))
       };
     }
   }
@@ -194,6 +217,7 @@ function createMarkerElement(type, opts) {
   if (opts.endingSoon) {
     el.classList.add('marker-ending');
   }
+  el.style.setProperty('--marker-glow', (opts.glow !== undefined ? opts.glow : 0).toString());
   el.style.display = 'block';
   el.style.background = 'transparent';
   el.style.border = 'none';
