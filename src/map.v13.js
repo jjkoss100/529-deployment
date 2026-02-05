@@ -217,9 +217,6 @@ function createMarkerElement(type, opts) {
   if (opts.phase === 'active') {
     el.classList.add('marker-active');
   }
-  if (opts.endingSoon) {
-    el.classList.add('marker-ending');
-  }
   el.style.setProperty('--marker-glow', (opts.glow !== undefined ? opts.glow : 0).toString());
   el.style.display = 'block';
   el.style.background = 'transparent';
