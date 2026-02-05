@@ -1036,12 +1036,14 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
 
     if (!loggedOfferDebug) {
       loggedOfferDebug = true;
-      const debug = { todayKey, total: limitedOffers.length, offersWithTime, offersShown };
+      const sample = limitedOffers[0] || null;
+      const debug = { todayKey, total: limitedOffers.length, offersWithTime, offersShown, sample };
       console.log('[limited offers]', JSON.stringify(debug));
       console.log('[limited offers sample]', limitedOffers.slice(0, 3));
       const el = document.getElementById('limited-offers-debug');
       if (el) {
-        el.textContent = `limited offers: ${offersShown}/${offersWithTime} (total ${limitedOffers.length}) • ${todayKey}`;
+        const sampleName = sample ? sample.name : 'none';
+        el.textContent = `limited offers: ${offersShown}/${offersWithTime} (total ${limitedOffers.length}) • ${todayKey} • ${sampleName}`;
       }
     }
   } else {

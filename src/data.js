@@ -274,7 +274,7 @@ function parseLimitedOffersCSV(csvText) {
   let headerIndex = -1;
   for (let i = 0; i < Math.min(rows.length, 10); i += 1) {
     const row = rows[i] || [];
-    if (row.some(cell => (cell || '').toString().trim() === 'Event Name')) {
+    if (row.some(cell => (cell || '').toString().trim().toLowerCase() === 'event name')) {
       headerIndex = i;
       break;
     }
