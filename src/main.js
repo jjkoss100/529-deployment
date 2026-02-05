@@ -78,6 +78,8 @@ async function init() {
     overlay.addEventListener('animationend', () => {
       overlay.remove();
       document.body.classList.remove('covert-active');
+      const brand = document.getElementById('brand-widget');
+      if (brand) brand.style.display = '';
     }, { once: true });
   }
 
@@ -252,6 +254,8 @@ function updateLocalLabel(map, venues) {
 function ensureCovertOverlay() {
   if (document.getElementById('covert-overlay')) return;
   document.body.classList.add('covert-active');
+  const brand = document.getElementById('brand-widget');
+  if (brand) brand.style.display = 'none';
   const overlay = document.createElement('div');
   overlay.id = 'covert-overlay';
   overlay.className = 'covert-overlay';
