@@ -36,22 +36,25 @@
 .marker-special {
   --marker-glow: 0;
   filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.4));
-  box-shadow: 0 0 22px rgba(242, 107, 45, var(--marker-glow));
+  box-shadow: 0 0 26px rgba(242, 107, 45, var(--marker-glow));
+  will-change: box-shadow, transform, filter;
   transform: translateY(-2px);
 }
 
 .marker-urgent {
-  animation: markerGlowPulse 1.9s ease-in-out infinite;
+  animation: markerGlowPulse 1.6s ease-in-out infinite;
 }
 
 @keyframes markerGlowPulse {
   0%, 100% {
-    box-shadow: 0 0 18px rgba(242, 107, 45, calc(var(--marker-glow) * 0.8));
-    transform: translateY(-2px) scale(1);
+    box-shadow: 0 0 24px rgba(242, 107, 45, calc(var(--marker-glow) * 0.85));
+    filter: drop-shadow(0 0 8px rgba(242, 107, 45, calc(var(--marker-glow) * 0.6)));
+    transform: translateY(-2px) scale(1.02);
   }
   50% {
-    box-shadow: 0 0 30px rgba(242, 107, 45, var(--marker-glow));
-    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 0 42px rgba(242, 107, 45, var(--marker-glow));
+    filter: drop-shadow(0 0 18px rgba(242, 107, 45, var(--marker-glow)));
+    transform: translateY(-2px) scale(1.08);
   }
 }
 
