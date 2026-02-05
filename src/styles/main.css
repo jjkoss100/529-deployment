@@ -48,7 +48,7 @@ html, body {
 }
 
 /* --- Covert Overlay --- */
- .covert-overlay {
+.covert-overlay {
   position: fixed;
   inset: 0;
   z-index: 9000;
@@ -76,6 +76,7 @@ html, body {
     repeating-linear-gradient(0deg, rgba(80, 160, 140, 0.08), rgba(80, 160, 140, 0.08) 1px, transparent 1px, transparent 3px);
   mix-blend-mode: screen;
   opacity: 0.35;
+  animation: scanSweep 1.2s linear infinite;
 }
 
 .covert-overlay__inner {
@@ -86,7 +87,7 @@ html, body {
   border-radius: 12px;
   background: rgba(10, 14, 20, 0.6);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
-  animation: scanFloat 2.6s ease-in-out infinite;
+  animation: scanFloat 2.6s ease-in-out infinite, scanFlicker 1.4s ease-in-out infinite;
 }
 
 .covert-overlay__tag {
@@ -100,7 +101,6 @@ html, body {
 .covert-overlay__tag--headline {
   font-size: 18px;
   margin-bottom: 0;
-  animation: scanFlicker 1.8s ease-in-out infinite;
 }
 
  
@@ -128,6 +128,18 @@ html, body {
 @keyframes scanFlicker {
   0%, 100% { opacity: 0.9; letter-spacing: 0.2em; }
   50% { opacity: 1; letter-spacing: 0.24em; }
+}
+
+@keyframes scanSweep {
+  0% { opacity: 0.15; background-position: 0% 0%; }
+  50% { opacity: 0.5; background-position: 0% 60%; }
+  100% { opacity: 0.15; background-position: 0% 100%; }
+}
+
+body.covert-active .app,
+body.covert-active .brand-widget {
+  filter: blur(6px) saturate(0.6);
+  opacity: 0.4;
 }
 
 .app {
