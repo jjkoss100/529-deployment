@@ -228,25 +228,11 @@ function createMarkerElement(type, opts) {
   el.style.height = size + 'px';
   el.style.opacity = (opts.opacity !== undefined ? opts.opacity : 1).toString();
   const isActive = opts.phase === 'active';
-  const coreColor = isActive ? '%23f26b2d' : '%23966a52';
-  const rimColor = isActive ? '%23f8a257' : '%23824d33';
-  const highlightColor = isActive ? '%23ffd1a8' : '%23c9b3a7';
-  const shadowColor = isActive ? '%23862f1b' : '%235a2c1f';
+  const coreColor = isActive ? '%23f26b2d' : '%23d66a3a';
+  const rimColor = isActive ? '%23f26b2d' : '%23c35a31';
   const svgContent = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
-      <defs>
-        <radialGradient id="coin-core" cx="35%" cy="30%" r="70%">
-          <stop offset="0%" stop-color="${highlightColor}"/>
-          <stop offset="40%" stop-color="${coreColor}"/>
-          <stop offset="100%" stop-color="${shadowColor}"/>
-        </radialGradient>
-        <radialGradient id="coin-gloss" cx="30%" cy="25%" r="50%">
-          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
-          <stop offset="70%" stop-color="#ffffff" stop-opacity="0"/>
-        </radialGradient>
-      </defs>
-      <circle cx="60" cy="60" r="52" fill="url(#coin-core)" stroke="${rimColor}" stroke-width="6"/>
-      <circle cx="60" cy="60" r="44" fill="url(#coin-gloss)"/>
+      <circle cx="60" cy="60" r="52" fill="${coreColor}" stroke="${rimColor}" stroke-width="6"/>
     </svg>
   `;
 
