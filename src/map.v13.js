@@ -69,7 +69,7 @@ function clearMarkers() {
 }
 
 const PRESHOW_MINUTES = 30; // Show markers 30min before start
-const MAX_SIZE = 24;        // Consistent marker size
+const MAX_SIZE = 28;        // Consistent marker size
 
 /**
  * Compute the visual lifecycle state of a marker based on current time.
@@ -199,28 +199,32 @@ function createMarkerElement(type, opts) {
   el.style.border = 'none';
   el.style.transition = 'width 0.5s ease, height 0.5s ease, opacity 0.5s ease';
 
-  let svgContent;
-  if (type === 'hh') {
-    const size = opts.size || MAX_SIZE;
-    el.style.width = size + 'px';
-    el.style.height = size + 'px';
-    el.style.opacity = (opts.opacity !== undefined ? opts.opacity : 1).toString();
-    // Preshow: muted grey smiley; Active: bright yellow smiley
-    const isActive = opts.phase === 'active';
-    const faceColor = isActive ? '%23f9c922' : '%23777';
-    const outlineColor = isActive ? '%23222' : '%23444';
-    svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="48" fill="${faceColor}" stroke="${outlineColor}" stroke-width="3"/><ellipse cx="36" cy="40" rx="6" ry="9" fill="${outlineColor}"/><ellipse cx="64" cy="40" rx="6" ry="9" fill="${outlineColor}"/><path d="M28 60 Q50 82 72 60" fill="none" stroke="${outlineColor}" stroke-width="3.5" stroke-linecap="round"/></svg>`;
-  } else {
-    const size = opts.size || MAX_SIZE;
-    el.style.width = size + 'px';
-    el.style.height = size + 'px';
-    el.style.opacity = (opts.opacity !== undefined ? opts.opacity : 1).toString();
-    const isActive = opts.phase === 'active';
-    // Preshow: muted grey star; Active: bold green star with dark outline
-    const fillColor = isActive ? '%2315b312' : '%23666';
-    const strokeColor = isActive ? '%23000' : '%23888';
-    svgContent = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><path d="M60 6 L74 44 L114 44 L80 67 L94 108 L60 84 L26 108 L40 67 L6 44 L46 44 Z" fill="${fillColor}" stroke="${strokeColor}" stroke-width="5" stroke-linejoin="round"/></svg>`;
-  }
+  const size = opts.size || MAX_SIZE;
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
+  el.style.opacity = (opts.opacity !== undefined ? opts.opacity : 1).toString();
+  const isActive = opts.phase === 'active';
+  const coreColor = isActive ? '%23f26b2d' : '%23966a52';
+  const rimColor = isActive ? '%23f8a257' : '%23824d33';
+  const highlightColor = isActive ? '%23ffd1a8' : '%23c9b3a7';
+  const shadowColor = isActive ? '%23862f1b' : '%235a2c1f';
+  svgContent = `
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
+      <defs>
+        <radialGradient id="coin-core" cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stop-color="${highlightColor}"/>
+          <stop offset="40%" stop-color="${coreColor}"/>
+          <stop offset="100%" stop-color="${shadowColor}"/>
+        </radialGradient>
+        <radialGradient id="coin-gloss" cx="30%" cy="25%" r="50%">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity="0.55"/>
+          <stop offset="70%" stop-color="#ffffff" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+      <circle cx="60" cy="60" r="52" fill="url(#coin-core)" stroke="${rimColor}" stroke-width="6"/>
+      <circle cx="60" cy="60" r="44" fill="url(#coin-gloss)"/>
+    </svg>
+  `;
 
   el.src = 'data:image/svg+xml,' + svgContent;
   container.appendChild(el);
