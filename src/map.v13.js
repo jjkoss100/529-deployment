@@ -1039,22 +1039,11 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
       const debug = { todayKey, total: limitedOffers.length, offersWithTime, offersShown };
       console.log('[limited offers]', JSON.stringify(debug));
       console.log('[limited offers sample]', limitedOffers.slice(0, 3));
-      if (!debugPanel) {
-        debugPanel = document.createElement('div');
-        debugPanel.style.position = 'fixed';
-        debugPanel.style.top = '12px';
-        debugPanel.style.right = '12px';
-        debugPanel.style.zIndex = '10001';
-        debugPanel.style.background = 'rgba(0,0,0,0.7)';
-        debugPanel.style.color = '#f26b2d';
-        debugPanel.style.padding = '6px 8px';
-        debugPanel.style.fontFamily = 'monospace';
-        debugPanel.style.fontSize = '11px';
-        debugPanel.style.borderRadius = '6px';
-        debugPanel.style.pointerEvents = 'none';
-        document.body.appendChild(debugPanel);
+      const el = document.getElementById('limited-offers-debug');
+      if (el) {
+        el.style.display = 'block';
+        el.textContent = `limited offers: ${offersShown}/${offersWithTime} (total ${limitedOffers.length}) • ${todayKey}`;
       }
-      debugPanel.textContent = `limited offers: ${offersShown}/${offersWithTime} (total ${limitedOffers.length}) • ${todayKey}`;
     }
   }
 }
