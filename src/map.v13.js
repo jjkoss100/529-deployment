@@ -306,6 +306,17 @@ function getTimeStatus(promotions) {
     }
   }
 
+  // If not active today, check previous day's cross-midnight ranges
+  for (const range of prevCrossRanges) {
+    if (currentMinutes < range.end) {
+      return {
+        active: true,
+        text: `ends at ${formatTimeNoPeriod(range.end)}`,
+        endsSoon: (range.end - currentMinutes) <= 45
+      };
+    }
+  }
+
   const upcomingStarts = todayRanges
     .filter(r => r.start > currentMinutes)
     .sort((a, b) => a.start - b.start);
