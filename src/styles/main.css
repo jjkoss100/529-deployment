@@ -140,6 +140,11 @@ body.covert-active .app,
 body.covert-active .brand-widget {
   filter: blur(6px) saturate(0.6);
   opacity: 0.4;
+  transition: filter 0.2s ease, opacity 0.2s ease;
+}
+
+body.covert-active .brand-widget {
+  z-index: 8000;
 }
 
 .app {
