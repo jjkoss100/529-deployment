@@ -75,7 +75,7 @@ const MAX_SIZE = 24;        // Consistent marker size
  * Compute the visual lifecycle state of a marker based on current time.
  * Works for both HH and special promotions.
  * @param {Array} promotions - array of promotion objects (happyHours or specials)
- * Returns null if marker should be hidden, or { size, opacity, phase } where:
+ * Returns null if marker should be hidden, or { size, opacity, phase, endingSoon } where:
  *   phase: 'preshow' | 'active'
  */
 function getMarkerLifecycleState(promotions) {
@@ -137,15 +137,21 @@ function getMarkerLifecycleState(promotions) {
           ? currentMinutes - range.start
           : (1440 - range.start) + currentMinutes;
       }
+      const remaining = duration - elapsed;
       const progress = Math.min(elapsed / duration, 1); // 0 at start, 1 at end
       const opacity = Math.max(0.2, 1 - progress);
-      return { size: MAX_SIZE, opacity: parseFloat(opacity.toFixed(2)), phase: 'active' };
+      return {
+        size: MAX_SIZE,
+        opacity: parseFloat(opacity.toFixed(2)),
+        phase: 'active',
+        endingSoon: remaining <= 45
+      };
     }
 
     // Check if in preshow window (30min before start)
     if (currentMinutes >= preshowStart && currentMinutes < range.start) {
-      // Preshow: constant size with pulse animation at 75% opacity
-      return { size: MAX_SIZE, opacity: 0.75, phase: 'preshow' };
+      // Preshow: constant size with vibration animation
+      return { size: MAX_SIZE, opacity: 0.65, phase: 'preshow', endingSoon: false };
     }
   }
 
@@ -154,9 +160,15 @@ function getMarkerLifecycleState(promotions) {
     if (currentMinutes >= 0 && currentMinutes < range.end) {
       const elapsed = currentMinutes + (1440 - range.start);
       const duration = (1440 - range.start) + range.end;
+      const remaining = duration - elapsed;
       const progress = Math.min(elapsed / duration, 1);
       const opacity = Math.max(0.2, 1 - progress);
-      return { size: MAX_SIZE, opacity: parseFloat(opacity.toFixed(2)), phase: 'active' };
+      return {
+        size: MAX_SIZE,
+        opacity: parseFloat(opacity.toFixed(2)),
+        phase: 'active',
+        endingSoon: remaining <= 45
+      };
     }
   }
 
@@ -178,6 +190,9 @@ function createMarkerElement(type, opts) {
   el.classList.add(type === 'hh' ? 'marker-hh' : 'marker-special');
   if (opts.phase === 'preshow') {
     el.classList.add('marker-preshow');
+  }
+  if (opts.endingSoon) {
+    el.classList.add('marker-ending');
   }
   el.style.display = 'block';
   el.style.background = 'transparent';
@@ -250,7 +265,7 @@ function getTimeStatus(promotions) {
         return {
           active: true,
           text: `ends at ${formatTimeNoPeriod(range.end)}`,
-          endsSoon: range.end <= 30
+          endsSoon: (range.end - currentMinutes) <= 45
         };
       }
     }
@@ -269,8 +284,8 @@ function getTimeStatus(promotions) {
         active: true,
         text: `ends at ${formatTimeNoPeriod(range.end)}`,
         endsSoon: (range.end > range.start)
-          ? (range.end - currentMinutes) <= 30
-          : ((1440 - currentMinutes) + range.end) <= 30
+          ? (range.end - currentMinutes) <= 45
+          : ((1440 - currentMinutes) + range.end) <= 45
       };
     }
   }
@@ -698,6 +713,15 @@ export function renderMarkers(venues, filters) {
         maxWidth: '320px',
         className: 'venue-popup'
       }).setHTML(buildPopupContent(venue, 'hh'));
+      popup.on('open', () => {
+        const popupEl = popup.getElement();
+        if (!popupEl) return;
+        const statusEl = popupEl.querySelector('.popup-time-status--soon');
+        if (!statusEl) return;
+        statusEl.classList.remove('popup-time-status--alert');
+        void statusEl.offsetWidth;
+        statusEl.classList.add('popup-time-status--alert');
+      });
 
       const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([finalHHLng, venue.lat])
@@ -720,6 +744,15 @@ export function renderMarkers(venues, filters) {
         maxWidth: '320px',
         className: 'venue-popup'
       }).setHTML(buildPopupContent(venue, 'special'));
+      popup.on('open', () => {
+        const popupEl = popup.getElement();
+        if (!popupEl) return;
+        const statusEl = popupEl.querySelector('.popup-time-status--soon');
+        if (!statusEl) return;
+        statusEl.classList.remove('popup-time-status--alert');
+        void statusEl.offsetWidth;
+        statusEl.classList.add('popup-time-status--alert');
+      });
 
       const marker = new mapboxgl.Marker({ element: el })
         .setLngLat([finalSpLng, venue.lat])

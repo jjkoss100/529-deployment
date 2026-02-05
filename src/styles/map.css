@@ -38,20 +38,36 @@
   transform: translateY(-2px);
 }
 
-/* Preshow pulse */
-.marker-preshow {
-  animation: markerPulse 1.6s ease-in-out infinite;
+.marker-ending {
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 2px rgba(235, 60, 60, 0.55),
+    0 0 10px rgba(235, 60, 60, 0.65);
 }
 
-@keyframes markerPulse {
+/* Preshow vibrate */
+.marker-preshow {
+  animation: markerVibrate 0.45s linear infinite;
+}
+
+@keyframes markerVibrate {
   0% {
-    transform: translateY(-2px) scale(1);
+    transform: translate(-1px, -3px) rotate(-1deg) scale(1.01);
   }
-  50% {
-    transform: translateY(-2px) scale(1.06);
+  20% {
+    transform: translate(1px, -1px) rotate(1deg) scale(1.02);
+  }
+  40% {
+    transform: translate(0px, -3px) rotate(-2deg) scale(1.015);
+  }
+  60% {
+    transform: translate(1px, -2px) rotate(2deg) scale(1.02);
+  }
+  80% {
+    transform: translate(-1px, -1px) rotate(-1deg) scale(1.015);
   }
   100% {
-    transform: translateY(-2px) scale(1);
+    transform: translate(-1px, -3px) rotate(1deg) scale(1.01);
   }
 }
 
@@ -319,6 +335,35 @@
 
 .popup-time-status--soon {
   color: #c32020;
+}
+
+.popup-time-status--alert {
+  animation: popupAlert 0.65s ease-out 1;
+}
+
+@keyframes popupAlert {
+  0% {
+    transform: translateX(0);
+    text-shadow: 0 0 0 rgba(235, 60, 60, 0);
+  }
+  20% {
+    transform: translateX(-2px);
+    text-shadow: 0 0 10px rgba(235, 60, 60, 0.55);
+  }
+  40% {
+    transform: translateX(2px);
+  }
+  60% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+    text-shadow: 0 0 8px rgba(235, 60, 60, 0.45);
+  }
+  100% {
+    transform: translateX(0);
+    text-shadow: 0 0 0 rgba(235, 60, 60, 0);
+  }
 }
 
  
