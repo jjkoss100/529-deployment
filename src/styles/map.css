@@ -43,21 +43,43 @@
 .marker-shell::after {
   content: '';
   position: absolute;
-  inset: -14px;
+  inset: -36px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(242, 107, 45, calc(var(--marker-glow) * 0.5)) 0%, rgba(242, 107, 45, 0) 70%);
-  filter: blur(8px);
+  background: radial-gradient(
+    circle,
+    rgba(242, 107, 45, calc(var(--marker-glow) * 0.9)) 0%,
+    rgba(242, 107, 45, calc(var(--marker-glow) * 0.55)) 35%,
+    rgba(242, 107, 45, 0) 75%
+  );
+  filter: blur(22px);
   opacity: calc(var(--marker-glow));
   pointer-events: none;
   z-index: -1;
 }
 
-.marker-shell.marker-urgent {
-  animation: markerGlowPulse 1.15s ease-in-out infinite;
+.marker-shell::before {
+  content: '';
+  position: absolute;
+  inset: -12px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(242, 107, 45, calc(var(--marker-glow) * 0.55)) 0%,
+    rgba(242, 107, 45, 0) 65%
+  );
+  filter: blur(6px);
+  opacity: calc(var(--marker-glow) * 0.9);
+  pointer-events: none;
+  z-index: -1;
 }
 
-.marker-shell.marker-urgent::after {
-  animation: markerGlowPulseHalo 1.15s ease-in-out infinite;
+.marker-shell.marker-urgent {
+  animation: markerGlowPulse 1.4s ease-in-out infinite;
+}
+
+.marker-shell.marker-urgent::after,
+.marker-shell.marker-urgent::before {
+  animation: markerGlowPulseHalo 1.4s ease-in-out infinite;
 }
 
 .marker-hh,
@@ -68,10 +90,10 @@
 
 @keyframes markerGlowPulse {
   0%, 100% {
-    transform: translateY(-2px) scale(1.06);
+    transform: translateY(-2px) scale(1.04);
   }
   50% {
-    transform: translateY(-2px) scale(1.18);
+    transform: translateY(-2px) scale(1.12);
   }
 }
 
@@ -82,7 +104,7 @@
   }
   50% {
     opacity: var(--marker-glow);
-    transform: scale(1.15);
+    transform: scale(1.08);
   }
 }
 
