@@ -7,6 +7,7 @@ let markers = [];
 let openPopup = null;
 let energyAnimationHandle = null;
 let debugPanel = null;
+let loggedOfferDebug = false;
 
 const ENERGY_SOURCE_ID = 'energy-trails';
 const ENERGY_LAYER_ID = 'energy-trails-line';
@@ -986,6 +987,8 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     yesterday.setDate(now.getDate() - 1);
     const prevKey = getDateKey(yesterday);
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    let offersWithTime = 0;
+    let offersShown = 0;
 
     for (const offer of limitedOffers) {
       let timeStr = offer.times ? offer.times[todayKey] : '';
@@ -995,9 +998,11 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
         if (isPrevActive) timeStr = offer.times[prevKey];
       }
       if (!timeStr) continue;
+      offersWithTime += 1;
 
       const offerState = getLimitedOfferLifecycleState(timeStr);
       if (!offerState) continue;
+      offersShown += 1;
 
       const el = createMarkerElement('hh', offerState);
       const popup = new mapboxgl.Popup({
@@ -1027,6 +1032,11 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
       });
 
       markers.push(marker);
+    }
+
+    if (!loggedOfferDebug) {
+      loggedOfferDebug = true;
+      console.log('[limited offers]', { todayKey, total: limitedOffers.length, offersWithTime, offersShown });
     }
   }
 }
