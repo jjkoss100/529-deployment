@@ -256,7 +256,7 @@ function ensureCovertOverlay() {
   overlay.setAttribute('aria-hidden', 'true');
   overlay.innerHTML = `
     <div class="covert-overlay__inner">
-      <div class="covert-overlay__tag covert-overlay__tag--headline">DEALS HAPPENING IN VENICE BEACH NOW..</div>
+      <div class="covert-overlay__tag covert-overlay__tag--headline">DEALS HAPPENING IN VENICE BEACH NOW</div>
     </div>
   `;
   document.body.appendChild(overlay);
