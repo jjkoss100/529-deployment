@@ -208,12 +208,8 @@ function getMarkerLifecycleState(promotions) {
  * For special markers: uses fixed active/inactive sizes.
  */
 function createMarkerElement(type, opts) {
-  const container = document.createElement('div');
-  container.classList.add('marker-shell');
-  container.style.display = 'block';
-  container.style.cursor = 'pointer';
-
   const el = document.createElement('img');
+  el.classList.add('marker-shell');
   el.classList.add(type === 'hh' ? 'marker-hh' : 'marker-special');
   if (opts.phase === 'preshow') {
     el.classList.add('marker-preshow');
@@ -221,21 +217,18 @@ function createMarkerElement(type, opts) {
   const rawGlow = opts.glow !== undefined ? opts.glow : 0;
   const displayGlow = Math.min(1, rawGlow * 1.8);
   if (opts.endingSoon || displayGlow >= 0.5) {
-    container.classList.add('marker-urgent');
+    el.classList.add('marker-urgent');
   }
-  container.style.setProperty('--marker-glow', displayGlow.toString());
+  el.style.setProperty('--marker-glow', displayGlow.toString());
   el.style.display = 'block';
+  el.style.cursor = 'pointer';
   el.style.background = 'transparent';
   el.style.border = 'none';
   el.style.transition = 'width 0.5s ease, height 0.5s ease, opacity 0.5s ease';
 
   const size = opts.size || MAX_SIZE;
-  container.style.width = size + 'px';
-  container.style.height = size + 'px';
-  container.style.transformOrigin = 'center';
-  container.style.overflow = 'visible';
-  el.style.width = '100%';
-  el.style.height = '100%';
+  el.style.width = size + 'px';
+  el.style.height = size + 'px';
   el.style.opacity = (opts.opacity !== undefined ? opts.opacity : 1).toString();
   const coreColor = '%23f26b2d';
   const rimColor = '%23f26b2d';
@@ -246,8 +239,7 @@ function createMarkerElement(type, opts) {
   `;
 
   el.src = 'data:image/svg+xml,' + svgContent;
-  container.appendChild(el);
-  return container;
+  return el;
 }
 
 /**
