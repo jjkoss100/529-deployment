@@ -73,7 +73,7 @@ async function init() {
   const overlay = document.getElementById('covert-overlay');
   if (overlay) {
     requestAnimationFrame(() => {
-      setTimeout(() => overlay.classList.add('covert-overlay--hide'), 1500);
+      setTimeout(() => overlay.classList.add('covert-overlay--hide'), 2000);
     });
     overlay.addEventListener('animationend', () => {
       overlay.remove();
