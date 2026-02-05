@@ -1057,7 +1057,8 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
         const headerIdx = window.__limitedOffersHeaderIndex ?? 'na';
         const headerCols = window.__limitedOffersHeaderCols ?? 'na';
         const rowCount = window.__limitedOffersRowCount ?? 'na';
-        el.textContent = `limited offers: 0/0 (total 0) • ${todayKey} • h${headerIdx}/${headerCols} • rows ${rowCount}`;
+        const firstRow = window.__limitedOffersFirstRow ? JSON.stringify(window.__limitedOffersFirstRow) : 'na';
+        el.textContent = `limited offers: 0/0 (total 0) • ${todayKey} • h${headerIdx}/${headerCols} • rows ${rowCount} • row0 ${firstRow}`;
       }
     }
   }

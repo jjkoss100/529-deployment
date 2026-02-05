@@ -282,7 +282,17 @@ function parseLimitedOffersCSV(csvText) {
   let headerIndex = -1;
   for (let i = 0; i < rows.length; i += 1) {
     const row = rows[i] || [];
-    if (row.some(cell => (cell || '').toString().replace(/^\uFEFF/, '').trim().toLowerCase() === 'event name')) {
+    const hasEventName = row.some(cell => {
+      const normalized = (cell || '')
+        .toString()
+        .replace(/^\uFEFF/, '')
+        .replace(/[^a-zA-Z0-9 ]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .toLowerCase();
+      return normalized === 'event name' || normalized.includes('event name');
+    });
+    if (hasEventName) {
       headerIndex = i;
       break;
     }
