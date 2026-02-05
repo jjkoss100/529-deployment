@@ -280,7 +280,7 @@ function getTimeStatus(promotions) {
       return {
         active: true,
         text: `ends at ${formatTimeNoPeriod(range.end)}`,
-        endsSoon: (range.end - currentMinutes) <= 45
+        endsSoon: (range.end - currentMinutes) <= 54
       };
     }
   }
@@ -301,8 +301,8 @@ function getTimeStatus(promotions) {
         active: true,
         text: `ends at ${formatTimeNoPeriod(range.end)}`,
         endsSoon: (range.end > range.start)
-          ? (range.end - currentMinutes) <= 45
-          : ((1440 - currentMinutes) + range.end) <= 45
+          ? (range.end - currentMinutes) <= 54
+          : ((1440 - currentMinutes) + range.end) <= 54
       };
     }
   }
