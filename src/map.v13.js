@@ -7,7 +7,6 @@ let markers = [];
 let openPopup = null;
 let energyAnimationHandle = null;
 let debugPanel = null;
-let loggedOfferDebug = false;
 
 const ENERGY_SOURCE_ID = 'energy-trails';
 const ENERGY_LAYER_ID = 'energy-trails-line';
@@ -1034,35 +1033,6 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
       markers.push(marker);
     }
 
-    if (!loggedOfferDebug) {
-      loggedOfferDebug = true;
-      const sample = limitedOffers[0] || null;
-      const debug = { todayKey, total: limitedOffers.length, offersWithTime, offersShown, sample };
-      console.log('[limited offers]', JSON.stringify(debug));
-      console.log('[limited offers sample]', limitedOffers.slice(0, 3));
-      const el = document.getElementById('limited-offers-debug');
-      if (el) {
-        const sampleName = sample ? sample.name : 'none';
-        const headerIdx = window.__limitedOffersHeaderIndex ?? 'na';
-        const headerCols = window.__limitedOffersHeaderCols ?? 'na';
-        el.textContent = `limited offers: ${offersShown}/${offersWithTime} (total ${limitedOffers.length}) • ${todayKey} • ${sampleName} • h${headerIdx}/${headerCols}`;
-      }
-    }
-  } else {
-    if (!loggedOfferDebug) {
-      loggedOfferDebug = true;
-      const el = document.getElementById('limited-offers-debug');
-      if (el) {
-        const todayKey = getDateKey(new Date());
-        const headerIdx = window.__limitedOffersHeaderIndex ?? 'na';
-        const headerCols = window.__limitedOffersHeaderCols ?? 'na';
-        const rowCount = window.__limitedOffersRowCount ?? 'na';
-        const firstRow = window.__limitedOffersFirstRow ? JSON.stringify(window.__limitedOffersFirstRow) : 'na';
-        const rawHasEvent = window.__limitedOffersRawHasEvent ? 'event' : 'noevent';
-        const firstLine = window.__limitedOffersFirstLine || '';
-        el.textContent = `limited offers: 0/0 (total 0) • ${todayKey} • h${headerIdx}/${headerCols} • rows ${rowCount} • ${rawHasEvent} • row0 ${firstRow} • line ${firstLine}`;
-      }
-    }
   }
 }
 

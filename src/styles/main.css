@@ -192,20 +192,6 @@ body.covert-active .brand-widget {
   display: none;
 }
 
-.limited-offers-debug {
-  position: fixed;
-  top: 12px;
-  right: 12px;
-  z-index: 10001;
-  background: rgba(0, 0, 0, 0.7);
-  color: #f26b2d;
-  padding: 6px 8px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  border-radius: 6px;
-  pointer-events: none;
-  display: block;
-}
 
 .app {
   display: flex;
