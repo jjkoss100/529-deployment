@@ -274,11 +274,11 @@
 }
 
 .popup-notes {
-  font-size: 12px;
-  color: #888;
-  font-style: italic;
+  font-size: 14px;
+  color: #555;
+  font-style: normal;
   margin-bottom: 8px;
-  line-height: 1.4;
+  line-height: 1.5;
   font-family: var(--font-body);
 }
 
