@@ -230,8 +230,10 @@ function createMarkerElement(type, opts) {
   el.style.transition = 'width 0.5s ease, height 0.5s ease, opacity 0.5s ease';
 
   const size = opts.size || MAX_SIZE;
-  el.style.width = size + 'px';
-  el.style.height = size + 'px';
+  container.style.width = size + 'px';
+  container.style.height = size + 'px';
+  el.style.width = '100%';
+  el.style.height = '100%';
   el.style.opacity = (opts.opacity !== undefined ? opts.opacity : 1).toString();
   const coreColor = '%23f26b2d';
   const rimColor = '%23f26b2d';
