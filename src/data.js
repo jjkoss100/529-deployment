@@ -287,8 +287,12 @@ function parseLimitedOffersCSV(csvText) {
       break;
     }
   }
-  window.__limitedOffersHeaderIndex = headerIndex;
-  window.__limitedOffersHeaderCols = headerIndex === -1 ? 0 : (rows[headerIndex] || []).length;
+  if (typeof window !== 'undefined') {
+    window.__limitedOffersHeaderIndex = headerIndex;
+    window.__limitedOffersHeaderCols = headerIndex === -1 ? 0 : (rows[headerIndex] || []).length;
+    window.__limitedOffersRowCount = rows.length;
+    window.__limitedOffersFirstRow = (rows[0] || []).slice(0, 5);
+  }
   if (headerIndex === -1) {
     console.warn('Limited offers header not found');
     return [];
