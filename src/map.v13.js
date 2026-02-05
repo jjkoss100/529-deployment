@@ -443,6 +443,9 @@ function getLimitedOfferLifecycleState(timeStr) {
   const now = new Date();
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
+  const sorted = ranges.slice().sort((a, b) => a.start - b.start);
+
+  // Active window
   for (const range of ranges) {
     const preshowStart = range.start - PRESHOW_MINUTES;
     const duration = range.end > range.start
@@ -487,6 +490,12 @@ function getLimitedOfferLifecycleState(timeStr) {
     if (currentMinutes >= preshowStart && currentMinutes < range.start) {
       return { size: MAX_SIZE, opacity: 0.8, phase: 'preshow', endingSoon: false, glow: 0 };
     }
+  }
+
+  // Upcoming today (show marker even before preshow)
+  const nextRange = sorted.find(r => r.start > currentMinutes);
+  if (nextRange) {
+    return { size: MAX_SIZE, opacity: 0.8, phase: 'upcoming', endingSoon: false, glow: 0 };
   }
 
   return null;
