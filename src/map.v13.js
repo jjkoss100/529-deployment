@@ -214,7 +214,7 @@ function createMarkerElement(type, opts) {
   if (opts.phase === 'preshow') {
     el.classList.add('marker-preshow');
   }
-  if (opts.endingSoon) {
+  if (opts.endingSoon || (opts.glow !== undefined && opts.glow >= 0.5)) {
     el.classList.add('marker-urgent');
   }
   el.style.setProperty('--marker-glow', (opts.glow !== undefined ? opts.glow : 0).toString());
