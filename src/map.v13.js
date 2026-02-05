@@ -1036,7 +1036,9 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
 
     if (!loggedOfferDebug) {
       loggedOfferDebug = true;
-      console.log('[limited offers]', { todayKey, total: limitedOffers.length, offersWithTime, offersShown });
+      const debug = { todayKey, total: limitedOffers.length, offersWithTime, offersShown };
+      console.log('[limited offers]', JSON.stringify(debug));
+      console.log('[limited offers sample]', limitedOffers.slice(0, 3));
     }
   }
 }
