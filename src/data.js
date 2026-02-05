@@ -264,6 +264,10 @@ export function parseCSV(csvText) {
 }
 
 function parseLimitedOffersCSV(csvText) {
+  const rawHasEvent = /event name/i.test(csvText);
+  const rawLines = csvText.split('\n');
+  const rawFirstLine = rawLines.find(line => /[A-Za-z0-9]/.test(line || '')) || '';
+
   let parsed = Papa.parse(csvText, {
     skipEmptyLines: true
   });
@@ -302,6 +306,40 @@ function parseLimitedOffersCSV(csvText) {
     window.__limitedOffersHeaderCols = headerIndex === -1 ? 0 : (rows[headerIndex] || []).length;
     window.__limitedOffersRowCount = rows.length;
     window.__limitedOffersFirstRow = (rows[0] || []).slice(0, 5);
+    window.__limitedOffersRawHasEvent = rawHasEvent;
+    window.__limitedOffersFirstLine = rawFirstLine.slice(0, 120);
+  }
+
+  if (headerIndex === -1 && rawHasEvent) {
+    parsed = Papa.parse(csvText, {
+      skipEmptyLines: true,
+      delimiter: ';'
+    });
+    rows = parsed.data || [];
+    headerIndex = -1;
+    for (let i = 0; i < rows.length; i += 1) {
+      const row = rows[i] || [];
+      const hasEventName = row.some(cell => {
+        const normalized = (cell || '')
+          .toString()
+          .replace(/^\uFEFF/, '')
+          .replace(/[^a-zA-Z0-9 ]+/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim()
+          .toLowerCase();
+        return normalized === 'event name' || normalized.includes('event name');
+      });
+      if (hasEventName) {
+        headerIndex = i;
+        break;
+      }
+    }
+    if (typeof window !== 'undefined') {
+      window.__limitedOffersHeaderIndex = headerIndex;
+      window.__limitedOffersHeaderCols = headerIndex === -1 ? 0 : (rows[headerIndex] || []).length;
+      window.__limitedOffersRowCount = rows.length;
+      window.__limitedOffersFirstRow = (rows[0] || []).slice(0, 5);
+    }
   }
   if (headerIndex === -1) {
     console.warn('Limited offers header not found');
