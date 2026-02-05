@@ -214,6 +214,9 @@ function createMarkerElement(type, opts) {
   if (opts.phase === 'preshow') {
     el.classList.add('marker-preshow');
   }
+  if (opts.phase === 'active') {
+    el.classList.add('marker-active');
+  }
   if (opts.endingSoon) {
     el.classList.add('marker-ending');
   }
