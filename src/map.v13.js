@@ -370,7 +370,7 @@ function buildPopupContent(venue, type) {
   // Notes (show for any promo type)
   const notesText = displayPromos.map(p => p.notes).find(n => n && n.trim());
   if (notesText) {
-    html += `<p class="popup-notes">${escapeHtml(notesText)}</p>`;
+    html += `<p class="popup-notes">${escapeHtml(formatNotesForDisplay(notesText))}</p>`;
   }
 
  
@@ -404,6 +404,38 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+function formatNotesForDisplay(notes) {
+  if (!notes || typeof notes !== 'string') return '';
+
+  const emojiLabels = [
+    { re: /🍺|🍻/u, label: 'Beer' },
+    { re: /🥃/u, label: 'Spirits' },
+    { re: /🍷/u, label: 'Wine' },
+    { re: /🍸|🍹/u, label: 'Cocktails' }
+  ];
+
+  const chunks = notes.split(',').map(s => s.trim()).filter(Boolean);
+  if (chunks.length < 2) return notes;
+
+  const formatted = [];
+  let parsedCount = 0;
+  for (const chunk of chunks) {
+    const priceMatch = chunk.match(/\$\s*\d+(?:\.\d+)?(?:\s*-\s*\$?\d+(?:\.\d+)?)?/);
+    const price = priceMatch ? priceMatch[0].replace(/\s+/g, '') : '';
+    const labelEntry = emojiLabels.find(e => e.re.test(chunk));
+    if (labelEntry && price) {
+      formatted.push(`${labelEntry.label} ${price}`);
+      parsedCount += 1;
+    }
+  }
+
+  if (parsedCount >= 2 && parsedCount === formatted.length) {
+    return formatted.join(' · ');
+  }
+
+  return notes;
 }
 
 function extractUrl(str) {
