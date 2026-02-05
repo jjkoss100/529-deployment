@@ -83,7 +83,7 @@ html, body {
   position: relative;
   z-index: 1;
   padding: 24px 36px;
-  border: 1px solid rgba(120, 200, 170, 0.25);
+  border: 1px solid rgba(242, 107, 45, 0.5);
   border-radius: 12px;
   background: rgba(10, 14, 20, 0.6);
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.45);
@@ -93,7 +93,7 @@ html, body {
 .covert-overlay__tag {
   font-size: 13px;
   text-transform: uppercase;
-  color: rgba(140, 220, 190, 0.75);
+  color: rgba(242, 107, 45, 0.85);
   margin-bottom: 10px;
   letter-spacing: 0.2em;
 }
