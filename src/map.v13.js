@@ -9,6 +9,7 @@ let openPopup = null;
 let energyAnimationHandle = null;
 let offerPulseHandle = null;
 let debugPanel = null;
+let pendingOfferFeatures = null;
 
 const ENERGY_SOURCE_ID = 'energy-trails';
 const ENERGY_LAYER_ID = 'energy-trails-line';
@@ -1047,8 +1048,21 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     }
   }
 
+  if (!map) return;
+  if (!map.isStyleLoaded()) {
+    pendingOfferFeatures = features;
+    map.once('load', () => {
+      ensureOffersLayer();
+      if (map.getSource(OFFERS_SOURCE_ID)) {
+        map.getSource(OFFERS_SOURCE_ID).setData({ type: 'FeatureCollection', features: pendingOfferFeatures || [] });
+      }
+      pendingOfferFeatures = null;
+    });
+    return;
+  }
+
   ensureOffersLayer();
-  if (map && map.getSource(OFFERS_SOURCE_ID)) {
+  if (map.getSource(OFFERS_SOURCE_ID)) {
     map.getSource(OFFERS_SOURCE_ID).setData({ type: 'FeatureCollection', features });
   }
 }
