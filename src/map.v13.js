@@ -1021,7 +1021,7 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
         statusEl.classList.add('popup-time-status--alert');
       });
 
-      const marker = new mapboxgl.Marker({ element: el })
+      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
         .setLngLat([offer.lng, offer.lat])
         .setPopup(popup)
         .addTo(map);

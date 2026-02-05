@@ -84,6 +84,7 @@
 .marker-special {
   filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.4));
   will-change: filter, transform;
+  transform-origin: center center;
 }
 
  .marker-shell.marker-urgent .marker-hh,
