@@ -67,8 +67,7 @@ async function init() {
   // Setup geolocation button
   setupGeolocation();
 
-  // Start weather widget
-  setupWeather();
+  // Weather widget hidden for now
 
   // Soften the covert overlay once the UI is live
   const overlay = document.getElementById('covert-overlay');
