@@ -220,6 +220,9 @@ function createMarkerElement(type, opts) {
   if (opts.endingSoon) {
     el.classList.add('marker-urgent');
   }
+  if (!opts.endingSoon && opts.glow !== undefined && opts.glow >= 0.5) {
+    el.classList.add('marker-urgent');
+  }
   el.style.setProperty('--marker-glow', (opts.glow !== undefined ? opts.glow : 0).toString());
   el.style.display = 'block';
   el.style.background = 'transparent';
