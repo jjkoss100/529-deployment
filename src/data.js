@@ -283,24 +283,38 @@ function parseLimitedOffersCSV(csvText) {
 
   if (rows.length === 0) return [];
 
+  const expectedHeaders = [
+    'venue instagram',
+    'long',
+    'lat',
+    'event name',
+    'organizer(s)',
+    'type',
+    'description',
+    'link'
+  ];
+
   let headerIndex = -1;
+  let headerScore = -1;
   for (let i = 0; i < rows.length; i += 1) {
     const row = rows[i] || [];
-    const hasEventName = row.some(cell => {
-      const normalized = (cell || '')
-        .toString()
-        .replace(/^\uFEFF/, '')
-        .replace(/[^a-zA-Z0-9 ]+/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .toLowerCase();
-      return normalized === 'event name' || normalized.includes('event name');
-    });
-    if (hasEventName) {
+    const normalizedRow = row.map(cell => (cell || '')
+      .toString()
+      .replace(/^\uFEFF/, '')
+      .replace(/[^a-zA-Z0-9 ]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .toLowerCase()
+    );
+    const score = expectedHeaders.reduce((acc, h) => acc + (normalizedRow.includes(h) ? 1 : 0), 0);
+    if (score > headerScore) {
+      headerScore = score;
       headerIndex = i;
-      break;
     }
+    if (score >= 4) break;
   }
+
+  if (headerScore <= 0) headerIndex = -1;
   if (typeof window !== 'undefined') {
     window.__limitedOffersHeaderIndex = headerIndex;
     window.__limitedOffersHeaderCols = headerIndex === -1 ? 0 : (rows[headerIndex] || []).length;
