@@ -1,10 +1,10 @@
 import { fetchVenues, fetchLimitedOffers, updateAllVenueStatuses } from './data.js?v=23';
-import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=76';
+import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=77';
 
 // --- Configuration ---
 // Replace with your published Google Sheet CSV URL
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQpj4lehM7ElDgkUxZHkQ_ZrZhGX4HwIkK-pBuA-siErJ0YG0ahpfYYJqSqoAq5-Fpj8tL6j0DyK-by/pub?gid=0&single=true&output=csv';
-const LIMITED_OFFERS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQpj4lehM7ElDgkUxZHkQ_ZrZhGX4HwIkK-pBuA-siErJ0YG0ahpfYYJqSqoAq5-Fpj8tL6j0DyK-by/pub?output=csv';
+const LIMITED_OFFERS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQpj4lehM7ElDgkUxZHkQ_ZrZhGX4HwIkK-pBuA-siErJ0YG0ahpfYYJqSqoAq5-Fpj8tL6j0DyK-by/pub?gid=628288566&single=true&output=csv';
 
 // Replace with your Mapbox access token
 const MAPBOX_TOKEN = 'pk.eyJ1Ijoiamprb3NzMTAiLCJhIjoiY21rdWp1YWFhMjJ1djNjcTJjcjRpYWNhZSJ9.ExODQ-GDFl9NHFl7NE9IxQ';
