@@ -271,11 +271,24 @@ function parseLimitedOffersCSV(csvText) {
   const rows = parsed.data || [];
   if (rows.length === 0) return [];
 
-  const header = rows[0].map((h = '') => h.toString().trim());
+  let headerIndex = -1;
+  for (let i = 0; i < Math.min(rows.length, 10); i += 1) {
+    const row = rows[i] || [];
+    if (row.some(cell => (cell || '').toString().trim() === 'Event Name')) {
+      headerIndex = i;
+      break;
+    }
+  }
+  if (headerIndex === -1) {
+    console.warn('Limited offers header not found');
+    return [];
+  }
+
+  const header = rows[headerIndex].map((h = '') => h.toString().trim());
   const offers = [];
   const dateColRegex = /^\d{1,2}\/\d{1,2}\/\d{2}$/;
 
-  for (let i = 1; i < rows.length; i += 1) {
+  for (let i = headerIndex + 1; i < rows.length; i += 1) {
     const row = rows[i];
     if (!row || row.length === 0) continue;
 
