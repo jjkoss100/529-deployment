@@ -69,7 +69,7 @@ function clearMarkers() {
 }
 
 const PRESHOW_MINUTES = 30; // Show markers 30min before start
-const MAX_SIZE = 28;        // Consistent marker size
+const MAX_SIZE = 20;        // Consistent marker size
 
 /**
  * Compute the visual lifecycle state of a marker based on current time.
@@ -230,9 +230,8 @@ function createMarkerElement(type, opts) {
   el.style.width = size + 'px';
   el.style.height = size + 'px';
   el.style.opacity = (opts.opacity !== undefined ? opts.opacity : 1).toString();
-  const isActive = opts.phase === 'active';
-  const coreColor = isActive ? '%23f26b2d' : '%23d66a3a';
-  const rimColor = isActive ? '%23f26b2d' : '%23c35a31';
+  const coreColor = '%23f26b2d';
+  const rimColor = '%23f26b2d';
   const svgContent = `
     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
       <circle cx="60" cy="60" r="52" fill="${coreColor}" stroke="${rimColor}" stroke-width="6"/>
