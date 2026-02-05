@@ -139,7 +139,7 @@ function getMarkerLifecycleState(promotions) {
       }
       const remaining = duration - elapsed;
       const progress = Math.min(elapsed / duration, 1); // 0 at start, 1 at end
-      const opacity = Math.min(1, 0.8 + (0.2 * progress));
+      const opacity = remaining <= 45 ? 1 : Math.min(1, 0.8 + (0.2 * progress));
       let glow = 0;
       if (duration <= 45) {
         // Entire window is the "last 45" segment
@@ -174,7 +174,7 @@ function getMarkerLifecycleState(promotions) {
       const duration = (1440 - range.start) + range.end;
       const remaining = duration - elapsed;
       const progress = Math.min(elapsed / duration, 1);
-      const opacity = Math.min(1, 0.8 + (0.2 * progress));
+      const opacity = remaining <= 45 ? 1 : Math.min(1, 0.8 + (0.2 * progress));
       let glow = 0;
       if (duration <= 45) {
         glow = 0.5 + (0.5 * progress);
@@ -216,6 +216,9 @@ function createMarkerElement(type, opts) {
   }
   if (opts.phase === 'active') {
     el.classList.add('marker-active');
+  }
+  if (opts.endingSoon) {
+    el.classList.add('marker-urgent');
   }
   el.style.setProperty('--marker-glow', (opts.glow !== undefined ? opts.glow : 0).toString());
   el.style.display = 'block';

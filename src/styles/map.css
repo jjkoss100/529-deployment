@@ -36,22 +36,22 @@
 .marker-special {
   --marker-glow: 0;
   filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.4));
-  box-shadow: 0 0 14px rgba(242, 107, 45, var(--marker-glow));
+  box-shadow: 0 0 22px rgba(242, 107, 45, var(--marker-glow));
   transform: translateY(-2px);
 }
 
-.marker-active {
-  animation: markerGlowPulse 2.8s ease-in-out infinite;
+.marker-urgent {
+  animation: markerGlowPulse 1.9s ease-in-out infinite;
 }
 
 @keyframes markerGlowPulse {
   0%, 100% {
-    box-shadow: 0 0 12px rgba(242, 107, 45, calc(var(--marker-glow) * 0.7));
+    box-shadow: 0 0 18px rgba(242, 107, 45, calc(var(--marker-glow) * 0.8));
     transform: translateY(-2px) scale(1);
   }
   50% {
-    box-shadow: 0 0 18px rgba(242, 107, 45, var(--marker-glow));
-    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 0 30px rgba(242, 107, 45, var(--marker-glow));
+    transform: translateY(-2px) scale(1.05);
   }
 }
 
