@@ -53,6 +53,11 @@ export function initMap(containerId, mapboxToken) {
     stylizeBaseLayers();
     ensureEnergyTrails();
     startEnergyAnimation();
+    ensureOffersLayer();
+    if (pendingOfferFeatures && map.getSource(OFFERS_SOURCE_ID)) {
+      map.getSource(OFFERS_SOURCE_ID).setData({ type: 'FeatureCollection', features: pendingOfferFeatures });
+      pendingOfferFeatures = null;
+    }
   });
 
   return map;
