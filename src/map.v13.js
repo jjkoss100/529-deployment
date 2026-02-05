@@ -3,13 +3,17 @@ import { getCurrentDayName, parseTimeRange, formatTimeNoPeriod, getPreviousDayNa
 const LNG_OFFSET = 0.00012; // Offset for dual markers side by side
 
 let map = null;
-let markers = [];
+let currentVenues = [];
+let currentLimitedOffers = [];
 let openPopup = null;
 let energyAnimationHandle = null;
+let offerPulseHandle = null;
 let debugPanel = null;
 
 const ENERGY_SOURCE_ID = 'energy-trails';
 const ENERGY_LAYER_ID = 'energy-trails-line';
+const OFFERS_SOURCE_ID = 'offers-points';
+const OFFERS_LAYER_ID = 'offers-circles';
 
 const IG_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ig-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#405de6"/><stop offset="15%" stop-color="#5851db"/><stop offset="30%" stop-color="#833ab4"/><stop offset="45%" stop-color="#c13584"/><stop offset="60%" stop-color="#e1306c"/><stop offset="72%" stop-color="#fd1d1d"/><stop offset="82%" stop-color="#f56040"/><stop offset="90%" stop-color="#f77737"/><stop offset="96%" stop-color="#fcaf45"/><stop offset="100%" stop-color="#ffdc80"/></linearGradient></defs><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" stroke="url(#ig-grad)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const MENU_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>`;
@@ -64,11 +68,13 @@ export function getMap() {
  * Clear all existing markers from the map.
  */
 function clearMarkers() {
-  for (const m of markers) {
-    m.remove();
+  if (openPopup) {
+    openPopup.remove();
+    openPopup = null;
   }
-  markers = [];
-  openPopup = null;
+  if (map && map.getSource(OFFERS_SOURCE_ID)) {
+    map.getSource(OFFERS_SOURCE_ID).setData({ type: 'FeatureCollection', features: [] });
+  }
 }
 
 const PRESHOW_MINUTES = 30; // Show markers 30min before start
@@ -154,19 +160,21 @@ function getMarkerLifecycleState(promotions) {
         const lastProgress = (45 - remaining) / 45;
         glow = 0.5 + (0.5 * Math.min(Math.max(lastProgress, 0), 1));
       }
+      const pulse = remaining <= 45 || glow >= 0.5 ? 1 : 0;
       return {
         size: MAX_SIZE,
         opacity: parseFloat(opacity.toFixed(2)),
         phase: 'active',
         endingSoon: remaining <= 45,
-        glow: parseFloat(glow.toFixed(2))
+        glow: parseFloat(glow.toFixed(2)),
+        pulse
       };
     }
 
     // Check if in preshow window (30min before start)
     if (currentMinutes >= preshowStart && currentMinutes < range.start) {
       // Preshow: constant size with vibration animation
-      return { size: MAX_SIZE, opacity: 0.8, phase: 'preshow', endingSoon: false, glow: 0 };
+      return { size: MAX_SIZE, opacity: 0.8, phase: 'preshow', endingSoon: false, glow: 0, pulse: 0 };
     }
   }
 
@@ -188,12 +196,14 @@ function getMarkerLifecycleState(promotions) {
         const lastProgress = (45 - remaining) / 45;
         glow = 0.5 + (0.5 * Math.min(Math.max(lastProgress, 0), 1));
       }
+      const pulse = remaining <= 45 || glow >= 0.5 ? 1 : 0;
       return {
         size: MAX_SIZE,
         opacity: parseFloat(opacity.toFixed(2)),
         phase: 'active',
         endingSoon: remaining <= 45,
-        glow: parseFloat(glow.toFixed(2))
+        glow: parseFloat(glow.toFixed(2)),
+        pulse
       };
     }
   }
@@ -202,45 +212,7 @@ function getMarkerLifecycleState(promotions) {
   return null;
 }
 
-/**
- * Create an HTML element for a marker.
- * For HH markers: size and opacity come from getHHMarkerState().
- * For special markers: uses fixed active/inactive sizes.
- */
-function createMarkerElement(type, opts) {
-  const el = document.createElement('img');
-  el.classList.add('marker-shell');
-  el.classList.add(type === 'hh' ? 'marker-hh' : 'marker-special');
-  if (opts.phase === 'preshow') {
-    el.classList.add('marker-preshow');
-  }
-  const rawGlow = opts.glow !== undefined ? opts.glow : 0;
-  const displayGlow = Math.min(1, rawGlow * 1.8);
-  if (opts.endingSoon || displayGlow >= 0.5) {
-    el.classList.add('marker-urgent');
-  }
-  el.style.setProperty('--marker-glow', displayGlow.toString());
-  el.style.display = 'block';
-  el.style.cursor = 'pointer';
-  el.style.background = 'transparent';
-  el.style.border = 'none';
-  el.style.transition = 'width 0.5s ease, height 0.5s ease, opacity 0.5s ease';
-
-  const size = opts.size || MAX_SIZE;
-  el.style.width = size + 'px';
-  el.style.height = size + 'px';
-  el.style.opacity = (opts.opacity !== undefined ? opts.opacity : 1).toString();
-  const coreColor = '%23f26b2d';
-  const rimColor = '%23f26b2d';
-  const svgContent = `
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120">
-      <circle cx="60" cy="60" r="52" fill="${coreColor}" stroke="${rimColor}" stroke-width="6"/>
-    </svg>
-  `;
-
-  el.src = 'data:image/svg+xml,' + svgContent;
-  return el;
-}
+// Markers are rendered via Mapbox circle layers (no DOM markers).
 
 /**
  * Get the time status for a set of promotions.
@@ -479,7 +451,8 @@ function getLimitedOfferLifecycleState(timeStr) {
         opacity: parseFloat(opacity.toFixed(2)),
         phase: 'active',
         endingSoon: remaining <= 45,
-        glow: parseFloat(glow.toFixed(2))
+        glow: parseFloat(glow.toFixed(2)),
+        pulse: remaining <= 45 || glow >= 0.5 ? 1 : 0
       };
     }
 
@@ -491,7 +464,7 @@ function getLimitedOfferLifecycleState(timeStr) {
   // Upcoming today (show marker even before preshow)
   const nextRange = sorted.find(r => r.start > currentMinutes);
   if (nextRange) {
-    return { size: MAX_SIZE, opacity: 0.8, phase: 'upcoming', endingSoon: false, glow: 0 };
+    return { size: MAX_SIZE, opacity: 0.8, phase: 'upcoming', endingSoon: false, glow: 0, pulse: 0 };
   }
 
   return null;
@@ -568,6 +541,100 @@ function buildLimitedOfferPopup(offer, timeStr) {
   html += `</div>`;
   html += `</div>`;
   return html;
+}
+
+function ensureOffersLayer() {
+  if (!map || !map.isStyleLoaded()) return;
+  if (!map.getSource(OFFERS_SOURCE_ID)) {
+    map.addSource(OFFERS_SOURCE_ID, {
+      type: 'geojson',
+      data: { type: 'FeatureCollection', features: [] }
+    });
+  }
+  if (!map.getLayer(OFFERS_LAYER_ID)) {
+    map.addLayer({
+      id: OFFERS_LAYER_ID,
+      type: 'circle',
+      source: OFFERS_SOURCE_ID,
+      paint: {
+        'circle-color': '#f26b2d',
+        'circle-opacity': ['get', 'opacity'],
+        'circle-radius': [
+          '+',
+          7.5,
+          ['*', ['get', 'glow'], 8],
+          ['*', ['get', 'pulse'], 4]
+        ],
+        'circle-blur': [
+          '+',
+          0.15,
+          ['*', ['get', 'glow'], 0.9],
+          ['*', ['get', 'pulse'], 0.4]
+        ],
+        'circle-stroke-color': '#f26b2d',
+        'circle-stroke-width': 0
+      }
+    });
+    map.on('mouseenter', OFFERS_LAYER_ID, () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+    map.on('mouseleave', OFFERS_LAYER_ID, () => {
+      map.getCanvas().style.cursor = '';
+    });
+    map.on('click', OFFERS_LAYER_ID, (e) => {
+      const feature = e.features && e.features[0];
+      if (!feature) return;
+      const { popupType, promoType, index, timeStr } = feature.properties || {};
+      const coords = feature.geometry.coordinates.slice();
+      let html = '';
+      if (popupType === 'limited') {
+        html = buildLimitedOfferPopup(currentLimitedOffers[index], timeStr);
+      } else {
+        html = buildPopupContent(currentVenues[index], promoType);
+      }
+      if (openPopup) openPopup.remove();
+      openPopup = new mapboxgl.Popup({
+        offset: 20,
+        closeButton: false,
+        closeOnClick: true,
+        maxWidth: '320px',
+        className: 'venue-popup'
+      }).setLngLat(coords).setHTML(html).addTo(map);
+      const popupEl = openPopup.getElement();
+      if (popupEl) {
+        const statusEl = popupEl.querySelector('.popup-time-status--soon');
+        if (statusEl) {
+          statusEl.classList.remove('popup-time-status--alert');
+          void statusEl.offsetWidth;
+          statusEl.classList.add('popup-time-status--alert');
+        }
+      }
+    });
+  }
+
+  if (!offerPulseHandle) {
+    const animate = (t) => {
+      if (!map || !map.getLayer(OFFERS_LAYER_ID)) {
+        offerPulseHandle = null;
+        return;
+      }
+      const pulse = (Math.sin(t / 350) + 1) / 2; // 0..1
+      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-radius', [
+        '+',
+        7.5,
+        ['*', ['get', 'glow'], 8],
+        ['*', ['get', 'pulse'], 6 * pulse]
+      ]);
+      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-blur', [
+        '+',
+        0.15,
+        ['*', ['get', 'glow'], 0.9],
+        ['*', ['get', 'pulse'], 0.6 * pulse]
+      ]);
+      offerPulseHandle = requestAnimationFrame(animate);
+    };
+    offerPulseHandle = requestAnimationFrame(animate);
+  }
 }
 
 function escapeHtml(str) {
@@ -883,16 +950,18 @@ function startEnergyAnimation() {
  * Render markers on the map for the given (filtered) venues.
  */
 export function renderMarkers(venues, filters, limitedOffers = []) {
+  currentVenues = venues;
+  currentLimitedOffers = limitedOffers;
   clearMarkers();
   updateEnergyTrails(venues);
 
-  // Debug panel disabled
+  const features = [];
 
-  for (const venue of venues) {
+  for (let i = 0; i < venues.length; i += 1) {
+    const venue = venues[i];
     const hasHH = venue.happyHours.length > 0;
     const hasSpecials = venue.specials.length > 0;
 
-    // Only show markers when the lifecycle says preshow/active.
     let showHH = false;
     let showSp = false;
     let hhState = null;
@@ -907,71 +976,38 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
       showSp = !!spState;
     }
 
-    // Recalculate offsets after lifecycle filtering
     const bothVisible = showHH && showSp;
     const finalHHLng = bothVisible ? venue.lng - LNG_OFFSET : venue.lng;
     const finalSpLng = bothVisible ? venue.lng + LNG_OFFSET : venue.lng;
 
     if (showHH && hhState) {
-      const el = createMarkerElement('hh', hhState);
-      const popup = new mapboxgl.Popup({
-        offset: 25,
-        closeButton: false,
-        closeOnClick: true,
-        maxWidth: '320px',
-        className: 'venue-popup'
-      }).setHTML(buildPopupContent(venue, 'hh'));
-      popup.on('open', () => {
-        const popupEl = popup.getElement();
-        if (!popupEl) return;
-        const statusEl = popupEl.querySelector('.popup-time-status--soon');
-        if (!statusEl) return;
-        statusEl.classList.remove('popup-time-status--alert');
-        void statusEl.offsetWidth;
-        statusEl.classList.add('popup-time-status--alert');
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [finalHHLng, venue.lat] },
+        properties: {
+          opacity: hhState.opacity,
+          glow: hhState.glow,
+          pulse: hhState.pulse,
+          popupType: 'running',
+          promoType: 'hh',
+          index: i
+        }
       });
-
-      const marker = new mapboxgl.Marker({ element: el })
-        .setLngLat([finalHHLng, venue.lat])
-        .setPopup(popup)
-        .addTo(map);
-
-      el.addEventListener('mouseenter', () => {
-        el.title = venue.name;
-      });
-
-      markers.push(marker);
     }
 
     if (showSp && spState) {
-      const el = createMarkerElement('special', spState);
-      const popup = new mapboxgl.Popup({
-        offset: 25,
-        closeButton: false,
-        closeOnClick: true,
-        maxWidth: '320px',
-        className: 'venue-popup'
-      }).setHTML(buildPopupContent(venue, 'special'));
-      popup.on('open', () => {
-        const popupEl = popup.getElement();
-        if (!popupEl) return;
-        const statusEl = popupEl.querySelector('.popup-time-status--soon');
-        if (!statusEl) return;
-        statusEl.classList.remove('popup-time-status--alert');
-        void statusEl.offsetWidth;
-        statusEl.classList.add('popup-time-status--alert');
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [finalSpLng, venue.lat] },
+        properties: {
+          opacity: spState.opacity,
+          glow: spState.glow,
+          pulse: spState.pulse,
+          popupType: 'running',
+          promoType: 'special',
+          index: i
+        }
       });
-
-      const marker = new mapboxgl.Marker({ element: el })
-        .setLngLat([finalSpLng, venue.lat])
-        .setPopup(popup)
-        .addTo(map);
-
-      el.addEventListener('mouseenter', () => {
-        el.title = venue.name;
-      });
-
-      markers.push(marker);
     }
   }
 
@@ -982,10 +1018,9 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     yesterday.setDate(now.getDate() - 1);
     const prevKey = getDateKey(yesterday);
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    let offersWithTime = 0;
-    let offersShown = 0;
 
-    for (const offer of limitedOffers) {
+    for (let i = 0; i < limitedOffers.length; i += 1) {
+      const offer = limitedOffers[i];
       let timeStr = offer.times ? offer.times[todayKey] : '';
       if (!timeStr && offer.times && offer.times[prevKey]) {
         const prevRanges = parseOfferRanges(offer.times[prevKey]);
@@ -993,42 +1028,28 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
         if (isPrevActive) timeStr = offer.times[prevKey];
       }
       if (!timeStr) continue;
-      offersWithTime += 1;
 
       const offerState = getLimitedOfferLifecycleState(timeStr);
       if (!offerState) continue;
-      offersShown += 1;
 
-      const el = createMarkerElement('hh', offerState);
-      const popup = new mapboxgl.Popup({
-        offset: 25,
-        closeButton: false,
-        closeOnClick: true,
-        maxWidth: '320px',
-        className: 'venue-popup'
-      }).setHTML(buildLimitedOfferPopup(offer, timeStr));
-      popup.on('open', () => {
-        const popupEl = popup.getElement();
-        if (!popupEl) return;
-        const statusEl = popupEl.querySelector('.popup-time-status--soon');
-        if (!statusEl) return;
-        statusEl.classList.remove('popup-time-status--alert');
-        void statusEl.offsetWidth;
-        statusEl.classList.add('popup-time-status--alert');
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [offer.lng, offer.lat] },
+        properties: {
+          opacity: offerState.opacity,
+          glow: offerState.glow,
+          pulse: offerState.pulse,
+          popupType: 'limited',
+          index: i,
+          timeStr
+        }
       });
-
-      const marker = new mapboxgl.Marker({ element: el, anchor: 'center' })
-        .setLngLat([offer.lng, offer.lat])
-        .setPopup(popup)
-        .addTo(map);
-
-      el.addEventListener('mouseenter', () => {
-        el.title = offer.name;
-      });
-
-      markers.push(marker);
     }
+  }
 
+  ensureOffersLayer();
+  if (map && map.getSource(OFFERS_SOURCE_ID)) {
+    map.getSource(OFFERS_SOURCE_ID).setData({ type: 'FeatureCollection', features });
   }
 }
 
