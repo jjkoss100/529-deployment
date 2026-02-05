@@ -35,8 +35,9 @@
 .marker-shell {
   --marker-glow: 0;
   position: relative;
-  width: fit-content;
-  height: fit-content;
+  width: 15px;
+  height: 15px;
+  overflow: visible;
 }
 
 .marker-shell::after {

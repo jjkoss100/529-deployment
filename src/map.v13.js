@@ -232,6 +232,8 @@ function createMarkerElement(type, opts) {
   const size = opts.size || MAX_SIZE;
   container.style.width = size + 'px';
   container.style.height = size + 'px';
+  container.style.transformOrigin = 'center';
+  container.style.overflow = 'visible';
   el.style.width = '100%';
   el.style.height = '100%';
   el.style.opacity = (opts.opacity !== undefined ? opts.opacity : 1).toString();
