@@ -10,6 +10,7 @@ let energyAnimationHandle = null;
 let offerPulseHandle = null;
 let debugPanel = null;
 let pendingOfferFeatures = null;
+let lastOfferFeatureCount = 0;
 
 const ENERGY_SOURCE_ID = 'energy-trails';
 const ENERGY_LAYER_ID = 'energy-trails-line';
@@ -463,7 +464,7 @@ function getLimitedOfferLifecycleState(timeStr) {
     }
 
     if (currentMinutes >= preshowStart && currentMinutes < range.start) {
-      return { size: MAX_SIZE, opacity: 0.8, phase: 'preshow', endingSoon: false, glow: 0 };
+      return { size: MAX_SIZE, opacity: 0.8, phase: 'preshow', endingSoon: false, glow: 0, pulse: 0 };
     }
   }
 
@@ -576,18 +577,18 @@ function ensureOffersLayer() {
       source: OFFERS_SOURCE_ID,
       paint: {
         'circle-color': '#f26b2d',
-        'circle-opacity': ['get', 'opacity'],
+        'circle-opacity': ['coalesce', ['get', 'opacity'], 1],
         'circle-radius': [
           '+',
           7.5,
-          ['*', ['get', 'glow'], 8],
-          ['*', ['get', 'pulse'], 4]
+          ['*', ['coalesce', ['get', 'glow'], 0], 8],
+          ['*', ['coalesce', ['get', 'pulse'], 0], 4]
         ],
         'circle-blur': [
           '+',
           0.15,
-          ['*', ['get', 'glow'], 0.9],
-          ['*', ['get', 'pulse'], 0.4]
+          ['*', ['coalesce', ['get', 'glow'], 0], 0.9],
+          ['*', ['coalesce', ['get', 'pulse'], 0], 0.4]
         ],
         'circle-stroke-color': '#f26b2d',
         'circle-stroke-width': 0
@@ -640,14 +641,14 @@ function ensureOffersLayer() {
       map.setPaintProperty(OFFERS_LAYER_ID, 'circle-radius', [
         '+',
         7.5,
-        ['*', ['get', 'glow'], 8],
-        ['*', ['get', 'pulse'], 6 * pulse]
+        ['*', ['coalesce', ['get', 'glow'], 0], 8],
+        ['*', ['coalesce', ['get', 'pulse'], 0], 6 * pulse]
       ]);
       map.setPaintProperty(OFFERS_LAYER_ID, 'circle-blur', [
         '+',
         0.15,
-        ['*', ['get', 'glow'], 0.9],
-        ['*', ['get', 'pulse'], 0.6 * pulse]
+        ['*', ['coalesce', ['get', 'glow'], 0], 0.9],
+        ['*', ['coalesce', ['get', 'pulse'], 0], 0.6 * pulse]
       ]);
       offerPulseHandle = requestAnimationFrame(animate);
     };
@@ -1066,25 +1067,64 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
   }
 
   if (!map) return;
+
+  const setOfferData = (items) => {
+    ensureOffersLayer();
+    const src = map.getSource(OFFERS_SOURCE_ID);
+    if (!src) return false;
+    src.setData({ type: 'FeatureCollection', features: items });
+    lastOfferFeatureCount = items.length;
+    updateDebugPanel();
+    return true;
+  };
+
   if (!map.isStyleLoaded()) {
     pendingOfferFeatures = features;
-    map.once('load', () => {
-      ensureOffersLayer();
-      if (map.getSource(OFFERS_SOURCE_ID)) {
-        map.getSource(OFFERS_SOURCE_ID).setData({ type: 'FeatureCollection', features: pendingOfferFeatures || [] });
+    const trySet = () => {
+      if (!map) return;
+      if (!map.isStyleLoaded()) {
+        map.once('styledata', trySet);
+        return;
       }
-      pendingOfferFeatures = null;
-    });
+      if (setOfferData(pendingOfferFeatures || [])) {
+        pendingOfferFeatures = null;
+      }
+    };
+    map.once('styledata', trySet);
     return;
   }
 
-  ensureOffersLayer();
-  if (map.getSource(OFFERS_SOURCE_ID)) {
-    map.getSource(OFFERS_SOURCE_ID).setData({ type: 'FeatureCollection', features });
-  }
+  setOfferData(features);
+  updateDebugPanel();
 }
 
-function updateDebugPanel() {}
+function updateDebugPanel() {
+  if (!map) return;
+  if (!debugPanel) {
+    debugPanel = document.createElement('div');
+    debugPanel.id = 'offers-debug-panel';
+    debugPanel.style.position = 'fixed';
+    debugPanel.style.left = '16px';
+    debugPanel.style.bottom = '16px';
+    debugPanel.style.zIndex = '40';
+    debugPanel.style.padding = '8px 10px';
+    debugPanel.style.borderRadius = '10px';
+    debugPanel.style.background = 'rgba(0,0,0,0.55)';
+    debugPanel.style.color = '#f26b2d';
+    debugPanel.style.fontFamily = 'SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace';
+    debugPanel.style.fontSize = '12px';
+    debugPanel.style.letterSpacing = '0.04em';
+    debugPanel.style.textTransform = 'uppercase';
+    document.body.appendChild(debugPanel);
+  }
+
+  const hasSource = !!map.getSource(OFFERS_SOURCE_ID);
+  const hasLayer = !!map.getLayer(OFFERS_LAYER_ID);
+  const hasDebug = !!map.getLayer('offers-debug');
+  const styleLoaded = map.isStyleLoaded();
+
+  debugPanel.textContent = `offers: ${lastOfferFeatureCount} · source ${hasSource ? 'yes' : 'no'} · layer ${hasLayer ? 'yes' : 'no'} · debug ${hasDebug ? 'yes' : 'no'} · style ${styleLoaded ? 'ok' : 'wait'}`;
+}
 
 /**
  * Fit map bounds to show all given venues.
