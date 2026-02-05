@@ -215,10 +215,12 @@ function createMarkerElement(type, opts) {
   if (opts.phase === 'preshow') {
     el.classList.add('marker-preshow');
   }
-  if (opts.endingSoon || (opts.glow !== undefined && opts.glow >= 0.5)) {
+  const rawGlow = opts.glow !== undefined ? opts.glow : 0;
+  const displayGlow = Math.min(1, rawGlow * 1.8);
+  if (opts.endingSoon || displayGlow >= 0.5) {
     container.classList.add('marker-urgent');
   }
-  container.style.setProperty('--marker-glow', (opts.glow !== undefined ? opts.glow : 0).toString());
+  container.style.setProperty('--marker-glow', displayGlow.toString());
   el.style.display = 'block';
   el.style.background = 'transparent';
   el.style.border = 'none';
