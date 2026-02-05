@@ -189,7 +189,7 @@ body.covert-active .brand-widget {
 
 body.covert-active .brand-widget {
   z-index: 8000;
-  visibility: hidden;
+  display: none;
 }
 
 .app {
