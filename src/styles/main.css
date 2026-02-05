@@ -154,6 +154,96 @@ body > .weather-widget {
   z-index: 9999;
 }
 
+.brand-logos {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.brand-logo {
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: rgba(7, 10, 18, 0.7);
+  border: 1px solid rgba(61, 209, 255, 0.25);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+  overflow: hidden;
+}
+
+.brand-logo svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.brand-logo--blimp {
+  animation: blimpFloat 5.6s ease-in-out infinite;
+}
+
+.brand-logo--blimp .blimp-sheen {
+  animation: blimpSheen 3.2s ease-in-out infinite;
+}
+
+.brand-logo--blimp .blimp-prop {
+  transform-origin: 292px 128px;
+  animation: blimpProp 0.9s linear infinite;
+}
+
+.brand-logo--globe {
+  animation: globeHover 6s ease-in-out infinite;
+}
+
+.brand-logo--globe .globe-ring {
+  filter: drop-shadow(0 0 10px rgba(0, 255, 200, 0.5));
+  animation: globeGlow 2.8s ease-in-out infinite;
+}
+
+@keyframes blimpFloat {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes blimpSheen {
+  0%, 100% {
+    opacity: 0.2;
+    transform: translateX(-20px);
+  }
+  50% {
+    opacity: 0.6;
+    transform: translateX(20px);
+  }
+}
+
+@keyframes blimpProp {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes globeHover {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes globeGlow {
+  0%, 100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .weather-title {
   font-size: 17px;
   text-transform: uppercase;

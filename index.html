@@ -16,7 +16,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <!-- App styles -->
-  <link rel="stylesheet" href="src/styles/main.css?v=15">
+  <link rel="stylesheet" href="src/styles/main.css?v=16">
   <link rel="stylesheet" href="src/styles/map.css?v=11">
   <link rel="stylesheet" href="src/styles/filters.css">
 </head>
@@ -30,7 +30,54 @@
 
   <!-- Weather widget -->
   <div class="weather-widget" id="weather-widget">
-    <div class="weather-title">VENICE BEACH <span class="weather-title-sup">529</span></div>
+    <div class="brand-logos">
+      <div class="brand-logo brand-logo--blimp" aria-label="529 WORLD blimp logo">
+        <svg viewBox="0 0 520 160" role="img" aria-hidden="true">
+          <defs>
+            <linearGradient id="blimp-body" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#111827" />
+              <stop offset="100%" stop-color="#0b0f1c" />
+            </linearGradient>
+            <linearGradient id="blimp-glow" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stop-color="#30e6ff" stop-opacity="0.2" />
+              <stop offset="50%" stop-color="#30e6ff" stop-opacity="0.55" />
+              <stop offset="100%" stop-color="#30e6ff" stop-opacity="0.2" />
+            </linearGradient>
+          </defs>
+          <ellipse cx="230" cy="80" rx="200" ry="56" fill="url(#blimp-body)" stroke="#1f2937" stroke-width="4" />
+          <ellipse class="blimp-sheen" cx="230" cy="80" rx="200" ry="56" fill="url(#blimp-glow)" />
+          <polygon points="420,68 470,88 420,110" fill="#0b0f1c" stroke="#1f2937" stroke-width="4" />
+          <rect x="250" y="108" width="64" height="20" rx="8" fill="#0b0f1c" stroke="#1f2937" stroke-width="3" />
+          <rect x="268" y="124" width="30" height="10" rx="5" fill="#0b0f1c" stroke="#1f2937" stroke-width="3" />
+          <text x="85" y="92" fill="#e4f8ff" font-size="36" font-family="IBM Plex Mono, ui-monospace, monospace" letter-spacing="6">529 WORLD</text>
+          <circle class="blimp-prop" cx="292" cy="128" r="7" fill="#30e6ff" opacity="0.55" />
+        </svg>
+      </div>
+      <div class="brand-logo brand-logo--globe" aria-label="529 WORLD globe logo">
+        <svg viewBox="0 0 280 220" role="img" aria-hidden="true">
+          <defs>
+            <radialGradient id="globe-core" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#0b2333" />
+              <stop offset="70%" stop-color="#0a1624" />
+              <stop offset="100%" stop-color="#04070f" />
+            </radialGradient>
+            <linearGradient id="globe-ring" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#30e6ff" />
+              <stop offset="100%" stop-color="#00ff88" />
+            </linearGradient>
+            <path id="globe-path" d="M30,140 C80,190 200,190 250,140" />
+          </defs>
+          <circle cx="140" cy="105" r="76" fill="url(#globe-core)" stroke="#1f2937" stroke-width="4" />
+          <path d="M92 82 Q140 52 188 82" fill="none" stroke="#2dd4ff" stroke-width="3" opacity="0.7" />
+          <path d="M96 115 Q140 90 184 115" fill="none" stroke="#22f7c5" stroke-width="2" opacity="0.6" />
+          <circle class="globe-ring" cx="140" cy="120" r="95" fill="none" stroke="url(#globe-ring)" stroke-width="4" />
+          <text font-size="18" font-family="IBM Plex Mono, ui-monospace, monospace" fill="#e4f8ff" letter-spacing="3">
+            <textPath href="#globe-path" startOffset="4%">529 WORLD</textPath>
+          </text>
+        </svg>
+      </div>
+    </div>
+    <div class="weather-title">529 WORLD <span class="weather-title-sup">VENICE</span></div>
     <div class="weather-current">
       <div class="weather-temp" id="weather-temp">--°</div>
       <div class="weather-meta">
