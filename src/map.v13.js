@@ -206,6 +206,7 @@ function getMarkerLifecycleState(promotions) {
  */
 function createMarkerElement(type, opts) {
   const container = document.createElement('div');
+  container.classList.add('marker-shell');
   container.style.display = 'block';
   container.style.cursor = 'pointer';
 
@@ -215,9 +216,9 @@ function createMarkerElement(type, opts) {
     el.classList.add('marker-preshow');
   }
   if (opts.endingSoon || (opts.glow !== undefined && opts.glow >= 0.5)) {
-    el.classList.add('marker-urgent');
+    container.classList.add('marker-urgent');
   }
-  el.style.setProperty('--marker-glow', (opts.glow !== undefined ? opts.glow : 0).toString());
+  container.style.setProperty('--marker-glow', (opts.glow !== undefined ? opts.glow : 0).toString());
   el.style.display = 'block';
   el.style.background = 'transparent';
   el.style.border = 'none';
