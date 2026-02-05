@@ -1041,8 +1041,16 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
       console.log('[limited offers sample]', limitedOffers.slice(0, 3));
       const el = document.getElementById('limited-offers-debug');
       if (el) {
-        el.style.display = 'block';
         el.textContent = `limited offers: ${offersShown}/${offersWithTime} (total ${limitedOffers.length}) • ${todayKey}`;
+      }
+    }
+  } else {
+    if (!loggedOfferDebug) {
+      loggedOfferDebug = true;
+      const el = document.getElementById('limited-offers-debug');
+      if (el) {
+        const todayKey = getDateKey(new Date());
+        el.textContent = `limited offers: 0/0 (total 0) • ${todayKey}`;
       }
     }
   }

@@ -204,7 +204,7 @@ body.covert-active .brand-widget {
   font-size: 11px;
   border-radius: 6px;
   pointer-events: none;
-  display: none;
+  display: block;
 }
 
 .app {
