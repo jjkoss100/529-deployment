@@ -1226,52 +1226,61 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
 
     for (let i = 0; i < limitedOffers.length; i += 1) {
       const offer = limitedOffers[i];
-      const offerType = (offer.type || '').toLowerCase();
-      if (offerType.includes('super')) {
-        lastSuperCount += 1;
-        if (!showSuperWindow || !offer.times) continue;
-        let chosenKey = '';
-        let chosenTime = '';
-        for (const key of Object.keys(offer.times)) {
-          const date = parseDateKey(key);
-          if (!date) continue;
-          if (date <= todayStart || date > futureLimit) continue;
-          if (!chosenKey || date < parseDateKey(chosenKey)) {
-            chosenKey = key;
-            chosenTime = offer.times[key];
-          }
-        }
-        if (!chosenKey || !chosenTime) continue;
-        lastSuperShown += 1;
-        features.push({
-          type: 'Feature',
-          geometry: { type: 'Point', coordinates: [offer.lng, offer.lat] },
-          properties: {
-            opacity: 0.95,
-            glow: 0,
-            pulse: 0,
-            color: SUPER_LIMITED_COLOR,
-            strokeColor: '#6c2fb4',
-            popupType: 'super',
-            index: i,
-            timeStr: chosenTime,
-            dateKey: chosenKey
-          }
-        });
-        continue;
+      const times = offer.times || {};
+      let todayTimeStr = times[todayKey] || times[todayKeyPad] || '';
+      let prevTimeStr = times[prevKey] || times[prevKeyPad] || '';
+
+      let hasActivePrev = false;
+      if (!todayTimeStr && prevTimeStr) {
+        const prevRanges = parseOfferRanges(prevTimeStr);
+        hasActivePrev = prevRanges.some(r => r.end < r.start && currentMinutes < r.end);
       }
 
-      let timeStr = '';
-      if (offer.times) {
-        timeStr = offer.times[todayKey] || offer.times[todayKeyPad] || '';
+      const futureKeys = Object.keys(times).filter((key) => {
+        const date = parseDateKey(key);
+        if (!date) return false;
+        return date > todayStart && date <= futureLimit;
+      });
+
+      if (futureKeys.length > 0) {
+        lastSuperCount += 1;
       }
-      if (!timeStr && offer.times && offer.times[prevKey]) {
-        const prevTimeStr = offer.times[prevKey] || offer.times[prevKeyPad] || '';
-        if (prevTimeStr) {
-          const prevRanges = parseOfferRanges(prevTimeStr);
-          const isPrevActive = prevRanges.some(r => r.end < r.start && currentMinutes < r.end);
-          if (isPrevActive) timeStr = prevTimeStr;
+
+      if (showSuperWindow && !todayTimeStr && !hasActivePrev && futureKeys.length > 0) {
+        let chosenKey = '';
+        let chosenTime = '';
+        for (const key of futureKeys) {
+          const date = parseDateKey(key);
+          if (!date) continue;
+          if (!chosenKey || date < parseDateKey(chosenKey)) {
+            chosenKey = key;
+            chosenTime = times[key];
+          }
         }
+        if (chosenKey && chosenTime) {
+          lastSuperShown += 1;
+          features.push({
+            type: 'Feature',
+            geometry: { type: 'Point', coordinates: [offer.lng, offer.lat] },
+            properties: {
+              opacity: 0.95,
+              glow: 0,
+              pulse: 0,
+              color: SUPER_LIMITED_COLOR,
+              strokeColor: '#6c2fb4',
+              popupType: 'super',
+              index: i,
+              timeStr: chosenTime,
+              dateKey: chosenKey
+            }
+          });
+          continue;
+        }
+      }
+
+      let timeStr = todayTimeStr;
+      if (!timeStr && prevTimeStr && hasActivePrev) {
+        timeStr = prevTimeStr;
       }
       if (!timeStr) continue;
 
