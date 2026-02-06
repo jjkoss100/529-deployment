@@ -12,6 +12,9 @@ let debugPanel = null;
 let pendingOfferFeatures = null;
 let lastOfferFeatureCount = 0;
 let offersLayerRetry = null;
+let lastVenueCount = 0;
+let lastPromoCount = 0;
+let lastVisibleCount = 0;
 
 const ENERGY_SOURCE_ID = 'energy-trails';
 const ENERGY_LAYER_ID = 'energy-trails-line';
@@ -1069,11 +1072,15 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
   updateEnergyTrails(venues);
 
   const features = [];
+  lastVenueCount = venues.length;
+  lastPromoCount = 0;
 
   for (let i = 0; i < venues.length; i += 1) {
     const venue = venues[i];
     const hasHH = venue.happyHours.length > 0;
     const hasSpecials = venue.specials.length > 0;
+    if (hasHH) lastPromoCount += venue.happyHours.length;
+    if (hasSpecials) lastPromoCount += venue.specials.length;
 
     let showHH = false;
     let showSp = false;
@@ -1169,6 +1176,7 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
   }
 
   if (!map) return;
+  lastVisibleCount = features.length;
 
   const setOfferData = (items) => {
     ensureOffersLayer();
@@ -1210,7 +1218,7 @@ function updateDebugPanel() {
   const hasDebug = !!map.getLayer('offers-debug');
   const styleLoaded = map.isStyleLoaded();
 
-  debugPanel.textContent = `offers: ${lastOfferFeatureCount} · source ${hasSource ? 'yes' : 'no'} · layer ${hasLayer ? 'yes' : 'no'} · debug ${hasDebug ? 'yes' : 'no'} · style ${styleLoaded ? 'ok' : 'wait'}`;
+  debugPanel.textContent = `offers: ${lastOfferFeatureCount} · visible ${lastVisibleCount} · venues ${lastVenueCount} · promos ${lastPromoCount} · source ${hasSource ? 'yes' : 'no'} · layer ${hasLayer ? 'yes' : 'no'} · debug ${hasDebug ? 'yes' : 'no'} · style ${styleLoaded ? 'ok' : 'wait'}`;
 }
 
 /**
