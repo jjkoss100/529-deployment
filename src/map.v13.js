@@ -472,6 +472,33 @@ function formatDateLabel(dateKey) {
   return `${month}/${day}`;
 }
 
+function formatTimeAP(timeStr) {
+  const parts = timeStr.split(':');
+  if (parts.length !== 2) return timeStr.trim();
+  let hour = parseInt(parts[0], 10);
+  const minutes = parseInt(parts[1], 10);
+  if (isNaN(hour) || isNaN(minutes)) return timeStr.trim();
+  const suffix = hour >= 12 ? 'p' : 'a';
+  hour = hour % 12;
+  if (hour === 0) hour = 12;
+  return `${hour}:${minutes.toString().padStart(2, '0')}${suffix}`;
+}
+
+function formatTimeWindowAP(timeStr) {
+  if (!timeStr) return '';
+  return timeStr
+    .split(',')
+    .map(segment => {
+      const trimmed = segment.trim();
+      const rangeParts = trimmed.split('-');
+      if (rangeParts.length !== 2) return trimmed;
+      const start = formatTimeAP(rangeParts[0].trim());
+      const end = formatTimeAP(rangeParts[1].trim());
+      return `${start}-${end}`;
+    })
+    .join(', ');
+}
+
 function parseOfferRanges(timeStr) {
   if (!timeStr) return [];
   return timeStr
@@ -635,7 +662,8 @@ function buildSuperLimitedPopup(offer, timeStr, dateKey) {
   html += `</div>`;
 
   const dateLabel = formatDateLabel(dateKey);
-  const timeLabel = timeStr ? `${dateLabel} · ${timeStr}` : dateLabel;
+  const windowLabel = formatTimeWindowAP(timeStr);
+  const timeLabel = windowLabel ? `${dateLabel} · ${windowLabel}` : dateLabel;
   html += `<div class="popup-footer">`;
   html += `<div class="popup-footer-actions">`;
   if (offer.link) {
