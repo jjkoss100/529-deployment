@@ -35,9 +35,10 @@ function ensureUiLayer() {
 export function initMap(containerId, mapboxToken) {
   mapboxgl.accessToken = mapboxToken;
 
+  const styleUrl = 'mapbox://styles/mapbox/navigation-night-v1';
   map = new mapboxgl.Map({
     container: containerId,
-    style: 'mapbox://styles/mapbox/navigation-night-v1',
+    style: styleUrl,
     center: [-118.469, 33.989],
     zoom: 14,
     minZoom: 12,
@@ -80,6 +81,14 @@ export function initMap(containerId, mapboxToken) {
       updateDebugPanel();
     }
   }, 500);
+
+  setTimeout(() => {
+    if (!map) return;
+    if (!map.isStyleLoaded()) {
+      console.warn('Style still not loaded; forcing setStyle refresh.');
+      map.setStyle(styleUrl);
+    }
+  }, 3500);
 
   return map;
 }
