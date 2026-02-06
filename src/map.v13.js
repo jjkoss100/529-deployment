@@ -70,6 +70,12 @@ export function initMap(containerId, mapboxToken) {
     applyStyleTuning();
     ensureOffersLayer();
     updateDebugPanel();
+    if (map.getSource(OFFERS_SOURCE_ID)) {
+      map.getSource(OFFERS_SOURCE_ID).setData({
+        type: 'FeatureCollection',
+        features: pendingOfferFeatures || []
+      });
+    }
   });
   map.on('idle', updateDebugPanel);
 
@@ -1127,6 +1133,7 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     const src = map.getSource(OFFERS_SOURCE_ID);
     if (!src) return false;
     src.setData({ type: 'FeatureCollection', features: items });
+    pendingOfferFeatures = items;
     lastOfferFeatureCount = items.length;
     updateDebugPanel();
     return true;
