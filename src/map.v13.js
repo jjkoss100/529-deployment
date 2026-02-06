@@ -50,11 +50,15 @@ export function initMap(containerId, mapboxToken) {
 
   map.addControl(new mapboxgl.NavigationControl(), 'top-right');
 
-  map.on('load', () => {
+  const applyStyleTuning = () => {
     setupMapAtmosphere();
     stylizeBaseLayers();
     ensureEnergyTrails();
     startEnergyAnimation();
+  };
+
+  map.on('load', () => {
+    applyStyleTuning();
     ensureOffersLayer();
     updateDebugPanel();
     if (pendingOfferFeatures && map.getSource(OFFERS_SOURCE_ID)) {
@@ -63,6 +67,7 @@ export function initMap(containerId, mapboxToken) {
     }
   });
   map.on('styledata', () => {
+    applyStyleTuning();
     ensureOffersLayer();
     updateDebugPanel();
   });
