@@ -11,6 +11,7 @@ let offerPulseHandle = null;
 let debugPanel = null;
 let pendingOfferFeatures = null;
 let lastOfferFeatureCount = 0;
+let offersLayerRetry = null;
 
 const ENERGY_SOURCE_ID = 'energy-trails';
 const ENERGY_LAYER_ID = 'energy-trails-line';
@@ -591,49 +592,80 @@ function buildLimitedOfferPopup(offer, timeStr) {
 }
 
 function ensureOffersLayer() {
-  if (!map || !map.isStyleLoaded()) return;
+  if (!map) return;
+  if (!map.getStyle || !map.getStyle()) return;
   if (!map.getSource(OFFERS_SOURCE_ID)) {
-    map.addSource(OFFERS_SOURCE_ID, {
-      type: 'geojson',
-      data: { type: 'FeatureCollection', features: [] }
-    });
+    try {
+      map.addSource(OFFERS_SOURCE_ID, {
+        type: 'geojson',
+        data: { type: 'FeatureCollection', features: [] }
+      });
+    } catch (err) {
+      if (!offersLayerRetry) {
+        offersLayerRetry = setTimeout(() => {
+          offersLayerRetry = null;
+          ensureOffersLayer();
+        }, 500);
+      }
+      return;
+    }
   }
   if (!map.getLayer('offers-debug')) {
-    map.addLayer({
-      id: 'offers-debug',
-      type: 'circle',
-      source: OFFERS_SOURCE_ID,
-      paint: {
-        'circle-color': '#00ffff',
-        'circle-radius': 4,
-        'circle-opacity': 0.8
+    try {
+      map.addLayer({
+        id: 'offers-debug',
+        type: 'circle',
+        source: OFFERS_SOURCE_ID,
+        paint: {
+          'circle-color': '#00ffff',
+          'circle-radius': 4,
+          'circle-opacity': 0.8
+        }
+      });
+    } catch (err) {
+      if (!offersLayerRetry) {
+        offersLayerRetry = setTimeout(() => {
+          offersLayerRetry = null;
+          ensureOffersLayer();
+        }, 500);
       }
-    });
+      return;
+    }
   }
   if (!map.getLayer(OFFERS_LAYER_ID)) {
-    map.addLayer({
-      id: OFFERS_LAYER_ID,
-      type: 'circle',
-      source: OFFERS_SOURCE_ID,
-      paint: {
-        'circle-color': '#f26b2d',
-        'circle-opacity': ['coalesce', ['get', 'opacity'], 1],
-        'circle-radius': [
-          '+',
-          7.5,
-          ['*', ['coalesce', ['get', 'glow'], 0], 8],
-          ['*', ['coalesce', ['get', 'pulse'], 0], 4]
-        ],
-        'circle-blur': [
-          '+',
-          0.15,
-          ['*', ['coalesce', ['get', 'glow'], 0], 0.9],
-          ['*', ['coalesce', ['get', 'pulse'], 0], 0.4]
-        ],
-        'circle-stroke-color': '#f26b2d',
-        'circle-stroke-width': 0
+    try {
+      map.addLayer({
+        id: OFFERS_LAYER_ID,
+        type: 'circle',
+        source: OFFERS_SOURCE_ID,
+        paint: {
+          'circle-color': '#f26b2d',
+          'circle-opacity': ['coalesce', ['get', 'opacity'], 1],
+          'circle-radius': [
+            '+',
+            7.5,
+            ['*', ['coalesce', ['get', 'glow'], 0], 8],
+            ['*', ['coalesce', ['get', 'pulse'], 0], 4]
+          ],
+          'circle-blur': [
+            '+',
+            0.15,
+            ['*', ['coalesce', ['get', 'glow'], 0], 0.9],
+            ['*', ['coalesce', ['get', 'pulse'], 0], 0.4]
+          ],
+          'circle-stroke-color': '#f26b2d',
+          'circle-stroke-width': 0
+        }
+      });
+    } catch (err) {
+      if (!offersLayerRetry) {
+        offersLayerRetry = setTimeout(() => {
+          offersLayerRetry = null;
+          ensureOffersLayer();
+        }, 500);
       }
-    });
+      return;
+    }
     map.on('mouseenter', OFFERS_LAYER_ID, () => {
       map.getCanvas().style.cursor = 'pointer';
     });
