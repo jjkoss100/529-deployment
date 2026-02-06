@@ -648,18 +648,19 @@ function ensureOffersLayer() {
           'circle-opacity': ['coalesce', ['get', 'opacity'], 1],
           'circle-radius': [
             '+',
-            7.5,
+            10,
             ['*', ['coalesce', ['get', 'glow'], 0], 8],
             ['*', ['coalesce', ['get', 'pulse'], 0], 4]
           ],
           'circle-blur': [
             '+',
-            0.15,
+            0.25,
             ['*', ['coalesce', ['get', 'glow'], 0], 0.9],
             ['*', ['coalesce', ['get', 'pulse'], 0], 0.4]
           ],
-          'circle-stroke-color': '#f26b2d',
-          'circle-stroke-width': 0
+          'circle-stroke-color': '#f9a15f',
+          'circle-stroke-width': 1.6,
+          'circle-stroke-opacity': 0.85
         }
       });
     } catch (err) {
@@ -717,13 +718,13 @@ function ensureOffersLayer() {
       const pulse = (Math.sin(t / 350) + 1) / 2; // 0..1
       map.setPaintProperty(OFFERS_LAYER_ID, 'circle-radius', [
         '+',
-        7.5,
+        10,
         ['*', ['coalesce', ['get', 'glow'], 0], 8],
         ['*', ['coalesce', ['get', 'pulse'], 0], 6 * pulse]
       ]);
       map.setPaintProperty(OFFERS_LAYER_ID, 'circle-blur', [
         '+',
-        0.15,
+        0.25,
         ['*', ['coalesce', ['get', 'glow'], 0], 0.9],
         ['*', ['coalesce', ['get', 'pulse'], 0], 0.6 * pulse]
       ]);
