@@ -740,6 +740,8 @@ function ensureOffersLayer() {
             ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 1.1],
             ['*', ['coalesce', ['get', 'pulse'], 0], 0.4]
           ],
+          'circle-translate': [0, -2],
+          'circle-translate-anchor': 'viewport',
           'circle-stroke-color': ['coalesce', ['get', 'strokeColor'], '#f9a15f'],
           'circle-stroke-width': ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 1.6],
           'circle-stroke-opacity': ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 0.9]
