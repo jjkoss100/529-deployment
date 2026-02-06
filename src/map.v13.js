@@ -923,6 +923,10 @@ function stylizeBaseLayers() {
         map.setPaintProperty(layer.id, 'icon-opacity', 0);
       }
 
+      if (layer.id === OFFERS_LAYER_ID || layer.id === 'offers-debug' || layer.id === ENERGY_LAYER_ID) {
+        continue;
+      }
+
       if (layer.type === 'circle') {
         map.setLayoutProperty(layer.id, 'visibility', 'none');
         map.setPaintProperty(layer.id, 'circle-opacity', 0);
