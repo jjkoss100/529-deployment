@@ -386,7 +386,19 @@ function parseLimitedOffersCSV(csvText) {
     return '';
   };
   const offers = [];
-  const dateColRegex = /^\d{1,2}\/\d{1,2}\/\d{2,4}$/;
+  const dateColRegex = /(\d{1,2})\/(\d{1,2})\/(\d{2,4})/;
+  const dateKeyByIndex = {};
+  for (let c = 0; c < header.length; c += 1) {
+    const match = (header[c] || '').toString().match(dateColRegex);
+    if (match) {
+      const m = parseInt(match[1], 10);
+      const d = parseInt(match[2], 10);
+      const y = match[3];
+      const yearNum = parseInt(y, 10);
+      const year2 = isNaN(yearNum) ? y : String(yearNum % 100);
+      dateKeyByIndex[c] = `${m}/${d}/${year2}`;
+    }
+  }
 
   for (let i = headerIndex + 1; i < rows.length; i += 1) {
     const row = rows[i];
@@ -415,16 +427,10 @@ function parseLimitedOffersCSV(csvText) {
 
     const times = {};
     for (let c = 0; c < header.length; c += 1) {
-      const key = header[c];
-      if (!dateColRegex.test(key)) continue;
+      const key = dateKeyByIndex[c];
+      if (!key) continue;
       const val = (row[c] || '').toString().trim();
-      if (val) {
-        const [m, d, y] = key.split('/');
-        const yearNum = parseInt(y, 10);
-        const year2 = isNaN(yearNum) ? y : String(yearNum % 100);
-        const normKey = `${parseInt(m, 10)}/${parseInt(d, 10)}/${year2}`;
-        times[normKey] = val;
-      }
+      if (val) times[key] = val;
     }
 
     offers.push({
