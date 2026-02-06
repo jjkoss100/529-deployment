@@ -15,6 +15,9 @@ let offersLayerRetry = null;
 let lastVenueCount = 0;
 let lastPromoCount = 0;
 let lastVisibleCount = 0;
+let lastLimitedCount = 0;
+let lastSuperCount = 0;
+let lastSuperShown = 0;
 
 const ENERGY_SOURCE_ID = 'energy-trails';
 const ENERGY_LAYER_ID = 'energy-trails-line';
@@ -1142,6 +1145,9 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
   const features = [];
   lastVenueCount = venues.length;
   lastPromoCount = 0;
+  lastLimitedCount = limitedOffers.length;
+  lastSuperCount = 0;
+  lastSuperShown = 0;
 
   for (let i = 0; i < venues.length; i += 1) {
     const venue = venues[i];
@@ -1222,6 +1228,7 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
       const offer = limitedOffers[i];
       const offerType = (offer.type || '').toLowerCase();
       if (offerType.includes('super')) {
+        lastSuperCount += 1;
         if (!showSuperWindow || !offer.times) continue;
         let chosenKey = '';
         let chosenTime = '';
@@ -1235,6 +1242,7 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
           }
         }
         if (!chosenKey || !chosenTime) continue;
+        lastSuperShown += 1;
         features.push({
           type: 'Feature',
           geometry: { type: 'Point', coordinates: [offer.lng, offer.lat] },
@@ -1328,7 +1336,7 @@ function updateDebugPanel() {
   const hasDebug = !!map.getLayer('offers-debug');
   const styleLoaded = map.isStyleLoaded();
 
-  debugPanel.textContent = `offers: ${lastOfferFeatureCount} · visible ${lastVisibleCount} · venues ${lastVenueCount} · promos ${lastPromoCount} · source ${hasSource ? 'yes' : 'no'} · layer ${hasLayer ? 'yes' : 'no'} · debug ${hasDebug ? 'yes' : 'no'} · style ${styleLoaded ? 'ok' : 'wait'}`;
+  debugPanel.textContent = `offers: ${lastOfferFeatureCount} · visible ${lastVisibleCount} · venues ${lastVenueCount} · promos ${lastPromoCount} · limited ${lastLimitedCount} · super ${lastSuperShown}/${lastSuperCount} · source ${hasSource ? 'yes' : 'no'} · layer ${hasLayer ? 'yes' : 'no'} · debug ${hasDebug ? 'yes' : 'no'} · style ${styleLoaded ? 'ok' : 'wait'}`;
 }
 
 /**
