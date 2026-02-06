@@ -392,9 +392,25 @@ function parseLimitedOffersCSV(csvText) {
     const row = rows[i];
     if (!row || row.length === 0) continue;
 
-    const eventName = getBy(['event name'], row);
-    const lat = parseFloat(getBy(['lat'], row));
-    const lng = parseFloat(getBy(['long', 'lng', 'longitude'], row));
+    const eventName = getBy(['event name'], row) ||
+      getBy(['venue', 'venue name', 'name'], row);
+    let lat = parseFloat(getBy(['lat'], row));
+    let lng = parseFloat(getBy(['long', 'lng', 'longitude'], row));
+    if (isNaN(lat) || isNaN(lng)) {
+      let foundLat = null;
+      let foundLng = null;
+      for (const cell of row) {
+        const value = parseFloat((cell || '').toString().trim());
+        if (isNaN(value)) continue;
+        if (value >= 33 && value <= 35 && foundLat === null) {
+          foundLat = value;
+        } else if (value <= -117 && value >= -119 && foundLng === null) {
+          foundLng = value;
+        }
+      }
+      if (!isNaN(foundLat)) lat = foundLat;
+      if (!isNaN(foundLng)) lng = foundLng;
+    }
     if (!eventName || isNaN(lat) || isNaN(lng)) continue;
 
     const times = {};
