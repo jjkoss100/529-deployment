@@ -61,6 +61,25 @@ export function initMap(containerId, mapboxToken) {
       pendingOfferFeatures = null;
     }
   });
+  map.on('styledata', () => {
+    ensureOffersLayer();
+    updateDebugPanel();
+  });
+  map.on('idle', updateDebugPanel);
+
+  const styleWatch = setInterval(() => {
+    if (!map) {
+      clearInterval(styleWatch);
+      return;
+    }
+    if (map.isStyleLoaded()) {
+      ensureOffersLayer();
+      updateDebugPanel();
+      clearInterval(styleWatch);
+    } else {
+      updateDebugPanel();
+    }
+  }, 500);
 
   return map;
 }
