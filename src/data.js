@@ -429,6 +429,7 @@ function parseLimitedOffersCSV(csvText) {
 
     offers.push({
       name: eventName,
+      type: getBy(['type', 'category', 'tier'], row),
       description: getBy(['description'], row),
       instagram: getBy(['venue instagram', 'instagram', 'ig'], row),
       link: getBy(['link', 'menu', 'url'], row),

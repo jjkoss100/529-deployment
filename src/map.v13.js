@@ -20,6 +20,7 @@ const ENERGY_SOURCE_ID = 'energy-trails';
 const ENERGY_LAYER_ID = 'energy-trails-line';
 const OFFERS_SOURCE_ID = 'offers-points';
 const OFFERS_LAYER_ID = 'offers-circles';
+const SUPER_LIMITED_COLOR = '#4b1a7a';
 
 const IG_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ig-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#405de6"/><stop offset="15%" stop-color="#5851db"/><stop offset="30%" stop-color="#833ab4"/><stop offset="45%" stop-color="#c13584"/><stop offset="60%" stop-color="#e1306c"/><stop offset="72%" stop-color="#fd1d1d"/><stop offset="82%" stop-color="#f56040"/><stop offset="90%" stop-color="#f77737"/><stop offset="96%" stop-color="#fcaf45"/><stop offset="100%" stop-color="#ffdc80"/></linearGradient></defs><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" stroke="url(#ig-grad)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const MENU_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>`;
@@ -448,6 +449,26 @@ function getDateKey(dateObj, pad = false) {
   return `${mm}/${dd}/${year}`;
 }
 
+function parseDateKey(dateKey) {
+  if (!dateKey) return null;
+  const parts = dateKey.split('/');
+  if (parts.length < 3) return null;
+  const m = parseInt(parts[0], 10);
+  const d = parseInt(parts[1], 10);
+  const yRaw = parts[2];
+  const y = yRaw.length === 2 ? 2000 + parseInt(yRaw, 10) : parseInt(yRaw, 10);
+  if (isNaN(m) || isNaN(d) || isNaN(y)) return null;
+  return new Date(y, m - 1, d);
+}
+
+function formatDateLabel(dateKey) {
+  const date = parseDateKey(dateKey);
+  if (!date) return dateKey;
+  const month = date.getMonth() + 1;
+  const day = date.getDate();
+  return `${month}/${day}`;
+}
+
 function parseOfferRanges(timeStr) {
   if (!timeStr) return [];
   return timeStr
@@ -596,6 +617,36 @@ function buildLimitedOfferPopup(offer, timeStr) {
   return html;
 }
 
+function buildSuperLimitedPopup(offer, timeStr, dateKey) {
+  let html = `<div class="popup-card">`;
+  html += `<div class="popup-body">`;
+  html += `<div class="popup-body-header">`;
+  html += `<h3 class="popup-venue-name">${escapeHtml(offer.name)}</h3>`;
+  if (offer.instagram) {
+    html += `<a class="popup-ig-link" href="${escapeHtml(offer.instagram)}" target="_blank" rel="noopener" title="Instagram">${IG_SVG}</a>`;
+  }
+  html += `</div>`;
+  if (offer.description) {
+    html += `<p class="popup-description">${escapeHtml(offer.description)}</p>`;
+  }
+  html += `</div>`;
+
+  const dateLabel = formatDateLabel(dateKey);
+  const timeLabel = timeStr ? `${dateLabel} · ${timeStr}` : dateLabel;
+  html += `<div class="popup-footer">`;
+  html += `<div class="popup-footer-actions">`;
+  if (offer.link) {
+    html += `<a class="popup-menu-icon" href="${escapeHtml(offer.link)}" target="_blank" rel="noopener" title="Link">${MENU_SVG}</a>`;
+  }
+  html += `</div>`;
+  html += `<div class="popup-time-status">`;
+  html += `<span>${escapeHtml(timeLabel)}</span>`;
+  html += `</div>`;
+  html += `</div>`;
+  html += `</div>`;
+  return html;
+}
+
 function ensureOffersLayer() {
   if (!map) return;
   if (!map.getStyle || !map.getStyle()) return;
@@ -644,7 +695,7 @@ function ensureOffersLayer() {
         type: 'circle',
         source: OFFERS_SOURCE_ID,
         paint: {
-          'circle-color': '#f26b2d',
+          'circle-color': ['coalesce', ['get', 'color'], '#f26b2d'],
           'circle-opacity': ['coalesce', ['get', 'opacity'], 1],
           'circle-radius': [
             '+',
@@ -658,7 +709,7 @@ function ensureOffersLayer() {
             ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 1.1],
             ['*', ['coalesce', ['get', 'pulse'], 0], 0.4]
           ],
-          'circle-stroke-color': '#f9a15f',
+          'circle-stroke-color': ['coalesce', ['get', 'strokeColor'], '#f9a15f'],
           'circle-stroke-width': ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 1.6],
           'circle-stroke-opacity': ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 0.9]
         }
@@ -681,10 +732,12 @@ function ensureOffersLayer() {
     map.on('click', OFFERS_LAYER_ID, (e) => {
       const feature = e.features && e.features[0];
       if (!feature) return;
-      const { popupType, promoType, index, timeStr } = feature.properties || {};
+      const { popupType, promoType, index, timeStr, dateKey } = feature.properties || {};
       const coords = feature.geometry.coordinates.slice();
       let html = '';
-      if (popupType === 'limited') {
+      if (popupType === 'super') {
+        html = buildSuperLimitedPopup(currentLimitedOffers[index], timeStr, dateKey);
+      } else if (popupType === 'limited') {
         html = buildLimitedOfferPopup(currentLimitedOffers[index], timeStr);
       } else {
         html = buildPopupContent(currentVenues[index], promoType);
@@ -1123,6 +1176,8 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
           opacity: hhState.opacity,
           glow: hhState.glow,
           pulse: hhState.pulse,
+          color: '#f26b2d',
+          strokeColor: '#f9a15f',
           popupType: 'running',
           promoType: 'hh',
           index: i
@@ -1138,6 +1193,8 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
           opacity: spState.opacity,
           glow: spState.glow,
           pulse: spState.pulse,
+          color: '#f26b2d',
+          strokeColor: '#f9a15f',
           popupType: 'running',
           promoType: 'special',
           index: i
@@ -1148,6 +1205,8 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
 
   if (limitedOffers.length > 0) {
     const now = new Date();
+    const nowHour = now.getHours();
+    const showSuperWindow = nowHour >= 21 || nowHour < 14;
     const todayKey = getDateKey(now);
     const todayKeyPad = getDateKey(now, true);
     const yesterday = new Date(now);
@@ -1155,9 +1214,45 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     const prevKey = getDateKey(yesterday);
     const prevKeyPad = getDateKey(yesterday, true);
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const futureLimit = new Date(todayStart);
+    futureLimit.setDate(futureLimit.getDate() + 14);
 
     for (let i = 0; i < limitedOffers.length; i += 1) {
       const offer = limitedOffers[i];
+      const offerType = (offer.type || '').toLowerCase();
+      if (offerType.includes('super')) {
+        if (!showSuperWindow || !offer.times) continue;
+        let chosenKey = '';
+        let chosenTime = '';
+        for (const key of Object.keys(offer.times)) {
+          const date = parseDateKey(key);
+          if (!date) continue;
+          if (date <= todayStart || date > futureLimit) continue;
+          if (!chosenKey || date < parseDateKey(chosenKey)) {
+            chosenKey = key;
+            chosenTime = offer.times[key];
+          }
+        }
+        if (!chosenKey || !chosenTime) continue;
+        features.push({
+          type: 'Feature',
+          geometry: { type: 'Point', coordinates: [offer.lng, offer.lat] },
+          properties: {
+            opacity: 0.95,
+            glow: 0,
+            pulse: 0,
+            color: SUPER_LIMITED_COLOR,
+            strokeColor: '#6c2fb4',
+            popupType: 'super',
+            index: i,
+            timeStr: chosenTime,
+            dateKey: chosenKey
+          }
+        });
+        continue;
+      }
+
       let timeStr = '';
       if (offer.times) {
         timeStr = offer.times[todayKey] || offer.times[todayKeyPad] || '';
