@@ -361,21 +361,40 @@ function parseLimitedOffersCSV(csvText) {
   }
 
   const header = rows[headerIndex].map((h = '') => h.toString().trim());
+  const normalizeHeader = (value) => (value || '')
+    .toString()
+    .replace(/^\uFEFF/, '')
+    .replace(/[^a-zA-Z0-9/ ]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+  const headerMap = new Map();
+  header.forEach((h, idx) => {
+    const key = normalizeHeader(h);
+    if (key && !headerMap.has(key)) {
+      headerMap.set(key, idx);
+    }
+  });
+
+  const getBy = (keys, row) => {
+    for (const key of keys) {
+      const idx = headerMap.get(key);
+      if (idx !== undefined) {
+        return (row[idx] || '').toString().trim();
+      }
+    }
+    return '';
+  };
   const offers = [];
-  const dateColRegex = /^\d{1,2}\/\d{1,2}\/\d{2}$/;
+  const dateColRegex = /^\d{1,2}\/\d{1,2}\/\d{2,4}$/;
 
   for (let i = headerIndex + 1; i < rows.length; i += 1) {
     const row = rows[i];
     if (!row || row.length === 0) continue;
 
-    const get = (name) => {
-      const idx = header.indexOf(name);
-      return idx === -1 ? '' : (row[idx] || '').toString().trim();
-    };
-
-    const eventName = get('Event Name');
-    const lat = parseFloat(get('Lat'));
-    const lng = parseFloat(get('Long'));
+    const eventName = getBy(['event name'], row);
+    const lat = parseFloat(getBy(['lat'], row));
+    const lng = parseFloat(getBy(['long', 'lng', 'longitude'], row));
     if (!eventName || isNaN(lat) || isNaN(lng)) continue;
 
     const times = {};
@@ -383,14 +402,20 @@ function parseLimitedOffersCSV(csvText) {
       const key = header[c];
       if (!dateColRegex.test(key)) continue;
       const val = (row[c] || '').toString().trim();
-      if (val) times[key] = val;
+      if (val) {
+        const [m, d, y] = key.split('/');
+        const yearNum = parseInt(y, 10);
+        const year2 = isNaN(yearNum) ? y : String(yearNum % 100);
+        const normKey = `${parseInt(m, 10)}/${parseInt(d, 10)}/${year2}`;
+        times[normKey] = val;
+      }
     }
 
     offers.push({
       name: eventName,
-      description: get('Description'),
-      instagram: get('Venue Instagram'),
-      link: get('Link'),
+      description: getBy(['description'], row),
+      instagram: getBy(['venue instagram', 'instagram', 'ig'], row),
+      link: getBy(['link', 'menu', 'url'], row),
       lat,
       lng,
       times
