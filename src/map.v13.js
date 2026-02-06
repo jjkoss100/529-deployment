@@ -565,12 +565,6 @@ function getLimitedOfferLifecycleState(timeStr) {
     }
   }
 
-  // Upcoming today (show marker even before preshow)
-  const nextRange = sorted.find(r => r.start > currentMinutes);
-  if (nextRange) {
-    return { size: MAX_SIZE, opacity: 0.8, phase: 'upcoming', endingSoon: false, glow: 0, pulse: 0 };
-  }
-
   return null;
 }
 
