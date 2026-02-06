@@ -55,6 +55,7 @@ export function initMap(containerId, mapboxToken) {
     ensureEnergyTrails();
     startEnergyAnimation();
     ensureOffersLayer();
+    updateDebugPanel();
     if (pendingOfferFeatures && map.getSource(OFFERS_SOURCE_ID)) {
       map.getSource(OFFERS_SOURCE_ID).setData({ type: 'FeatureCollection', features: pendingOfferFeatures });
       pendingOfferFeatures = null;
@@ -656,6 +657,26 @@ function ensureOffersLayer() {
   }
 }
 
+function ensureDebugPanel() {
+  if (debugPanel) return debugPanel;
+  debugPanel = document.createElement('div');
+  debugPanel.id = 'offers-debug-panel';
+  debugPanel.style.position = 'fixed';
+  debugPanel.style.left = '14px';
+  debugPanel.style.top = '14px';
+  debugPanel.style.zIndex = '1000';
+  debugPanel.style.padding = '8px 10px';
+  debugPanel.style.borderRadius = '10px';
+  debugPanel.style.background = 'rgba(0,0,0,0.6)';
+  debugPanel.style.color = '#f26b2d';
+  debugPanel.style.fontFamily = 'SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace';
+  debugPanel.style.fontSize = '12px';
+  debugPanel.style.letterSpacing = '0.04em';
+  debugPanel.style.textTransform = 'uppercase';
+  document.body.appendChild(debugPanel);
+  return debugPanel;
+}
+
 function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
@@ -1100,23 +1121,7 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
 
 function updateDebugPanel() {
   if (!map) return;
-  if (!debugPanel) {
-    debugPanel = document.createElement('div');
-    debugPanel.id = 'offers-debug-panel';
-    debugPanel.style.position = 'fixed';
-    debugPanel.style.left = '16px';
-    debugPanel.style.bottom = '16px';
-    debugPanel.style.zIndex = '40';
-    debugPanel.style.padding = '8px 10px';
-    debugPanel.style.borderRadius = '10px';
-    debugPanel.style.background = 'rgba(0,0,0,0.55)';
-    debugPanel.style.color = '#f26b2d';
-    debugPanel.style.fontFamily = 'SFMono-Regular, Menlo, Monaco, Consolas, \"Liberation Mono\", \"Courier New\", monospace';
-    debugPanel.style.fontSize = '12px';
-    debugPanel.style.letterSpacing = '0.04em';
-    debugPanel.style.textTransform = 'uppercase';
-    document.body.appendChild(debugPanel);
-  }
+  ensureDebugPanel();
 
   const hasSource = !!map.getSource(OFFERS_SOURCE_ID);
   const hasLayer = !!map.getLayer(OFFERS_LAYER_ID);
