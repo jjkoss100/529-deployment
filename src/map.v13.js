@@ -659,8 +659,8 @@ function ensureOffersLayer() {
             ['*', ['coalesce', ['get', 'pulse'], 0], 0.4]
           ],
           'circle-stroke-color': '#f9a15f',
-          'circle-stroke-width': 1.6,
-          'circle-stroke-opacity': 0.85
+          'circle-stroke-width': ['*', ['coalesce', ['get', 'glow'], 0], 1.6],
+          'circle-stroke-opacity': ['*', ['coalesce', ['get', 'glow'], 0], 0.9]
         }
       });
     } catch (err) {
@@ -727,6 +727,16 @@ function ensureOffersLayer() {
         0.25,
         ['*', ['coalesce', ['get', 'glow'], 0], 0.9],
         ['*', ['coalesce', ['get', 'pulse'], 0], 0.6 * pulse]
+      ]);
+      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-stroke-width', [
+        '*',
+        ['coalesce', ['get', 'glow'], 0],
+        1.6
+      ]);
+      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-stroke-opacity', [
+        '*',
+        ['coalesce', ['get', 'glow'], 0],
+        0.9
       ]);
       offerPulseHandle = requestAnimationFrame(animate);
     };
