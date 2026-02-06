@@ -436,11 +436,13 @@ function buildPopupContent(venue, type) {
   return html;
 }
 
-function getDateKey(dateObj) {
+function getDateKey(dateObj, pad = false) {
   const month = dateObj.getMonth() + 1;
   const day = dateObj.getDate();
   const year = dateObj.getFullYear().toString().slice(-2);
-  return `${month}/${day}/${year}`;
+  const mm = pad ? String(month).padStart(2, '0') : String(month);
+  const dd = pad ? String(day).padStart(2, '0') : String(day);
+  return `${mm}/${dd}/${year}`;
 }
 
 function parseOfferRanges(timeStr) {
@@ -1125,18 +1127,26 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
   if (limitedOffers.length > 0) {
     const now = new Date();
     const todayKey = getDateKey(now);
+    const todayKeyPad = getDateKey(now, true);
     const yesterday = new Date(now);
     yesterday.setDate(now.getDate() - 1);
     const prevKey = getDateKey(yesterday);
+    const prevKeyPad = getDateKey(yesterday, true);
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
 
     for (let i = 0; i < limitedOffers.length; i += 1) {
       const offer = limitedOffers[i];
-      let timeStr = offer.times ? offer.times[todayKey] : '';
+      let timeStr = '';
+      if (offer.times) {
+        timeStr = offer.times[todayKey] || offer.times[todayKeyPad] || '';
+      }
       if (!timeStr && offer.times && offer.times[prevKey]) {
-        const prevRanges = parseOfferRanges(offer.times[prevKey]);
-        const isPrevActive = prevRanges.some(r => r.end < r.start && currentMinutes < r.end);
-        if (isPrevActive) timeStr = offer.times[prevKey];
+        const prevTimeStr = offer.times[prevKey] || offer.times[prevKeyPad] || '';
+        if (prevTimeStr) {
+          const prevRanges = parseOfferRanges(prevTimeStr);
+          const isPrevActive = prevRanges.some(r => r.end < r.start && currentMinutes < r.end);
+          if (isPrevActive) timeStr = prevTimeStr;
+        }
       }
       if (!timeStr) continue;
 
