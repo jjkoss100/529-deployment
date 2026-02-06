@@ -747,6 +747,24 @@ function ensureOffersLayer() {
           'circle-stroke-opacity': ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 0.9]
         }
       });
+
+      map.addLayer({
+        id: `${OFFERS_LAYER_ID}-shine`,
+        type: 'circle',
+        source: OFFERS_SOURCE_ID,
+        paint: {
+          'circle-color': '#fff6ea',
+          'circle-opacity': ['*', ['coalesce', ['get', 'opacity'], 1], 0.25],
+          'circle-radius': [
+            '+',
+            4.5,
+            ['*', ['coalesce', ['get', 'pulse'], 0], 1.4]
+          ],
+          'circle-blur': 0.4,
+          'circle-translate': [0.8, -2.8],
+          'circle-translate-anchor': 'viewport'
+        }
+      });
     } catch (err) {
       if (!offersLayerRetry) {
         offersLayerRetry = setTimeout(() => {
@@ -824,6 +842,18 @@ function ensureOffersLayer() {
         ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0],
         0.9
       ]);
+      if (map.getLayer(`${OFFERS_LAYER_ID}-shine`)) {
+        map.setPaintProperty(`${OFFERS_LAYER_ID}-shine`, 'circle-radius', [
+          '+',
+          4.5,
+          ['*', ['coalesce', ['get', 'pulse'], 0], 1.4 * pulse]
+        ]);
+        map.setPaintProperty(`${OFFERS_LAYER_ID}-shine`, 'circle-opacity', [
+          '*',
+          ['coalesce', ['get', 'opacity'], 1],
+          0.25 + 0.15 * pulse
+        ]);
+      }
       offerPulseHandle = requestAnimationFrame(animate);
     };
     offerPulseHandle = requestAnimationFrame(animate);
