@@ -649,18 +649,18 @@ function ensureOffersLayer() {
           'circle-radius': [
             '+',
             10,
-            ['*', ['coalesce', ['get', 'glow'], 0], 8],
+            ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 10],
             ['*', ['coalesce', ['get', 'pulse'], 0], 4]
           ],
           'circle-blur': [
             '+',
             0.25,
-            ['*', ['coalesce', ['get', 'glow'], 0], 0.9],
+            ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 1.1],
             ['*', ['coalesce', ['get', 'pulse'], 0], 0.4]
           ],
           'circle-stroke-color': '#f9a15f',
-          'circle-stroke-width': ['*', ['coalesce', ['get', 'glow'], 0], 1.6],
-          'circle-stroke-opacity': ['*', ['coalesce', ['get', 'glow'], 0], 0.9]
+          'circle-stroke-width': ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 1.6],
+          'circle-stroke-opacity': ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 0.9]
         }
       });
     } catch (err) {
@@ -719,23 +719,23 @@ function ensureOffersLayer() {
       map.setPaintProperty(OFFERS_LAYER_ID, 'circle-radius', [
         '+',
         10,
-        ['*', ['coalesce', ['get', 'glow'], 0], 8],
+        ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 10],
         ['*', ['coalesce', ['get', 'pulse'], 0], 6 * pulse]
       ]);
       map.setPaintProperty(OFFERS_LAYER_ID, 'circle-blur', [
         '+',
         0.25,
-        ['*', ['coalesce', ['get', 'glow'], 0], 0.9],
+        ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 1.1],
         ['*', ['coalesce', ['get', 'pulse'], 0], 0.6 * pulse]
       ]);
       map.setPaintProperty(OFFERS_LAYER_ID, 'circle-stroke-width', [
         '*',
-        ['coalesce', ['get', 'glow'], 0],
+        ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0],
         1.6
       ]);
       map.setPaintProperty(OFFERS_LAYER_ID, 'circle-stroke-opacity', [
         '*',
-        ['coalesce', ['get', 'glow'], 0],
+        ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0],
         0.9
       ]);
       offerPulseHandle = requestAnimationFrame(animate);
