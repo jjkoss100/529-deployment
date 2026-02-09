@@ -24,6 +24,7 @@ const ENERGY_LAYER_ID = 'energy-trails-line';
 const OFFERS_SOURCE_ID = 'offers-points';
 const OFFERS_LAYER_ID = 'offers-circles';
 const SUPER_LIMITED_COLOR = '#4b1a7a';
+const EVENT_PRESHOW_MINUTES = 300;
 
 const IG_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ig-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#405de6"/><stop offset="15%" stop-color="#5851db"/><stop offset="30%" stop-color="#833ab4"/><stop offset="45%" stop-color="#c13584"/><stop offset="60%" stop-color="#e1306c"/><stop offset="72%" stop-color="#fd1d1d"/><stop offset="82%" stop-color="#f56040"/><stop offset="90%" stop-color="#f77737"/><stop offset="96%" stop-color="#fcaf45"/><stop offset="100%" stop-color="#ffdc80"/></linearGradient></defs><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" stroke="url(#ig-grad)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const MENU_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>`;
@@ -484,6 +485,15 @@ function formatTimeAP(timeStr) {
   return `${hour}:${minutes.toString().padStart(2, '0')}${suffix}`;
 }
 
+function formatMinutesAP(totalMinutes) {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  const suffix = h >= 12 ? 'p' : 'a';
+  let hour = h % 12;
+  if (hour === 0) hour = 12;
+  return `${hour}:${m.toString().padStart(2, '0')}${suffix}`;
+}
+
 function formatTimeWindowAP(timeStr) {
   if (!timeStr) return '';
   return timeStr
@@ -506,6 +516,77 @@ function parseOfferRanges(timeStr) {
     .map(s => s.trim())
     .map(s => parseTimeRange(s))
     .filter(Boolean);
+}
+
+function parseFirstRange(timeStr) {
+  const ranges = parseOfferRanges(timeStr);
+  return ranges.length ? ranges[0] : null;
+}
+
+function getEventLifecycleState(timeStr) {
+  const range = parseFirstRange(timeStr);
+  if (!range) return null;
+
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const start = range.start;
+  const end = range.end;
+
+  let isActive = false;
+  if (end > start) {
+    isActive = currentMinutes >= start && currentMinutes <= end;
+  } else if (end < start) {
+    isActive = currentMinutes >= start || currentMinutes <= end;
+  }
+
+  const preshowStart = start - EVENT_PRESHOW_MINUTES;
+  let isPreshow = false;
+  if (preshowStart >= 0) {
+    isPreshow = currentMinutes >= preshowStart && currentMinutes < start;
+  } else {
+    isPreshow = currentMinutes >= (1440 + preshowStart) || currentMinutes < start;
+  }
+
+  if (!isActive && !isPreshow) return null;
+
+  return {
+    opacity: 1,
+    glow: 0,
+    pulse: isActive ? 1 : 0,
+    active: isActive
+  };
+}
+
+function getEventTimeStatus(timeStr, dateKey) {
+  const range = parseFirstRange(timeStr);
+  if (!range) {
+    return { text: dateKey || timeStr || 'Time TBD', endsSoon: false, active: false };
+  }
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const start = range.start;
+  const end = range.end;
+
+  let isActive = false;
+  if (end > start) {
+    isActive = currentMinutes >= start && currentMinutes <= end;
+  } else if (end < start) {
+    isActive = currentMinutes >= start || currentMinutes <= end;
+  }
+
+  if (isActive) {
+    const remaining = end > start
+      ? end - currentMinutes
+      : (currentMinutes <= end ? end - currentMinutes : (1440 - currentMinutes) + end);
+    return {
+      active: true,
+      endsSoon: remaining <= 45,
+      text: `ends at ${formatMinutesAP(end)}`
+    };
+  }
+
+  const windowLabel = formatTimeWindowAP(timeStr);
+  return { active: false, endsSoon: false, text: windowLabel };
 }
 
 function getLimitedOfferLifecycleState(timeStr) {
@@ -636,6 +717,27 @@ function buildLimitedOfferPopup(offer, timeStr) {
   html += `<div class="popup-time-status ${timeStatus.active ? 'popup-time-status--active' : ''} ${timeStatus.endsSoon ? 'popup-time-status--soon' : ''}">`;
   html += `<span>${escapeHtml(timeStatus.text)}</span>`;
   html += `</div>`;
+  html += `</div>`;
+  html += `</div>`;
+  return html;
+}
+
+function buildEventPopup(venue, timeStr, dateKey) {
+  const notes = venue.notes ? venue.notes.trim() : '';
+  const titleLine = `${venue.name}${notes ? ` - ${notes}` : ''}`;
+  const timeStatus = getEventTimeStatus(timeStr, dateKey);
+
+  let html = `<div class="popup-card">`;
+  html += `<div class="popup-body">`;
+  html += `<div class="popup-event-line">${escapeHtml(titleLine)}</div>`;
+  html += `<ul class="popup-list">`;
+  if (venue.menuUrl) {
+    html += `<li><a href="${escapeHtml(venue.menuUrl)}" target="_blank" rel="noopener">see full menu</a></li>`;
+  } else {
+    html += `<li>see full menu</li>`;
+  }
+  html += `<li class="${timeStatus.endsSoon ? 'popup-time-status--soon' : ''}">${escapeHtml(timeStatus.text)}</li>`;
+  html += `</ul>`;
   html += `</div>`;
   html += `</div>`;
   return html;
@@ -780,7 +882,9 @@ function ensureOffersLayer() {
       const { popupType, promoType, index, timeStr, dateKey } = feature.properties || {};
       const coords = feature.geometry.coordinates.slice();
       let html = '';
-      if (popupType === 'super') {
+      if (popupType === 'event') {
+        html = buildEventPopup(currentVenues[index], timeStr, dateKey);
+      } else if (popupType === 'super') {
         html = buildSuperLimitedPopup(currentLimitedOffers[index], timeStr, dateKey);
       } else if (popupType === 'limited') {
         html = buildLimitedOfferPopup(currentLimitedOffers[index], timeStr);
@@ -1203,157 +1307,34 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
   lastSuperCount = 0;
   lastSuperShown = 0;
 
+  const now = new Date();
+  const todayKey = getDateKey(now);
+  const todayKeyPad = getDateKey(now, true);
+
   for (let i = 0; i < venues.length; i += 1) {
     const venue = venues[i];
-    const hasHH = venue.happyHours.length > 0;
-    const hasSpecials = venue.specials.length > 0;
-    if (hasHH) lastPromoCount += venue.happyHours.length;
-    if (hasSpecials) lastPromoCount += venue.specials.length;
+    const times = venue.times || {};
+    const timeStr = times[todayKey] || times[todayKeyPad] || '';
+    if (!timeStr) continue;
 
-    let showHH = false;
-    let showSp = false;
-    let hhState = null;
-    let spState = null;
+    const state = getEventLifecycleState(timeStr);
+    if (!state) continue;
 
-    if (hasHH) {
-      hhState = getMarkerLifecycleState(venue.happyHours);
-      showHH = !!hhState;
-    }
-    if (hasSpecials) {
-      spState = getMarkerLifecycleState(venue.specials);
-      showSp = !!spState;
-    }
-
-    const bothVisible = showHH && showSp;
-    const finalHHLng = bothVisible ? venue.lng - LNG_OFFSET : venue.lng;
-    const finalSpLng = bothVisible ? venue.lng + LNG_OFFSET : venue.lng;
-
-    if (showHH && hhState) {
-      features.push({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [finalHHLng, venue.lat] },
-        properties: {
-          opacity: hhState.opacity,
-          glow: hhState.glow,
-          pulse: hhState.pulse,
-          color: '#f26b2d',
-          strokeColor: '#f9a15f',
-          popupType: 'running',
-          promoType: 'hh',
-          index: i
-        }
-      });
-    }
-
-    if (showSp && spState) {
-      features.push({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [finalSpLng, venue.lat] },
-        properties: {
-          opacity: spState.opacity,
-          glow: spState.glow,
-          pulse: spState.pulse,
-          color: '#f26b2d',
-          strokeColor: '#f9a15f',
-          popupType: 'running',
-          promoType: 'special',
-          index: i
-        }
-      });
-    }
-  }
-
-  if (limitedOffers.length > 0) {
-    const now = new Date();
-    const nowHour = now.getHours();
-    const showSuperWindow = nowHour >= 21 || nowHour < 14;
-    const todayKey = getDateKey(now);
-    const todayKeyPad = getDateKey(now, true);
-    const yesterday = new Date(now);
-    yesterday.setDate(now.getDate() - 1);
-    const prevKey = getDateKey(yesterday);
-    const prevKeyPad = getDateKey(yesterday, true);
-    const currentMinutes = now.getHours() * 60 + now.getMinutes();
-    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const futureLimit = new Date(todayStart);
-    futureLimit.setDate(futureLimit.getDate() + 14);
-
-    for (let i = 0; i < limitedOffers.length; i += 1) {
-      const offer = limitedOffers[i];
-      const times = offer.times || {};
-      let todayTimeStr = times[todayKey] || times[todayKeyPad] || '';
-      let prevTimeStr = times[prevKey] || times[prevKeyPad] || '';
-
-      let hasActivePrev = false;
-      if (!todayTimeStr && prevTimeStr) {
-        const prevRanges = parseOfferRanges(prevTimeStr);
-        hasActivePrev = prevRanges.some(r => r.end < r.start && currentMinutes < r.end);
+    features.push({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [venue.lng, venue.lat] },
+      properties: {
+        opacity: state.opacity,
+        glow: state.glow,
+        pulse: state.pulse,
+        color: '#f26b2d',
+        strokeColor: '#f9a15f',
+        popupType: 'event',
+        index: i,
+        timeStr,
+        dateKey: todayKey
       }
-
-      const futureKeys = Object.keys(times).filter((key) => {
-        const date = parseDateKey(key);
-        if (!date) return false;
-        return date > todayStart && date <= futureLimit;
-      });
-
-      if (futureKeys.length > 0) {
-        lastSuperCount += 1;
-      }
-
-      if (showSuperWindow && !todayTimeStr && !hasActivePrev && futureKeys.length > 0) {
-        let chosenKey = '';
-        let chosenTime = '';
-        for (const key of futureKeys) {
-          const date = parseDateKey(key);
-          if (!date) continue;
-          if (!chosenKey || date < parseDateKey(chosenKey)) {
-            chosenKey = key;
-            chosenTime = times[key];
-          }
-        }
-        if (chosenKey && chosenTime) {
-          lastSuperShown += 1;
-          features.push({
-            type: 'Feature',
-            geometry: { type: 'Point', coordinates: [offer.lng, offer.lat] },
-            properties: {
-              opacity: 0.95,
-              glow: 0,
-              pulse: 0,
-              color: SUPER_LIMITED_COLOR,
-              strokeColor: '#6c2fb4',
-              popupType: 'super',
-              index: i,
-              timeStr: chosenTime,
-              dateKey: chosenKey
-            }
-          });
-          continue;
-        }
-      }
-
-      let timeStr = todayTimeStr;
-      if (!timeStr && prevTimeStr && hasActivePrev) {
-        timeStr = prevTimeStr;
-      }
-      if (!timeStr) continue;
-
-      const offerState = getLimitedOfferLifecycleState(timeStr);
-      if (!offerState) continue;
-
-      features.push({
-        type: 'Feature',
-        geometry: { type: 'Point', coordinates: [offer.lng, offer.lat] },
-        properties: {
-          opacity: offerState.opacity,
-          glow: offerState.glow,
-          pulse: offerState.pulse,
-          popupType: 'limited',
-          index: i,
-          timeStr
-        }
-      });
-    }
+    });
   }
 
   if (!map) return;

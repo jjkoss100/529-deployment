@@ -1,10 +1,9 @@
-import { fetchVenues, fetchLimitedOffers, updateAllVenueStatuses } from './data.js?v=28';
-import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=113';
+import { fetchVenues, updateAllVenueStatuses } from './data.js?v=30';
+import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=116';
 
 // --- Configuration ---
 // Replace with your published Google Sheet CSV URL
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQpj4lehM7ElDgkUxZHkQ_ZrZhGX4HwIkK-pBuA-siErJ0YG0ahpfYYJqSqoAq5-Fpj8tL6j0DyK-by/pub?gid=0&single=true&output=csv';
-const LIMITED_OFFERS_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQpj4lehM7ElDgkUxZHkQ_ZrZhGX4HwIkK-pBuA-siErJ0YG0ahpfYYJqSqoAq5-Fpj8tL6j0DyK-by/pub?gid=628288566&single=true&output=csv';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQpj4lehM7ElDgkUxZHkQ_ZrZhGX4HwIkK-pBuA-siErJ0YG0ahpfYYJqSqoAq5-Fpj8tL6j0DyK-by/pub?gid=6430153&single=true&output=csv';
 
 // Replace with your Mapbox access token
 const MAPBOX_TOKEN = 'pk.eyJ1Ijoiamprb3NzMTAiLCJhIjoiY21rdWp1YWFhMjJ1djNjcTJjcjRpYWNhZSJ9.ExODQ-GDFl9NHFl7NE9IxQ';
@@ -31,7 +30,7 @@ async function init() {
 
   // Fetch and parse venue data
   allVenues = await fetchVenues(CSV_URL);
-  limitedOffers = await fetchLimitedOffers(LIMITED_OFFERS_URL);
+  limitedOffers = [];
 
   if (allVenues.length === 0) {
     console.warn('No venues loaded. Check CSV URL.');

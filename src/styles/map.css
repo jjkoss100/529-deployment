@@ -230,6 +230,32 @@
   position: relative;
 }
 
+.popup-event-line {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f1f1f;
+  margin-bottom: 10px;
+  line-height: 1.4;
+  font-family: var(--font-body);
+}
+
+.popup-list {
+  margin: 0;
+  padding-left: 16px;
+  list-style: disc;
+  display: grid;
+  gap: 6px;
+  font-family: var(--font-body);
+  color: #2c2c2c;
+  font-size: 13px;
+}
+
+.popup-list a {
+  color: #1d1d1d;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 .popup-body-header {
   display: flex;
   align-items: baseline;

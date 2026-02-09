@@ -128,7 +128,7 @@ export async function fetchLimitedOffers(csvUrl) {
  * We detect the header row by looking for "Business DBA".
  */
 export function parseCSV(csvText) {
-  // First, find the header row
+  // Locate header row (supports extra rows before header)
   const lines = csvText.split('\n');
   let headerIndex = -1;
   for (let i = 0; i < Math.min(lines.length, 10); i++) {
@@ -138,7 +138,6 @@ export function parseCSV(csvText) {
     }
   }
 
-  // If we found a header row that's not the first line, skip the preamble
   let cleanedCSV = csvText;
   if (headerIndex > 0) {
     cleanedCSV = lines.slice(headerIndex).join('\n');
@@ -150,117 +149,67 @@ export function parseCSV(csvText) {
     transformHeader: h => h.trim()
   });
 
-  const rows = parsed.data;
+  const rows = parsed.data || [];
   const venues = [];
-  let currentVenue = null;
+
+  const dateColRegex = /(\d{1,2})\/(\d{1,2})\/(\d{2,4})/;
+  const headers = parsed.meta && parsed.meta.fields ? parsed.meta.fields : [];
+  const dateKeyByIndex = {};
+  headers.forEach((h, idx) => {
+    const match = (h || '').toString().match(dateColRegex);
+    if (match) {
+      const m = parseInt(match[1], 10);
+      const d = parseInt(match[2], 10);
+      const y = match[3];
+      const yearNum = parseInt(y, 10);
+      const year2 = isNaN(yearNum) ? y : String(yearNum % 100);
+      dateKeyByIndex[idx] = `${m}/${d}/${year2}`;
+    }
+  });
 
   for (const row of rows) {
     const businessName = (row['Business DBA'] || '').trim();
-    const promotionType = (row['Promotion Type'] || '').trim();
-    const hours = parseRowHours(row);
-    const hasHours = hasAnyHours(hours);
+    if (!businessName) continue;
 
-    // Skip rows with no useful data
-    if (!promotionType && !businessName && !hasHours) continue;
-
-    // Handle rows that are just additional time ranges for the previous promotion
-    // (no business name, no promotion type, but has hours)
-    if (!promotionType && !businessName && hasHours && currentVenue) {
-      // Append hours to the last promotion entry (HH or Special)
-      const lastPromos = currentVenue.happyHours.length > 0
-        ? currentVenue.happyHours
-        : currentVenue.specials;
-      if (lastPromos.length > 0) {
-        const lastPromo = lastPromos[lastPromos.length - 1];
-        for (const [day, ranges] of Object.entries(hours)) {
-          if (!lastPromo.hours[day]) {
-            lastPromo.hours[day] = [];
-          }
-          lastPromo.hours[day].push(...ranges);
-        }
-      }
-      continue;
+    let lat = parseFloat(row['Lat']);
+    let lng = parseFloat(row['Long']);
+    if ((isNaN(lat) || isNaN(lng)) && MISSING_COORDS[businessName]) {
+      lat = MISSING_COORDS[businessName].lat;
+      lng = MISSING_COORDS[businessName].lng;
     }
-
-    // New venue starts when Business DBA is filled
-    if (businessName) {
-      // Save previous venue
-      if (currentVenue) {
-        venues.push(currentVenue);
-      }
-
-      let lat = parseFloat(row['Lat']);
-      let lng = parseFloat(row['Long']);
-
-      // Fill in missing coordinates
-      if ((isNaN(lat) || isNaN(lng)) && MISSING_COORDS[businessName]) {
-        lat = MISSING_COORDS[businessName].lat;
-        lng = MISSING_COORDS[businessName].lng;
-      }
-
-      currentVenue = {
-        name: businessName,
-        area: (row['Area'] || '').trim(),
-        lat: lat,
-        lng: lng,
-        instagram: (row['Instagram'] || '').trim(),
-        website: (row['Website'] || '').trim(),
-        description: (row['Description'] || '').trim(),
-        happyHours: [],
-        specials: [],
-        // Computed later
-        hasActiveHappyHour: false,
-        hasActiveSpecial: false,
-        hasWeekendHappyHour: false,
-        hasWeekendSpecial: false
-      };
-    }
-
-    if (!currentVenue) continue;
+    if (isNaN(lat) || isNaN(lng)) continue;
 
     const menuField = (row['Menu'] || '').trim();
+    const { menuUrl } = parseMenuField(menuField);
     const notes = (row['Notes'] || '').trim();
-    const { menuUrl, menuDescription } = parseMenuField(menuField);
-    const promoDescription = getPromoDescription(row, currentVenue.description);
 
-    if (promotionType === 'Special') {
-      const resolvedMenuUrl =
-        currentVenue.name.toLowerCase() === 'cou cou' &&
-        (menuDescription || menuField || notes || '').toLowerCase().includes('martini monday')
-          ? 'https://www.coucou.la/martini-monday-venice'
-          : menuUrl;
-      currentVenue.specials.push({
-        name: menuDescription || menuField || notes || 'Special',
-        typeLabel: promotionType || 'Special',
-        menuUrl: resolvedMenuUrl,
-        description: promoDescription,
-        notes,
-        hours
-      });
-    } else {
-      // Treat any other promotion type as a generic promo (rendered like HH)
-      currentVenue.happyHours.push({
-        typeLabel: promotionType || 'Promotion',
-        menuUrl,
-        menuDescription,
-        description: promoDescription,
-        notes,
-        hours
-      });
-    }
+    const times = {};
+    headers.forEach((h, idx) => {
+      const key = dateKeyByIndex[idx];
+      if (!key) return;
+      const val = (row[h] || '').toString().trim();
+      if (val) times[key] = val;
+    });
+
+    venues.push({
+      name: businessName,
+      lat,
+      lng,
+      instagram: (row['Instagram'] || '').trim(),
+      menuUrl,
+      notes,
+      promotionType: (row['Promotion Type'] || '').trim(),
+      times,
+      happyHours: [],
+      specials: [],
+      hasActiveHappyHour: false,
+      hasActiveSpecial: false,
+      hasWeekendHappyHour: false,
+      hasWeekendSpecial: false
+    });
   }
 
-  // Don't forget the last venue
-  if (currentVenue) {
-    venues.push(currentVenue);
-  }
-
-  // Compute runtime fields
-  for (const venue of venues) {
-    updateVenueStatus(venue);
-  }
-
-  return venues.filter(v => !isNaN(v.lat) && !isNaN(v.lng));
+  return venues;
 }
 
 function parseLimitedOffersCSV(csvText) {
