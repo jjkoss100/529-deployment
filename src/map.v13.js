@@ -869,10 +869,14 @@ function ensureOffersLayer() {
         source: OFFERS_SOURCE_ID,
         paint: {
           'circle-color': ['coalesce', ['get', 'color'], ORANGE_COLOR],
-          'circle-opacity': ['coalesce', ['get', 'opacity'], 1],
+          'circle-opacity': [
+            '*',
+            ['coalesce', ['get', 'opacity'], 1],
+            ['coalesce', ['get', 'baseOpacity'], 1]
+          ],
           'circle-radius': [
             '+',
-            8,
+            ['case', ['>', ['coalesce', ['get', 'baseOpacity'], 0], 0], 8, 0],
             0
           ],
           'circle-blur': [
@@ -883,8 +887,8 @@ function ensureOffersLayer() {
           'circle-translate': [0, -2],
           'circle-translate-anchor': 'viewport',
           'circle-stroke-color': ['coalesce', ['get', 'strokeColor'], ORANGE_STROKE],
-          'circle-stroke-width': 1.4,
-          'circle-stroke-opacity': 0.8
+          'circle-stroke-width': ['case', ['>', ['coalesce', ['get', 'baseOpacity'], 0], 0], 1.2, 0],
+          'circle-stroke-opacity': ['case', ['>', ['coalesce', ['get', 'baseOpacity'], 0], 0], 0.8, 0]
         }
       });
 
@@ -894,7 +898,11 @@ function ensureOffersLayer() {
         source: OFFERS_SOURCE_ID,
         layout: {
           'icon-image': ['get', 'icon'],
-          'icon-size': 0.36,
+          'icon-size': [
+            '+',
+            0.55,
+            ['*', ['coalesce', ['get', 'pulse'], 0], 0.05]
+          ],
           'icon-allow-overlap': true,
           'icon-ignore-placement': true
         }
@@ -978,20 +986,10 @@ function ensureOffersLayer() {
         return;
       }
       const pulse = (Math.sin(t / 350) + 1) / 2; // 0..1
-      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-radius', [
-        '+',
-        8,
-        0
-      ]);
-      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-blur', [
-        '+',
-        0.05,
-        0
-      ]);
       map.setPaintProperty(OFFERS_LAYER_ID, 'circle-opacity', [
         '*',
         ['coalesce', ['get', 'opacity'], 1],
-        0.85 + 0.15 * pulse
+        ['coalesce', ['get', 'baseOpacity'], 1]
       ]);
       offerPulseHandle = requestAnimationFrame(animate);
     };
@@ -1365,22 +1363,27 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     let icon = 'icon-menu';
     let color = ORANGE_COLOR;
     let strokeColor = ORANGE_STROKE;
+    let baseOpacity = 1;
     if (promoType.includes('happy')) {
       icon = 'icon-happy';
       color = ORANGE_COLOR;
       strokeColor = ORANGE_STROKE;
+      baseOpacity = 0;
     } else if (promoType.includes('special')) {
       icon = 'icon-special';
       color = SPECIAL_COLOR;
       strokeColor = SPECIAL_STROKE;
+      baseOpacity = 0;
     } else if (promoType.includes('pop')) {
       icon = 'icon-popup';
       color = POPUP_COLOR;
       strokeColor = POPUP_STROKE;
+      baseOpacity = 0;
     } else if (promoType.includes('distinct')) {
       icon = 'icon-menu';
       color = ORANGE_COLOR;
       strokeColor = ORANGE_STROKE;
+      baseOpacity = 1;
     }
 
     features.push({
@@ -1392,6 +1395,7 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
         pulse: state.pulse,
         color,
         strokeColor,
+        baseOpacity,
         popupType: 'event',
         label: venue.name,
         icon,
