@@ -23,6 +23,7 @@ const ENERGY_SOURCE_ID = 'energy-trails';
 const ENERGY_LAYER_ID = 'energy-trails-line';
 const OFFERS_SOURCE_ID = 'offers-points';
 const OFFERS_LAYER_ID = 'offers-circles';
+const OFFERS_LABEL_ID = 'offers-labels';
 const SUPER_LIMITED_COLOR = '#4b1a7a';
 const EVENT_PRESHOW_MINUTES = 300;
 
@@ -861,6 +862,28 @@ function ensureOffersLayer() {
           'circle-translate-anchor': 'viewport'
         }
       });
+
+      map.addLayer({
+        id: OFFERS_LABEL_ID,
+        type: 'symbol',
+        source: OFFERS_SOURCE_ID,
+        layout: {
+          'text-field': ['get', 'label'],
+          'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
+          'text-size': 12,
+          'text-anchor': 'left',
+          'text-offset': [0.9, -0.05],
+          'text-allow-overlap': true,
+          'text-optional': true
+        },
+        paint: {
+          'text-color': '#f26b2d',
+          'text-halo-color': 'rgba(7, 9, 15, 0.85)',
+          'text-halo-width': 1.6,
+          'text-halo-blur': 0.6,
+          'text-opacity': 0.9
+        }
+      });
     } catch (err) {
       if (!offersLayerRetry) {
         offersLayerRetry = setTimeout(() => {
@@ -1320,21 +1343,22 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     const state = getEventLifecycleState(timeStr);
     if (!state) continue;
 
-    features.push({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [venue.lng, venue.lat] },
-      properties: {
-        opacity: state.opacity,
-        glow: state.glow,
-        pulse: state.pulse,
-        color: '#f26b2d',
-        strokeColor: '#f9a15f',
-        popupType: 'event',
-        index: i,
-        timeStr,
-        dateKey: todayKey
-      }
-    });
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [venue.lng, venue.lat] },
+        properties: {
+          opacity: state.opacity,
+          glow: state.glow,
+          pulse: state.pulse,
+          color: '#f26b2d',
+          strokeColor: '#f9a15f',
+          popupType: 'event',
+          label: venue.name,
+          index: i,
+          timeStr,
+          dateKey: todayKey
+        }
+      });
   }
 
   if (!map) return;
