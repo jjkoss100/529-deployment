@@ -23,7 +23,6 @@ const ENERGY_SOURCE_ID = 'energy-trails';
 const ENERGY_LAYER_ID = 'energy-trails-line';
 const OFFERS_SOURCE_ID = 'offers-points';
 const OFFERS_LAYER_ID = 'offers-circles';
-const OFFERS_SHINE_ID = 'offers-circles-shine';
 const OFFERS_ICON_ID = 'offers-icons';
 const OFFERS_LABEL_ID = 'offers-labels';
 const SUPER_LIMITED_COLOR = '#4b1a7a';
@@ -873,39 +872,19 @@ function ensureOffersLayer() {
           'circle-opacity': ['coalesce', ['get', 'opacity'], 1],
           'circle-radius': [
             '+',
-            10,
-            ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 10],
-            ['*', ['coalesce', ['get', 'pulse'], 0], 4]
+            8,
+            0
           ],
           'circle-blur': [
             '+',
-            0.25,
-            ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 1.1],
-            ['*', ['coalesce', ['get', 'pulse'], 0], 0.4]
+            0.05,
+            0
           ],
           'circle-translate': [0, -2],
           'circle-translate-anchor': 'viewport',
           'circle-stroke-color': ['coalesce', ['get', 'strokeColor'], ORANGE_STROKE],
-          'circle-stroke-width': ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 1.6],
-          'circle-stroke-opacity': ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 0.9]
-        }
-      });
-
-      map.addLayer({
-        id: OFFERS_SHINE_ID,
-        type: 'circle',
-        source: OFFERS_SOURCE_ID,
-        paint: {
-          'circle-color': '#fff6ea',
-          'circle-opacity': ['*', ['coalesce', ['get', 'opacity'], 1], 0.25],
-          'circle-radius': [
-            '+',
-            4.5,
-            ['*', ['coalesce', ['get', 'pulse'], 0], 1.4]
-          ],
-          'circle-blur': 0.4,
-          'circle-translate': [0.8, -2.8],
-          'circle-translate-anchor': 'viewport'
+          'circle-stroke-width': 1.4,
+          'circle-stroke-opacity': 0.8
         }
       });
 
@@ -1001,38 +980,19 @@ function ensureOffersLayer() {
       const pulse = (Math.sin(t / 350) + 1) / 2; // 0..1
       map.setPaintProperty(OFFERS_LAYER_ID, 'circle-radius', [
         '+',
-        10,
-        ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 10],
-        ['*', ['coalesce', ['get', 'pulse'], 0], 6 * pulse]
+        8,
+        0
       ]);
       map.setPaintProperty(OFFERS_LAYER_ID, 'circle-blur', [
         '+',
-        0.25,
-        ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 1.1],
-        ['*', ['coalesce', ['get', 'pulse'], 0], 0.6 * pulse]
+        0.05,
+        0
       ]);
-      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-stroke-width', [
+      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-opacity', [
         '*',
-        ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0],
-        1.6
+        ['coalesce', ['get', 'opacity'], 1],
+        0.85 + 0.15 * pulse
       ]);
-      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-stroke-opacity', [
-        '*',
-        ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0],
-        0.9
-      ]);
-      if (map.getLayer(OFFERS_SHINE_ID)) {
-        map.setPaintProperty(OFFERS_SHINE_ID, 'circle-radius', [
-          '+',
-          4.5,
-          ['*', ['coalesce', ['get', 'pulse'], 0], 1.4 * pulse]
-        ]);
-        map.setPaintProperty(OFFERS_SHINE_ID, 'circle-opacity', [
-          '*',
-          ['coalesce', ['get', 'opacity'], 1],
-          0.25 + 0.15 * pulse
-        ]);
-      }
       offerPulseHandle = requestAnimationFrame(animate);
     };
     offerPulseHandle = requestAnimationFrame(animate);
@@ -1228,7 +1188,7 @@ function stylizeBaseLayers() {
         map.setPaintProperty(layer.id, 'icon-opacity', 0);
       }
 
-      if (layer.id === OFFERS_LAYER_ID || layer.id === OFFERS_SHINE_ID || layer.id === OFFERS_ICON_ID || layer.id === OFFERS_LABEL_ID || layer.id === 'offers-debug' || layer.id === ENERGY_LAYER_ID) {
+      if (layer.id === OFFERS_LAYER_ID || layer.id === OFFERS_ICON_ID || layer.id === OFFERS_LABEL_ID || layer.id === 'offers-debug' || layer.id === ENERGY_LAYER_ID) {
         continue;
       }
 
