@@ -904,7 +904,11 @@ function ensureOffersLayer() {
             ['*', ['coalesce', ['get', 'pulse'], 0], 0.05]
           ],
           'icon-allow-overlap': true,
-          'icon-ignore-placement': true
+          'icon-ignore-placement': true,
+          'icon-optional': true
+        },
+        paint: {
+          'icon-opacity': ['coalesce', ['get', 'iconOpacity'], 1]
         }
       });
 
@@ -1370,26 +1374,30 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     if (!state) continue;
 
     const promoType = (venue.promotionType || '').toLowerCase();
+    const isHappy = promoType.includes('happy');
+    const isSpecial = promoType.includes('special');
+    const isPopup = promoType.includes('pop');
+    const isDistinct = promoType.includes('distinct');
     let icon = 'icon-menu';
     let color = ORANGE_COLOR;
     let strokeColor = ORANGE_STROKE;
     let baseOpacity = 1;
-    if (promoType.includes('happy')) {
+    if (isHappy) {
       icon = 'icon-happy';
       color = ORANGE_COLOR;
       strokeColor = ORANGE_STROKE;
       baseOpacity = 0;
-    } else if (promoType.includes('special')) {
+    } else if (isSpecial) {
       icon = 'icon-special';
       color = SPECIAL_COLOR;
       strokeColor = SPECIAL_STROKE;
       baseOpacity = 0;
-    } else if (promoType.includes('pop')) {
+    } else if (isPopup) {
       icon = 'icon-popup';
       color = POPUP_COLOR;
       strokeColor = POPUP_STROKE;
       baseOpacity = 0;
-    } else if (promoType.includes('distinct')) {
+    } else if (isDistinct) {
       icon = 'icon-menu';
       color = ORANGE_COLOR;
       strokeColor = ORANGE_STROKE;
@@ -1406,6 +1414,7 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
         color,
         strokeColor,
         baseOpacity,
+        iconOpacity: (isHappy || isSpecial || isPopup) ? 1 : 0,
         popupType: 'event',
         label: venue.name,
         icon,
