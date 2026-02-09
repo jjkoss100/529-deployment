@@ -1121,6 +1121,16 @@ function stylizeBaseLayers() {
     try {
       const id = layer.id.toLowerCase();
 
+      const isOfferLayer = layer.id === OFFERS_LAYER_ID ||
+        layer.id === OFFERS_ICON_ID ||
+        layer.id === OFFERS_LABEL_ID ||
+        layer.id === 'offers-debug' ||
+        layer.id === ENERGY_LAYER_ID;
+
+      if (isOfferLayer) {
+        continue;
+      }
+
       if (layer.type === 'background') {
         map.setPaintProperty(layer.id, 'background-color', '#07090f');
       }
