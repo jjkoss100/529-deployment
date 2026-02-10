@@ -822,45 +822,13 @@ function ensureOffersLayer() {
         type: 'circle',
         source: OFFERS_SOURCE_ID,
         paint: {
-          'circle-color': ['coalesce', ['get', 'color'], '#f26b2d'],
+          'circle-color': '#f26b2d',
           'circle-opacity': ['coalesce', ['get', 'opacity'], 1],
-          'circle-radius': [
-            '+',
-            10,
-            ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 10],
-            ['*', ['coalesce', ['get', 'pulse'], 0], 4]
-          ],
-          'circle-blur': [
-            '+',
-            0.25,
-            ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 1.1],
-            ['*', ['coalesce', ['get', 'pulse'], 0], 0.4]
-          ],
-          'circle-translate': [0, -2],
-          'circle-translate-anchor': 'viewport',
-          'circle-stroke-color': ['coalesce', ['get', 'strokeColor'], '#f9a15f'],
-          'circle-stroke-width': ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 1.6],
-          'circle-stroke-opacity': ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 0.9]
+          'circle-radius': 9,
+          'circle-stroke-width': 0
         }
       });
 
-      map.addLayer({
-        id: `${OFFERS_LAYER_ID}-shine`,
-        type: 'circle',
-        source: OFFERS_SOURCE_ID,
-        paint: {
-          'circle-color': '#fff6ea',
-          'circle-opacity': ['*', ['coalesce', ['get', 'opacity'], 1], 0.25],
-          'circle-radius': [
-            '+',
-            4.5,
-            ['*', ['coalesce', ['get', 'pulse'], 0], 1.4]
-          ],
-          'circle-blur': 0.4,
-          'circle-translate': [0.8, -2.8],
-          'circle-translate-anchor': 'viewport'
-        }
-      });
     } catch (err) {
       if (!offersLayerRetry) {
         offersLayerRetry = setTimeout(() => {
@@ -918,40 +886,15 @@ function ensureOffersLayer() {
         return;
       }
       const pulse = (Math.sin(t / 350) + 1) / 2; // 0..1
-      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-radius', [
-        '+',
-        10,
-        ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 10],
-        ['*', ['coalesce', ['get', 'pulse'], 0], 6 * pulse]
-      ]);
-      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-blur', [
-        '+',
-        0.25,
-        ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 1.1],
-        ['*', ['coalesce', ['get', 'pulse'], 0], 0.6 * pulse]
-      ]);
-      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-stroke-width', [
+      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-opacity', [
         '*',
-        ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0],
-        1.6
-      ]);
-      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-stroke-opacity', [
-        '*',
-        ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0],
-        0.9
-      ]);
-      if (map.getLayer(`${OFFERS_LAYER_ID}-shine`)) {
-        map.setPaintProperty(`${OFFERS_LAYER_ID}-shine`, 'circle-radius', [
+        ['coalesce', ['get', 'opacity'], 1],
+        [
           '+',
-          4.5,
-          ['*', ['coalesce', ['get', 'pulse'], 0], 1.4 * pulse]
-        ]);
-        map.setPaintProperty(`${OFFERS_LAYER_ID}-shine`, 'circle-opacity', [
-          '*',
-          ['coalesce', ['get', 'opacity'], 1],
-          0.25 + 0.15 * pulse
-        ]);
-      }
+          0.7,
+          ['*', ['coalesce', ['get', 'pulse'], 0], 0.3 * pulse]
+        ]
+      ]);
       offerPulseHandle = requestAnimationFrame(animate);
     };
     offerPulseHandle = requestAnimationFrame(animate);
