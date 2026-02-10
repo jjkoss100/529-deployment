@@ -8,6 +8,7 @@ let currentLimitedOffers = [];
 let openPopup = null;
 let energyAnimationHandle = null;
 let offerPulseHandle = null;
+let offerPulseActive = false;
 let debugPanel = null;
 let pendingOfferFeatures = null;
 let lastOfferFeatureCount = 0;
@@ -137,27 +138,23 @@ export function initMap(containerId, mapboxToken) {
   });
   map.on('idle', updateDebugPanel);
 
+  let styleWatchTicks = 0;
   const styleWatch = setInterval(() => {
     if (!map) {
       clearInterval(styleWatch);
       return;
     }
+    styleWatchTicks += 1;
     if (map.isStyleLoaded()) {
       ensureOffersLayer();
       updateDebugPanel();
+      clearInterval(styleWatch);
+    } else if (styleWatchTicks >= 12) {
       clearInterval(styleWatch);
     } else {
       updateDebugPanel();
     }
   }, 500);
-
-  setTimeout(() => {
-    if (!map) return;
-    if (!map.isStyleLoaded()) {
-      console.warn('Style still not loaded; forcing setStyle refresh.');
-      map.setStyle(styleUrl);
-    }
-  }, 3500);
 
   return map;
 }
@@ -987,7 +984,7 @@ function ensureOffersLayer() {
 
   if (!offerPulseHandle) {
     const animate = (t) => {
-      if (!map || !map.getLayer(OFFERS_LAYER_ID)) {
+      if (!map || !map.getLayer(OFFERS_LAYER_ID) || !offerPulseActive) {
         offerPulseHandle = null;
         return;
       }
@@ -1448,13 +1445,22 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     }
   }
 
+  let hasPulse = false;
   for (const feature of featureByVenue.values()) {
     delete feature.properties._priority;
+    if (feature.properties.pulse > 0) {
+      hasPulse = true;
+    }
     features.push(feature);
   }
 
   if (!map) return;
   lastVisibleCount = features.length;
+  offerPulseActive = hasPulse;
+  if (!offerPulseActive && offerPulseHandle) {
+    cancelAnimationFrame(offerPulseHandle);
+    offerPulseHandle = null;
+  }
 
   const setOfferData = (items) => {
     ensureOffersLayer();
