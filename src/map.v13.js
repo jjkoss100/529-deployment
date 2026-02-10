@@ -10,6 +10,7 @@ let energyAnimationHandle = null;
 let offerPulseHandle = null;
 let debugPanel = null;
 let pendingOfferFeatures = null;
+let lastRenderedFeatures = [];
 let lastOfferFeatureCount = 0;
 let offersLayerRetry = null;
 let lastVenueCount = 0;
@@ -103,9 +104,10 @@ export function initMap(containerId, mapboxToken) {
     ensureOffersLayer();
     updateDebugPanel();
     if (map.getSource(OFFERS_SOURCE_ID)) {
+      const features = pendingOfferFeatures || lastRenderedFeatures || [];
       map.getSource(OFFERS_SOURCE_ID).setData({
         type: 'FeatureCollection',
-        features: pendingOfferFeatures || []
+        features
       });
     }
   });
@@ -1350,6 +1352,7 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     if (!src) return false;
     src.setData({ type: 'FeatureCollection', features: items });
     pendingOfferFeatures = items;
+    lastRenderedFeatures = items;
     lastOfferFeatureCount = items.length;
     updateDebugPanel();
     return true;
@@ -1357,6 +1360,7 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
 
   if (!map.isStyleLoaded()) {
     pendingOfferFeatures = features;
+    lastRenderedFeatures = features;
     const trySet = () => {
       if (!map) return;
       if (!map.isStyleLoaded()) {
