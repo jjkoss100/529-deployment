@@ -74,9 +74,12 @@ function isVenueVisible(venue) {
   return false;
 }
 
-// --- Check if a venue is upcoming but not yet visible (more than 5h out, hasn't ended) ---
+// --- Check if a venue is upcoming but not yet visible ---
+// Upcoming = has a liveWindow, is NOT currently on the map, and hasn't fully ended yet.
+// This includes late-night deals that bleed into early morning tomorrow.
 function isVenueUpcoming(venue) {
   if (!venue.liveWindow) return false;
+  if (isVenueVisible(venue)) return false; // already showing on map
 
   const nowMin = getLAMinutes();
   const ranges = venue.liveWindow.split(',');
@@ -90,15 +93,14 @@ function isVenueUpcoming(venue) {
     if (start === null || end === null) continue;
 
     const crossesMidnight = end <= start;
-    const preshowStart = start - PRESHOW_HOURS * 60;
 
     if (crossesMidnight) {
-      // Event hasn't started yet and is more than 5h out
-      if (preshowStart >= 0 && nowMin < preshowStart) return true;
+      // e.g. 22:00-02:00 — hasn't ended if now < end (morning side) or now < start (evening side, not started)
+      // Since isVenueVisible already returned false, this deal is waiting to start
+      if (nowMin < start) return true;
     } else {
-      // Normal window: upcoming if now is before the preshow and event hasn't ended
-      if (preshowStart >= 0 && nowMin < preshowStart && nowMin < end) return true;
-      if (preshowStart < 0 && nowMin < (preshowStart + 1440) && nowMin > end) return true;
+      // Normal window — upcoming if now is before the end time
+      if (nowMin < end) return true;
     }
   }
 
