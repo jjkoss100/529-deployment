@@ -7,6 +7,72 @@ const MAP_STYLE = 'mapbox://styles/mapbox/dark-v11';
 const SOURCE_ID = 'venues';
 const LAYER_ID = 'venue-markers';
 const LNG_OFFSET = 0.00012;
+const PRESHOW_HOURS = 5;
+const REFRESH_INTERVAL = 60000; // re-filter every 60s
+
+// --- Get current time in LA timezone as minutes since midnight ---
+function getLAMinutes() {
+  const now = new Date();
+  const laTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+  return laTime.getHours() * 60 + laTime.getMinutes();
+}
+
+// --- Parse "HH:MM" to minutes since midnight ---
+function parseMinutes(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  if (isNaN(h)) return null;
+  return h * 60 + (m || 0);
+}
+
+// --- Check if a venue should be visible right now ---
+// Show if: current time is within 5 hours before start, OR during the active window.
+// Hide if: more than 5 hours before start, OR after the window ends.
+// Venues with no liveWindow are always shown.
+function isVenueVisible(venue) {
+  if (!venue.liveWindow) return true;
+
+  const nowMin = getLAMinutes();
+
+  // Check each time range (comma-separated)
+  const ranges = venue.liveWindow.split(',');
+  for (const range of ranges) {
+    const parts = range.trim().split('-');
+    if (parts.length !== 2) continue;
+
+    const start = parseMinutes(parts[0].trim());
+    const end = parseMinutes(parts[1].trim());
+    if (start === null || end === null) continue;
+
+    // Handle midnight-crossing windows (e.g. 22:00-02:00)
+    const crossesMidnight = end <= start;
+    const preshowStart = start - PRESHOW_HOURS * 60;
+
+    if (crossesMidnight) {
+      // Active window spans midnight: start..1440 + 0..end
+      // Preshow: preshowStart..start
+      // Visible if: nowMin >= preshowStart AND nowMin <= end (next day)
+      if (preshowStart >= 0) {
+        if (nowMin >= preshowStart) return true; // preshow or active (evening side)
+        if (nowMin <= end) return true;           // active (morning side)
+      } else {
+        // Preshow wraps to previous day
+        if (nowMin >= (preshowStart + 1440)) return true;
+        if (nowMin >= start) return true;
+        if (nowMin <= end) return true;
+      }
+    } else {
+      // Normal window: start..end same day
+      if (preshowStart >= 0) {
+        if (nowMin >= preshowStart && nowMin <= end) return true;
+      } else {
+        // Preshow wraps to previous day (e.g. event at 03:00, preshow starts at 22:00 prev day)
+        if (nowMin >= (preshowStart + 1440) || nowMin <= end) return true;
+      }
+    }
+  }
+
+  return false;
+}
 
 // --- Time formatting: 24h → 12h ---
 function formatTime12h(timeStr) {
@@ -159,11 +225,14 @@ async function fetchAndParseCSV(url) {
   return venues;
 }
 
-// --- Build GeoJSON from venues ---
+// --- Build GeoJSON from venues (only visible ones) ---
 function buildGeoJSON(venues) {
+  const visible = venues.filter(isVenueVisible);
+  console.log(`Showing ${visible.length} of ${venues.length} venues`);
+
   // Group by venue name to offset overlapping markers
   const byName = new Map();
-  for (const v of venues) {
+  for (const v of visible) {
     if (!byName.has(v.name)) byName.set(v.name, []);
     byName.get(v.name).push(v);
   }
@@ -341,6 +410,12 @@ async function init() {
         bounds.extend([v.lng, v.lat]);
       }
       map.fitBounds(bounds, { padding: 60, maxZoom: 15 });
+
+      // Auto-refresh: re-filter venues as time passes
+      setInterval(() => {
+        const updated = buildGeoJSON(venues);
+        map.getSource(SOURCE_ID).setData(updated);
+      }, REFRESH_INTERVAL);
     });
 
     // Re-register images if style reloads
