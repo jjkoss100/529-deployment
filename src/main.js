@@ -256,20 +256,39 @@ function setupPopups(map) {
       if (!features.length) popup.remove();
     });
   } else {
-    // Desktop: hover to show, leave to hide
+    // Desktop: hover to show, delayed hide so user can reach the popup
+    let closeTimer = null;
+
+    const cancelClose = () => {
+      if (closeTimer) { clearTimeout(closeTimer); closeTimer = null; }
+    };
+
+    const scheduleClose = () => {
+      cancelClose();
+      closeTimer = setTimeout(() => {
+        popup.remove();
+        map.getCanvas().style.cursor = '';
+      }, 200);
+    };
+
     map.on('mouseenter', LAYER_ID, (e) => {
+      cancelClose();
       map.getCanvas().style.cursor = 'pointer';
       const feature = e.features[0];
       popup
         .setLngLat(feature.geometry.coordinates)
         .setHTML(buildPopupHTML(feature.properties))
         .addTo(map);
+
+      // Keep popup alive while hovering its content
+      const el = popup.getElement();
+      if (el) {
+        el.addEventListener('mouseenter', cancelClose);
+        el.addEventListener('mouseleave', scheduleClose);
+      }
     });
 
-    map.on('mouseleave', LAYER_ID, () => {
-      map.getCanvas().style.cursor = '';
-      popup.remove();
-    });
+    map.on('mouseleave', LAYER_ID, scheduleClose);
   }
 }
 
