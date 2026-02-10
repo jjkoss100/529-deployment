@@ -1,5 +1,5 @@
 import { fetchVenues, updateAllVenueStatuses } from './data.js?v=30';
-import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=129';
+import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=130';
 
 // --- Configuration ---
 // Replace with your published Google Sheet CSV URL
@@ -271,6 +271,14 @@ function ensureCovertOverlay() {
     </div>
   `;
   document.body.appendChild(overlay);
+  const cleanup = () => {
+    if (!overlay.isConnected) return;
+    overlay.remove();
+    document.body.classList.remove('covert-active');
+    const brandEl = document.getElementById('brand-widget');
+    if (brandEl) brandEl.style.display = '';
+  };
+  setTimeout(cleanup, 3200);
 }
 
 function updateWeatherWidget(data, marineData) {
