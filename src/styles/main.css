@@ -102,13 +102,14 @@ html, body {
 }
 
 .venue-popup__name--link {
+  display: block;
   text-decoration: none;
-  color: #fff;
-  transition: color 0.15s;
+  color: #00d4ff;
+  cursor: pointer;
 }
 
 .venue-popup__name--link:hover {
-  color: #00d4ff;
+  text-decoration: underline;
 }
 
 .venue-popup__notes {

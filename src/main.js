@@ -273,7 +273,7 @@ function setupPopups(map) {
       closeTimer = setTimeout(() => {
         popup.remove();
         map.getCanvas().style.cursor = '';
-      }, 200);
+      }, 350);
     };
 
     map.on('mouseenter', LAYER_ID, (e) => {
