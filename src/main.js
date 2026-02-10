@@ -1,12 +1,12 @@
 import { fetchVenues, updateAllVenueStatuses } from './data.js?v=30';
-import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=141';
+import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=142';
 
 // --- Configuration ---
 // Replace with your published Google Sheet CSV URL
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQpj4lehM7ElDgkUxZHkQ_ZrZhGX4HwIkK-pBuA-siErJ0YG0ahpfYYJqSqoAq5-Fpj8tL6j0DyK-by/pub?gid=6430153&single=true&output=csv';
 
 // Replace with your Mapbox access token
-const MAPBOX_TOKEN = 'pk.eyJ1Ijoiamprb3NzMTAiLCJhIjoiY21rdWp1YWFhMjJ1djNjcTJjcjRpYWNhZSJ9.ExODQ-GDFl9NHFl7NE9IxQ';
+const MAPBOX_TOKEN = 'pk.eyJ1Ijoiamprb3NzMTAiLCJhIjoiY21sZnl3NnN3MDZoNTNlb2s1MnczMWVwbSJ9.HDXt8N0fEOpSvSGhKp6jRg';
 
 const REFRESH_INTERVAL = 30000; // 30 seconds — frequent for smooth marker lifecycle
 const WEATHER_COORDS = { lat: 33.994975, lng: -118.466552 };
