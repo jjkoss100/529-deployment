@@ -1,534 +1,332 @@
-import { fetchVenues, updateAllVenueStatuses } from './data.js?v=30';
-import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=144';
-
 // --- Configuration ---
-// Replace with your published Google Sheet CSV URL
 const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQpj4lehM7ElDgkUxZHkQ_ZrZhGX4HwIkK-pBuA-siErJ0YG0ahpfYYJqSqoAq5-Fpj8tL6j0DyK-by/pub?gid=6430153&single=true&output=csv';
-
-// Replace with your Mapbox access token
 const MAPBOX_TOKEN = 'pk.eyJ1Ijoiamprb3NzMTAiLCJhIjoiY21sZnl3NnN3MDZoNTNlb2s1MnczMWVwbSJ9.HDXt8N0fEOpSvSGhKp6jRg';
+const MAP_CENTER = [-118.469, 33.989];
+const MAP_ZOOM = 14;
+const MAP_STYLE = 'mapbox://styles/mapbox/dark-v11';
+const SOURCE_ID = 'venues';
+const LAYER_ID = 'venue-markers';
+const LNG_OFFSET = 0.00012;
 
-const REFRESH_INTERVAL = 30000; // 30 seconds — frequent for smooth marker lifecycle
-const WEATHER_COORDS = { lat: 33.994975, lng: -118.466552 };
-const WEATHER_TIMEZONE = 'America/Los_Angeles';
-const WEATHER_REFRESH_MS = 15 * 60 * 1000; // 15 minutes
-
-// --- State ---
-let allVenues = [];
-let limitedOffers = [];
-
-/**
- * Main app initialization.
- */
-async function init() {
-  try {
-  ensureCovertOverlay();
-  // Initialize map
-  console.log('Initializing map...');
-  const map = initMap('map', MAPBOX_TOKEN);
-  console.log('Map initialized');
-
-  // Fetch and parse venue data
-  allVenues = await fetchVenues(CSV_URL);
-  limitedOffers = [];
-
-  if (allVenues.length === 0) {
-    console.warn('No venues loaded. Check CSV URL.');
-    return;
-  }
-
-  console.log(`Loaded ${allVenues.length} venues`);
-
-  // Default filter state (no panel, show all active)
-  const defaultFilters = {
-    activeOnly: false,
-    promotionType: 'all',
-    selectedDay: 'today',
-    neighborhoods: [],
-    menuCategories: [],
-    hasWeekendHours: false
-  };
-
-  // Initial render — show all venues
-  renderMarkers(allVenues, defaultFilters, limitedOffers);
-
-  // Fit map to show all venues once loaded
-  if (map.loaded()) {
-    fitToVenues(allVenues);
-  } else {
-    map.on('load', () => fitToVenues(allVenues));
-  }
-
-  // Update local label from map center and keep in sync
-  updateLocalLabel(map, allVenues);
-  map.on('moveend', () => updateLocalLabel(map, allVenues));
-
-  // Start auto-refresh timer
-  startAutoRefresh();
-
-  // Setup geolocation button
-  setupGeolocation();
-
-  // Weather widget hidden for now
-
-  // Soften the covert overlay once the UI is live
-  const overlay = document.getElementById('covert-overlay');
-  if (overlay) {
-    requestAnimationFrame(() => {
-      setTimeout(() => overlay.classList.add('covert-overlay--hide'), 2000);
-    });
-    overlay.addEventListener('animationend', () => {
-      overlay.remove();
-      document.body.classList.remove('covert-active');
-      const brand = document.getElementById('brand-widget');
-      if (brand) brand.style.display = '';
-    }, { once: true });
-    // Fallback: if animation doesn't fire, clear the overlay anyway.
-    setTimeout(() => {
-      const lingering = document.getElementById('covert-overlay');
-      if (lingering) {
-        lingering.remove();
-        document.body.classList.remove('covert-active');
-        const brand = document.getElementById('brand-widget');
-        if (brand) brand.style.display = '';
-      }
-    }, 6000);
-  }
-
-  } catch (err) {
-    console.error('Init error:', err);
-    document.body.style.background = 'white';
-    document.body.style.color = 'black';
-    document.body.innerHTML = `<pre style="padding:20px">Error: ${err.message}\n\n${err.stack}</pre>`;
-  }
+// --- Time formatting: 24h → 12h ---
+function formatTime12h(timeStr) {
+  const [h, m] = timeStr.split(':').map(Number);
+  if (isNaN(h)) return timeStr;
+  const suffix = h >= 12 ? 'pm' : 'am';
+  const hour12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return m ? `${hour12}:${String(m).padStart(2, '0')}${suffix}` : `${hour12}${suffix}`;
 }
 
-
-/**
- * Auto-refresh venue statuses every 60 seconds.
- */
-function startAutoRefresh() {
-  const defaultFilters = {
-    activeOnly: false,
-    promotionType: 'all',
-    selectedDay: 'today',
-    neighborhoods: [],
-    menuCategories: [],
-    hasWeekendHours: false
-  };
-  setInterval(() => {
-    updateAllVenueStatuses(allVenues);
-    renderMarkers(allVenues, defaultFilters, limitedOffers);
-  }, REFRESH_INTERVAL);
+function formatLiveWindow(liveWindow) {
+  if (!liveWindow) return '';
+  return liveWindow.split(',').map(range => {
+    const parts = range.trim().split('-');
+    if (parts.length !== 2) return range.trim();
+    return `${formatTime12h(parts[0].trim())} – ${formatTime12h(parts[1].trim())}`;
+  }).join(', ');
 }
 
-/**
- * Setup geolocation "near me" button.
- */
-function setupGeolocation() {
-  const btn = document.getElementById('geo-btn');
-  if (!btn) return;
+// --- Popup HTML builder ---
+function buildPopupHTML(props) {
+  const name = props.name || '';
+  const notes = props.notes || '';
+  const time = formatLiveWindow(props.liveWindow);
+  const link = props.link || '';
 
-  btn.addEventListener('click', () => {
-    if (!navigator.geolocation) {
-      btn.title = 'Geolocation not supported';
-      return;
+  let html = `<div class="venue-popup">`;
+  html += `<div class="venue-popup__name">${name}</div>`;
+  if (notes) html += `<div class="venue-popup__notes">${notes}</div>`;
+  if (time) html += `<div class="venue-popup__time">${time}</div>`;
+  if (link) {
+    html += `<a class="venue-popup__link" href="${link}" target="_blank" rel="noopener noreferrer">`;
+    html += `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
+    html += `</a>`;
+  }
+  html += `</div>`;
+  return html;
+}
+
+// --- SVG Marker Icons ---
+const MARKER_SVGS = {
+  'Special': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+    <path fill="#22c55e" d="M32 4 L39.5 24.5 L60 24.5 L43 38 L49 58 L32 46 L15 58 L21 38 L4 24.5 L24.5 24.5 Z"/>
+  </svg>`,
+
+  'Happy Hour': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="22" fill="none" stroke="#facc15" stroke-width="8"/>
+  </svg>`,
+
+  'Distinct Menu': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+    <circle cx="32" cy="32" r="22" fill="#f97316"/>
+  </svg>`,
+
+  'Limited': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+    <path fill="#a855f7" d="M32 6 L58 32 L32 58 L6 32 Z"/>
+  </svg>`,
+
+  'Pop-up': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+    <path fill="#ef4444" d="M32 6 L58 56 L6 56 Z"/>
+  </svg>`,
+};
+
+// --- SVG Helper ---
+function makeSvgData(svg) {
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+// --- Load marker images into Mapbox ---
+function loadMarkerImages(map) {
+  return Promise.all(
+    Object.entries(MARKER_SVGS).map(([promoType, svg]) => {
+      return new Promise((resolve) => {
+        const imageId = `marker-${promoType}`;
+        if (map.hasImage(imageId)) { resolve(); return; }
+        const img = new Image(64, 64);
+        img.onload = () => {
+          if (!map.hasImage(imageId)) {
+            map.addImage(imageId, img, { pixelRatio: 2 });
+          }
+          resolve();
+        };
+        img.onerror = () => {
+          console.warn(`Failed to load marker image for "${promoType}"`);
+          resolve();
+        };
+        img.src = makeSvgData(svg);
+      });
+    })
+  );
+}
+
+// --- Fetch and parse CSV ---
+async function fetchAndParseCSV(url) {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`CSV fetch failed: HTTP ${response.status}`);
+  const csvText = await response.text();
+
+  // Find header row (CSV has junk rows before it)
+  const lines = csvText.split('\n');
+  let headerIndex = 0;
+  for (let i = 0; i < Math.min(lines.length, 15); i++) {
+    if (lines[i].includes('Venue') && lines[i].includes('Promotion Type')) {
+      headerIndex = i;
+      break;
     }
+  }
+  const cleanedCSV = lines.slice(headerIndex).join('\n');
 
-    btn.classList.add('geo-btn--loading');
-
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        getMap().flyTo({
-          center: [pos.coords.longitude, pos.coords.latitude],
-          zoom: 15
-        });
-        btn.classList.remove('geo-btn--loading');
-      },
-      (err) => {
-        console.warn('Geolocation error:', err);
-        btn.classList.remove('geo-btn--loading');
-        btn.title = 'Location access denied';
-      }
-    );
+  const parsed = Papa.parse(cleanedCSV, {
+    header: true,
+    skipEmptyLines: true,
+    transformHeader: h => h.trim()
   });
-}
 
-function setupWeather() {
-  const widget = ensureWeatherWidget();
-  if (!widget) return;
-  fetchWeather();
-  setInterval(fetchWeather, WEATHER_REFRESH_MS);
-}
+  const venues = [];
+  const rows = parsed.data || [];
 
-async function fetchWeather() {
-  const widget = ensureWeatherWidget();
-  if (!widget) return;
+  for (const row of rows) {
+    const name = (row['Venue'] || '').trim();
+    if (!name) continue;
 
-  const { lat, lng } = WEATHER_COORDS;
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}` +
-    `&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m` +
-    `&hourly=temperature_2m,apparent_temperature,precipitation_probability,weather_code,wind_speed_10m` +
-    `&daily=sunrise,sunset` +
-    `&forecast_hours=24&timezone=${encodeURIComponent(WEATHER_TIMEZONE)}` +
-    `&temperature_unit=fahrenheit&wind_speed_unit=mph`;
-  const marineUrl = `https://marine-api.open-meteo.com/v1/marine?latitude=${lat}&longitude=${lng}` +
-    `&current=wave_height,wave_period,sea_surface_temperature` +
-    `&hourly=wave_height,wave_period,sea_surface_temperature` +
-    `&temperature_unit=fahrenheit&timezone=${encodeURIComponent(WEATHER_TIMEZONE)}`;
+    const lng = parseFloat(row['Long']);
+    const lat = parseFloat(row['Lat']);
+    if (isNaN(lng) || isNaN(lat)) continue;
 
-  try {
-    const [response, marineResponse] = await Promise.all([fetch(url), fetch(marineUrl)]);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const data = await response.json();
-    const marineData = marineResponse.ok ? await marineResponse.json() : null;
-    updateWeatherWidget(data, marineData);
-  } catch (err) {
-    console.warn('Weather fetch failed:', err);
-    renderWeatherError();
-  }
-}
-
-function ensureUiLayer() {
-  let layer = document.getElementById('ui-layer');
-  if (layer) return layer;
-  layer = document.createElement('div');
-  layer.id = 'ui-layer';
-  document.body.appendChild(layer);
-  return layer;
-}
-
-function ensureWeatherWidget() {
-  const layer = ensureUiLayer();
-  let widget = document.getElementById('weather-widget');
-  if (widget) {
-    widget.style.position = 'fixed';
-    widget.style.top = '16px';
-    widget.style.left = '16px';
-    widget.style.zIndex = '9999';
-    return widget;
-  }
-
-  widget = document.createElement('div');
-  widget.id = 'weather-widget';
-  widget.className = 'weather-widget';
-  widget.innerHTML = `
-    <div class="weather-title">529WORLD</div>
-    <div class="weather-local" id="weather-local">WESTSIDE</div>
-    <div class="weather-current">
-      <div class="weather-temp" id="weather-temp">--°</div>
-      <div class="weather-meta">
-        <div class="weather-summary" id="weather-summary">Loading...</div>
-        <div class="weather-details" id="weather-details"></div>
-      </div>
-    </div>
-    <div class="weather-third">
-      <div class="weather-tonight" id="weather-tonight"></div>
-      <div class="weather-extras">
-        <div class="weather-extra-row" id="sun-times"></div>
-        <div class="weather-extra-row" id="moon-phase"></div>
-        <div class="weather-extra-row" id="astro-tidbit"></div>
-        <div class="weather-extra-row" id="surf-conditions"></div>
-      </div>
-    </div>
-  `;
-
-  layer.appendChild(widget);
-  widget.style.position = 'fixed';
-  widget.style.top = '16px';
-  widget.style.left = '16px';
-  widget.style.zIndex = '9999';
-  return widget;
-}
-
-function updateLocalLabel(map, venues) {
-  const labelEl = document.getElementById('weather-local');
-  if (!labelEl || !map || !venues || venues.length === 0) return;
-
-  const center = map.getCenter();
-  let best = null;
-  let bestDist = Infinity;
-  for (const venue of venues) {
-    if (!venue.area || isNaN(venue.lat) || isNaN(venue.lng)) continue;
-    const dx = venue.lng - center.lng;
-    const dy = venue.lat - center.lat;
-    const d2 = dx * dx + dy * dy;
-    if (d2 < bestDist) {
-      bestDist = d2;
-      best = venue.area;
+    const promoType = (row['Promotion Type'] || '').trim();
+    if (!MARKER_SVGS[promoType]) {
+      console.warn(`Unknown promotion type "${promoType}" for "${name}", skipping`);
+      continue;
     }
+
+    venues.push({
+      name,
+      lng,
+      lat,
+      instagram: (row['Venue Instagram'] || '').trim(),
+      eventName: (row['Event Name/Description'] || '').trim(),
+      promotionType: promoType,
+      link: (row['Link'] || '').trim(),
+      notes: (row['Notes'] || '').trim(),
+      liveWindow: (row['Live Window'] || '').trim(),
+    });
   }
 
-  const label = (best || 'WESTSIDE').toString().trim();
-  labelEl.textContent = label ? label.toUpperCase() : 'WESTSIDE';
+  return venues;
 }
 
-function ensureCovertOverlay() {
-  if (document.getElementById('covert-overlay')) return;
-  document.body.classList.add('covert-active');
-  const brand = document.getElementById('brand-widget');
-  if (brand) brand.style.display = 'none';
-  const overlay = document.createElement('div');
-  overlay.id = 'covert-overlay';
-  overlay.className = 'covert-overlay';
-  overlay.setAttribute('aria-hidden', 'true');
-  overlay.innerHTML = `
-    <div class="covert-overlay__inner">
-      <div class="covert-overlay__tag covert-overlay__tag--headline">SCANNING FOR SPECIALS AND POP-UPS</div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
-}
-
-function updateWeatherWidget(data, marineData) {
-  const tempEl = document.getElementById('weather-temp');
-  const summaryEl = document.getElementById('weather-summary');
-  const detailsEl = document.getElementById('weather-details');
-  const tonightEl = document.getElementById('weather-tonight');
-  const sunEl = document.getElementById('sun-times');
-  const moonEl = document.getElementById('moon-phase');
-  const astroEl = document.getElementById('astro-tidbit');
-  const surfEl = document.getElementById('surf-conditions');
-  if (!tempEl || !summaryEl || !detailsEl || !tonightEl) return;
-
-  const current = data.current;
-  if (!current) {
-    renderWeatherError();
-    return;
+// --- Build GeoJSON from venues ---
+function buildGeoJSON(venues) {
+  // Group by venue name to offset overlapping markers
+  const byName = new Map();
+  for (const v of venues) {
+    if (!byName.has(v.name)) byName.set(v.name, []);
+    byName.get(v.name).push(v);
   }
 
-  const currentTemp = Math.round(current.temperature_2m);
-  const feelsLike = Math.round(current.apparent_temperature);
-  const wind = Math.round(current.wind_speed_10m);
-  const currentLabel = getWeatherLabel(current.weather_code);
+  const features = [];
+  for (const [name, group] of byName) {
+    for (let i = 0; i < group.length; i++) {
+      const v = group[i];
+      const offset = group.length > 1
+        ? (i - (group.length - 1) / 2) * LNG_OFFSET
+        : 0;
 
-  tempEl.textContent = `${currentTemp}°`;
-  summaryEl.textContent = currentLabel;
-  detailsEl.textContent = `Feels like ${feelsLike}°F • Wind ${wind} mph`;
-
-  const tonight = buildTonightOutlook(data);
-  if (tonight) {
-    tonightEl.textContent = `Tonight: ${tonight}`;
-  } else {
-    tonightEl.textContent = '';
-  }
-
-  const sunTimes = getSunTimes(data);
-  if (sunEl) sunEl.textContent = sunTimes || '';
-
-  const moonInfo = getMoonInfo();
-  if (moonEl) moonEl.textContent = moonInfo.phaseText;
-  if (astroEl) astroEl.textContent = moonInfo.astroText;
-
-  if (surfEl) {
-    const surf = getSurfConditions(marineData);
-    surfEl.textContent = surf || '';
-  }
-}
-
-function renderWeatherError() {
-  const summaryEl = document.getElementById('weather-summary');
-  const detailsEl = document.getElementById('weather-details');
-  const tonightEl = document.getElementById('weather-tonight');
-  const tempEl = document.getElementById('weather-temp');
-  if (summaryEl) summaryEl.textContent = 'Weather unavailable';
-  if (detailsEl) detailsEl.textContent = 'Check connection';
-  if (tonightEl) tonightEl.textContent = '';
-  if (tempEl) tempEl.textContent = '--°';
-  const sunEl = document.getElementById('sun-times');
-  const moonEl = document.getElementById('moon-phase');
-  const astroEl = document.getElementById('astro-tidbit');
-  const surfEl = document.getElementById('surf-conditions');
-  if (sunEl) sunEl.textContent = '';
-  if (moonEl) moonEl.textContent = '';
-  if (astroEl) astroEl.textContent = '';
-  if (surfEl) surfEl.textContent = '';
-}
-
-function buildTonightOutlook(data) {
-  const hourly = data.hourly;
-  if (!hourly || !hourly.time || hourly.time.length === 0) return null;
-
-  const now = new Date();
-  const start = new Date(now);
-  if (start.getHours() < 18) {
-    start.setHours(18, 0, 0, 0);
-  }
-  const end = new Date(start);
-  end.setDate(start.getDate() + 1);
-  end.setHours(2, 0, 0, 0);
-
-  const times = hourly.time;
-  const temps = hourly.temperature_2m || [];
-  const precip = hourly.precipitation_probability || [];
-  const codes = hourly.weather_code || [];
-
-  const window = [];
-  for (let i = 0; i < times.length; i++) {
-    const t = new Date(times[i]);
-    if (t >= start && t <= end) {
-      window.push({
-        temp: temps[i],
-        precip: precip[i],
-        code: codes[i]
+      features.push({
+        type: 'Feature',
+        geometry: {
+          type: 'Point',
+          coordinates: [v.lng + offset, v.lat]
+        },
+        properties: {
+          name: v.name,
+          promotionType: v.promotionType,
+          icon: `marker-${v.promotionType}`,
+          eventName: v.eventName,
+          liveWindow: v.liveWindow,
+          notes: v.notes,
+          link: v.link,
+          instagram: v.instagram,
+        }
       });
     }
   }
 
-  if (window.length === 0) return null;
+  return { type: 'FeatureCollection', features };
+}
 
-  let minTemp = Infinity;
-  let maxTemp = -Infinity;
-  let maxPrecip = 0;
-  const codeCounts = new Map();
+// --- Add venue layer to map ---
+function addVenueLayer(map, geojson) {
+  map.addSource(SOURCE_ID, {
+    type: 'geojson',
+    data: geojson
+  });
 
-  for (const entry of window) {
-    if (typeof entry.temp === 'number') {
-      minTemp = Math.min(minTemp, entry.temp);
-      maxTemp = Math.max(maxTemp, entry.temp);
+  map.addLayer({
+    id: LAYER_ID,
+    type: 'symbol',
+    source: SOURCE_ID,
+    layout: {
+      'icon-image': ['get', 'icon'],
+      'icon-size': 0.675,
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+
+      'text-field': ['get', 'name'],
+      'text-font': ['Open Sans Bold'],
+      'text-size': 16.5,
+      'text-offset': [1.5, 0],
+      'text-anchor': 'left',
+      'text-allow-overlap': false,
+      'text-optional': true,
+      'text-max-width': 12,
+    },
+    paint: {
+      'icon-opacity': 1,
+      'text-color': '#d6deeb',
+      'text-halo-color': '#07090f',
+      'text-halo-width': 1.2,
     }
-    if (typeof entry.precip === 'number') {
-      maxPrecip = Math.max(maxPrecip, entry.precip);
-    }
-    if (typeof entry.code === 'number') {
-      codeCounts.set(entry.code, (codeCounts.get(entry.code) || 0) + 1);
-    }
+  });
+}
+
+// --- Popup interactions (hover on desktop, click on mobile) ---
+function setupPopups(map) {
+  const popup = new mapboxgl.Popup({
+    closeButton: false,
+    closeOnClick: false,
+    className: 'venue-mapbox-popup',
+    maxWidth: '260px',
+    offset: 12,
+  });
+
+  const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+
+  if (isTouchDevice) {
+    // Mobile: click to open, click elsewhere to close
+    map.on('click', LAYER_ID, (e) => {
+      const feature = e.features[0];
+      popup
+        .setLngLat(feature.geometry.coordinates)
+        .setHTML(buildPopupHTML(feature.properties))
+        .addTo(map);
+    });
+
+    map.on('click', (e) => {
+      const features = map.queryRenderedFeatures(e.point, { layers: [LAYER_ID] });
+      if (!features.length) popup.remove();
+    });
+  } else {
+    // Desktop: hover to show, leave to hide
+    map.on('mouseenter', LAYER_ID, (e) => {
+      map.getCanvas().style.cursor = 'pointer';
+      const feature = e.features[0];
+      popup
+        .setLngLat(feature.geometry.coordinates)
+        .setHTML(buildPopupHTML(feature.properties))
+        .addTo(map);
+    });
+
+    map.on('mouseleave', LAYER_ID, () => {
+      map.getCanvas().style.cursor = '';
+      popup.remove();
+    });
   }
-
-  const dominantCode = [...codeCounts.entries()].sort((a, b) => b[1] - a[1])[0]?.[0];
-  const label = getWeatherLabel(dominantCode);
-  const tempRange = `${Math.round(minTemp)}–${Math.round(maxTemp)}°F`;
-  const precipText = maxPrecip ? `${Math.round(maxPrecip)}% precip` : 'Low precip';
-
-  return `${label} • ${tempRange} • ${precipText}`;
 }
 
-function getWeatherLabel(code) {
-  if (code === undefined || code === null) return 'Weather';
-  const mapping = new Map([
-    [0, 'Clear'],
-    [1, 'Mostly clear'],
-    [2, 'Partly cloudy'],
-    [3, 'Overcast'],
-    [45, 'Fog'],
-    [48, 'Rime fog'],
-    [51, 'Light drizzle'],
-    [53, 'Drizzle'],
-    [55, 'Heavy drizzle'],
-    [56, 'Light freezing drizzle'],
-    [57, 'Freezing drizzle'],
-    [61, 'Light rain'],
-    [63, 'Rain'],
-    [65, 'Heavy rain'],
-    [66, 'Light freezing rain'],
-    [67, 'Freezing rain'],
-    [71, 'Light snow'],
-    [73, 'Snow'],
-    [75, 'Heavy snow'],
-    [77, 'Snow grains'],
-    [80, 'Light showers'],
-    [81, 'Showers'],
-    [82, 'Heavy showers'],
-    [85, 'Light snow showers'],
-    [86, 'Snow showers'],
-    [95, 'Thunderstorm'],
-    [96, 'Thunderstorm with hail'],
-    [99, 'Thunderstorm with heavy hail']
-  ]);
+// --- Initialize Mapbox map ---
+function initMap() {
+  mapboxgl.accessToken = MAPBOX_TOKEN;
 
-  return mapping.get(code) || 'Weather';
+  const map = new mapboxgl.Map({
+    container: 'map',
+    style: MAP_STYLE,
+    center: MAP_CENTER,
+    zoom: MAP_ZOOM,
+    minZoom: 12,
+    maxZoom: 18,
+  });
+
+  map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+  return map;
 }
 
-function getSunTimes(data) {
-  const daily = data.daily;
-  if (!daily || !daily.sunrise || !daily.sunset) return '';
-  const sunrise = daily.sunrise[0];
-  const sunset = daily.sunset[0];
-  if (!sunrise || !sunset) return '';
-  return `Sunrise: ${formatTimeShort(sunrise)} • Sunset: ${formatTimeShort(sunset)}`;
-}
+// --- Main init ---
+async function init() {
+  try {
+    const map = initMap();
 
-function formatTimeShort(isoStr) {
-  const d = new Date(isoStr);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).toLowerCase();
-}
+    map.on('load', async () => {
+      await loadMarkerImages(map);
 
-function getMoonInfo(date = new Date()) {
-  const phase = getMoonPhaseFraction(date);
-  const phaseName = getMoonPhaseName(phase);
-  const illumination = Math.round(getMoonIllumination(phase) * 100);
-  const astro = getAstroTidbit(phaseName);
-  return {
-    phaseText: `Moon: ${phaseName} • ${illumination}%`,
-    astroText: astro
-  };
-}
+      const venues = await fetchAndParseCSV(CSV_URL);
+      console.log(`Loaded ${venues.length} venues`);
 
-function getMoonPhaseFraction(date) {
-  const knownNewMoon = new Date(Date.UTC(2000, 0, 6, 18, 14, 0));
-  const synodicMonth = 29.53058867;
-  const days = (date.getTime() - knownNewMoon.getTime()) / (1000 * 60 * 60 * 24);
-  const phase = (days % synodicMonth) / synodicMonth;
-  return (phase + 1) % 1;
-}
+      if (venues.length === 0) {
+        console.warn('No venues loaded from CSV');
+        return;
+      }
 
-function getMoonIllumination(phase) {
-  return 0.5 * (1 - Math.cos(2 * Math.PI * phase));
-}
+      const geojson = buildGeoJSON(venues);
+      addVenueLayer(map, geojson);
+      setupPopups(map);
 
-function getMoonPhaseName(phase) {
-  const phases = [
-    { name: 'New', start: 0.00, end: 0.03 },
-    { name: 'Waxing crescent', start: 0.03, end: 0.24 },
-    { name: 'First quarter', start: 0.24, end: 0.28 },
-    { name: 'Waxing gibbous', start: 0.28, end: 0.49 },
-    { name: 'Full', start: 0.49, end: 0.53 },
-    { name: 'Waning gibbous', start: 0.53, end: 0.74 },
-    { name: 'Last quarter', start: 0.74, end: 0.78 },
-    { name: 'Waning crescent', start: 0.78, end: 1.00 }
-  ];
-  return phases.find(p => phase >= p.start && phase < p.end)?.name || 'New';
-}
+      // Fit map to venue bounds
+      const bounds = new mapboxgl.LngLatBounds();
+      for (const v of venues) {
+        bounds.extend([v.lng, v.lat]);
+      }
+      map.fitBounds(bounds, { padding: 60, maxZoom: 15 });
+    });
 
-function getAstroTidbit(phaseName) {
-  const map = {
-    New: 'Astro: set intentions',
-    'Waxing crescent': 'Astro: build momentum',
-    'First quarter': 'Astro: take action',
-    'Waxing gibbous': 'Astro: refine and commit',
-    Full: 'Astro: spotlight and release',
-    'Waning gibbous': 'Astro: share the wins',
-    'Last quarter': 'Astro: recalibrate',
-    'Waning crescent': 'Astro: rest and reset'
-  };
-  return map[phaseName] || 'Astro: reset and recalibrate';
-}
+    // Re-register images if style reloads
+    map.on('styleimagemissing', () => {
+      loadMarkerImages(map);
+    });
 
-function getSurfConditions(marineData) {
-  if (!marineData) return '';
-  const current = marineData.current;
-  let waveHeight = current?.wave_height;
-  let wavePeriod = current?.wave_period;
-  let seaTemp = current?.sea_surface_temperature;
-
-  if (waveHeight === undefined || wavePeriod === undefined || seaTemp === undefined) {
-    const hourly = marineData.hourly;
-    if (hourly && hourly.time && hourly.time.length > 0) {
-      waveHeight = hourly.wave_height?.[0];
-      wavePeriod = hourly.wave_period?.[0];
-      seaTemp = hourly.sea_surface_temperature?.[0];
-    }
+  } catch (err) {
+    console.error('Init error:', err);
   }
-
-  if (waveHeight === undefined || wavePeriod === undefined || seaTemp === undefined) return '';
-  const waveFt = Math.round(waveHeight * 3.28084 * 10) / 10;
-  const period = Math.round(wavePeriod);
-  const temp = Math.round(seaTemp);
-  return `Surf: ${waveFt}ft @ ${period}s • Sea ${temp}°F`;
 }
 
-// --- Boot ---
-document.addEventListener('DOMContentLoaded', () => {
-  init();
-});
+document.addEventListener('DOMContentLoaded', init);
