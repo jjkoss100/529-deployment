@@ -1284,7 +1284,6 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     const state = getEventLifecycleState(timeStr);
     if (!state) continue;
 
-    const promoType = normalizedPromo.includes('pop') ? 'popup' : 'default';
     const normalizedPromo = (venue.promotionType || '').toLowerCase();
     const promoType = normalizedPromo.includes('pop') ? 'popup' : 'default';
     const featureKey = `${venue.name.toLowerCase()}|${timeStr}|${promoType}`;
