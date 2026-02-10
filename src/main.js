@@ -74,13 +74,44 @@ function isVenueVisible(venue) {
   return false;
 }
 
+// --- Check if a venue is upcoming but not yet visible (more than 5h out, hasn't ended) ---
+function isVenueUpcoming(venue) {
+  if (!venue.liveWindow) return false;
+
+  const nowMin = getLAMinutes();
+  const ranges = venue.liveWindow.split(',');
+
+  for (const range of ranges) {
+    const parts = range.trim().split('-');
+    if (parts.length !== 2) continue;
+
+    const start = parseMinutes(parts[0].trim());
+    const end = parseMinutes(parts[1].trim());
+    if (start === null || end === null) continue;
+
+    const crossesMidnight = end <= start;
+    const preshowStart = start - PRESHOW_HOURS * 60;
+
+    if (crossesMidnight) {
+      // Event hasn't started yet and is more than 5h out
+      if (preshowStart >= 0 && nowMin < preshowStart) return true;
+    } else {
+      // Normal window: upcoming if now is before the preshow and event hasn't ended
+      if (preshowStart >= 0 && nowMin < preshowStart && nowMin < end) return true;
+      if (preshowStart < 0 && nowMin < (preshowStart + 1440) && nowMin > end) return true;
+    }
+  }
+
+  return false;
+}
+
 // --- Debug panel ---
 function updateDebugPanel(venues) {
   const el = document.getElementById('debug-panel');
   if (!el) return;
 
-  const visible = venues.filter(isVenueVisible);
-  const count = visible.length;
+  const upcoming = venues.filter(isVenueUpcoming);
+  const count = upcoming.length;
 
   // Get current LA time formatted
   const now = new Date();
@@ -91,7 +122,7 @@ function updateDebugPanel(venues) {
     hour12: true
   }).toLowerCase();
 
-  el.textContent = `${count} specials loading...\n${laStr} PT`;
+  el.textContent = `${count} deal${count !== 1 ? 's' : ''} loading...\n${laStr} PT`;
 }
 
 // --- Time formatting: 24h → 12h ---
