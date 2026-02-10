@@ -876,11 +876,7 @@ function ensureOffersLayer() {
             ['coalesce', ['get', 'opacity'], 1],
             ['coalesce', ['get', 'baseOpacity'], 1]
           ],
-          'circle-radius': [
-            '+',
-            ['case', ['>', ['coalesce', ['get', 'baseOpacity'], 0], 0], 8, 0],
-            0
-          ],
+          'circle-radius': ['coalesce', ['get', 'baseSize'], 0],
           'circle-blur': [
             '+',
             0.05,
@@ -890,7 +886,7 @@ function ensureOffersLayer() {
           'circle-translate-anchor': 'viewport',
           'circle-stroke-color': ['coalesce', ['get', 'strokeColor'], ORANGE_STROKE],
           'circle-stroke-width': ['case', ['>', ['coalesce', ['get', 'baseOpacity'], 0], 0], 1.2, 0],
-          'circle-stroke-opacity': ['case', ['>', ['coalesce', ['get', 'baseOpacity'], 0], 0], 0.8, 0]
+          'circle-stroke-opacity': ['case', ['>', ['coalesce', ['get', 'baseOpacity'], 0], 0], 0.85, 0]
         }
       });
 
@@ -900,11 +896,7 @@ function ensureOffersLayer() {
         source: OFFERS_SOURCE_ID,
         layout: {
           'icon-image': ['get', 'icon'],
-          'icon-size': [
-            '+',
-            0.55,
-            ['*', ['coalesce', ['get', 'pulse'], 0], 0.05]
-          ],
+          'icon-size': ['coalesce', ['get', 'iconSize'], 0.6],
           'icon-allow-overlap': true,
           'icon-ignore-placement': true,
           'icon-optional': true
@@ -1386,26 +1378,36 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     let color = ORANGE_COLOR;
     let strokeColor = ORANGE_STROKE;
     let baseOpacity = 1;
+    let baseSize = 10;
+    let iconSize = 0.6;
     if (isHappy) {
       icon = 'icon-happy';
       color = HAPPY_COLOR;
       strokeColor = HAPPY_STROKE;
       baseOpacity = 0;
+      baseSize = 0;
+      iconSize = 0.7;
     } else if (isSpecial) {
       icon = 'icon-special';
       color = SPECIAL_COLOR;
       strokeColor = SPECIAL_STROKE;
       baseOpacity = 0;
+      baseSize = 0;
+      iconSize = 0.8;
     } else if (isPopup) {
       icon = 'icon-popup';
       color = POPUP_COLOR;
       strokeColor = POPUP_STROKE;
       baseOpacity = 0;
+      baseSize = 0;
+      iconSize = 0.8;
     } else if (isDistinct) {
       icon = 'icon-menu';
       color = ORANGE_COLOR;
       strokeColor = ORANGE_STROKE;
       baseOpacity = 1;
+      baseSize = 11;
+      iconSize = 0;
     }
 
     const feature = {
@@ -1418,6 +1420,8 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
         color,
         strokeColor,
         baseOpacity,
+        baseSize,
+        iconSize,
         iconOpacity: (isHappy || isSpecial || isPopup) ? 1 : 0,
         popupType: 'event',
         label: venue.name,
