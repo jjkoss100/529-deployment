@@ -35,7 +35,9 @@ function makeSvgData(svg) {
 
 function ensurePopupIcon() {
   if (!map) return;
-  if (map.hasImage(POPUP_ICON_ID)) return;
+  if (map.hasImage(POPUP_ICON_ID)) {
+    map.removeImage(POPUP_ICON_ID);
+  }
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path fill="${POPUP_COLOR}" d="M32 8l20 20-20 20-20-20z"/></svg>`;
   const img = new Image(64, 64);
   img.onload = () => {
@@ -842,7 +844,7 @@ function ensureOffersLayer() {
         id: OFFERS_LAYER_ID,
         type: 'circle',
         source: OFFERS_SOURCE_ID,
-        filter: ['!=', ['get', 'promoType'], 'popup'],
+        filter: ['==', ['coalesce', ['get', 'promoType'], 'default'], 'default'],
         paint: {
           'circle-color': '#f26b2d',
           'circle-opacity': ['coalesce', ['get', 'opacity'], 1],
@@ -855,10 +857,10 @@ function ensureOffersLayer() {
         id: OFFERS_POPUP_ID,
         type: 'symbol',
         source: OFFERS_SOURCE_ID,
-        filter: ['==', ['get', 'promoType'], 'popup'],
+        filter: ['==', ['coalesce', ['get', 'promoType'], 'default'], 'popup'],
         layout: {
           'icon-image': POPUP_ICON_ID,
-          'icon-size': 0.6,
+          'icon-size': 0.7,
           'icon-allow-overlap': true,
           'icon-ignore-placement': true
         }
@@ -1282,7 +1284,9 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     const state = getEventLifecycleState(timeStr);
     if (!state) continue;
 
-    const promoType = (venue.promotionType || '').toLowerCase().includes('pop') ? 'popup' : 'default';
+    const promoType = normalizedPromo.includes('pop') ? 'popup' : 'default';
+    const normalizedPromo = (venue.promotionType || '').toLowerCase();
+    const promoType = normalizedPromo.includes('pop') ? 'popup' : 'default';
     const featureKey = `${venue.name.toLowerCase()}|${timeStr}|${promoType}`;
     const existing = features.find(f => f.properties && f.properties._key === featureKey);
     if (!existing) {
