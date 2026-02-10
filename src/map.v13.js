@@ -29,6 +29,8 @@ const SUPER_LIMITED_COLOR = '#4b1a7a';
 const EVENT_PRESHOW_MINUTES = 300;
 const ORANGE_COLOR = '#f26b2d';
 const ORANGE_STROKE = '#f9a15f';
+const HAPPY_COLOR = '#ffd35f';
+const HAPPY_STROKE = '#ffe29a';
 const SPECIAL_COLOR = '#4aa3ff';
 const SPECIAL_STROKE = '#9fd0ff';
 const POPUP_COLOR = '#ff5db8';
@@ -1386,8 +1388,8 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     let baseOpacity = 1;
     if (isHappy) {
       icon = 'icon-happy';
-      color = ORANGE_COLOR;
-      strokeColor = ORANGE_STROKE;
+      color = HAPPY_COLOR;
+      strokeColor = HAPPY_STROKE;
       baseOpacity = 0;
     } else if (isSpecial) {
       icon = 'icon-special';
