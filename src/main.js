@@ -1,5 +1,5 @@
 import { fetchVenues, updateAllVenueStatuses } from './data.js?v=30';
-import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=142';
+import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=143';
 
 // --- Configuration ---
 // Replace with your published Google Sheet CSV URL
@@ -83,6 +83,16 @@ async function init() {
       const brand = document.getElementById('brand-widget');
       if (brand) brand.style.display = '';
     }, { once: true });
+    // Fallback: if animation doesn't fire, clear the overlay anyway.
+    setTimeout(() => {
+      const lingering = document.getElementById('covert-overlay');
+      if (lingering) {
+        lingering.remove();
+        document.body.classList.remove('covert-active');
+        const brand = document.getElementById('brand-widget');
+        if (brand) brand.style.display = '';
+      }
+    }, 6000);
   }
 
   } catch (err) {
