@@ -88,6 +88,7 @@ export function initMap(containerId, mapboxToken) {
     stylizeBaseLayers();
     ensureEnergyTrails();
     startEnergyAnimation();
+    ensurePopupIcon();
   };
 
   map.on('load', () => {
@@ -112,6 +113,16 @@ export function initMap(containerId, mapboxToken) {
     }
   });
   map.on('idle', updateDebugPanel);
+  map.on('styleimagemissing', (e) => {
+    if (e && e.id === POPUP_ICON_ID) {
+      ensurePopupIcon();
+    }
+  });
+  map.on('error', (e) => {
+    if (e && e.error) {
+      console.warn('Mapbox error:', e.error);
+    }
+  });
 
   const styleWatch = setInterval(() => {
     if (!map) {
