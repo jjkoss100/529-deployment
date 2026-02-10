@@ -136,3 +136,22 @@ html, body {
 .venue-popup__link:hover {
   color: #fff;
 }
+
+/* --- Debug panel --- */
+#debug-panel {
+  position: fixed;
+  bottom: 16px;
+  left: 16px;
+  z-index: 10;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #00ff88;
+  background: rgba(10, 10, 20, 0.85);
+  border: 1px solid rgba(0, 255, 136, 0.15);
+  border-radius: 4px;
+  padding: 8px 12px;
+  line-height: 1.5;
+  pointer-events: none;
+  white-space: pre;
+  letter-spacing: 0.02em;
+}

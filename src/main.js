@@ -74,6 +74,26 @@ function isVenueVisible(venue) {
   return false;
 }
 
+// --- Debug panel ---
+function updateDebugPanel(venues) {
+  const el = document.getElementById('debug-panel');
+  if (!el) return;
+
+  const visible = venues.filter(isVenueVisible);
+  const count = visible.length;
+
+  // Get current LA time formatted
+  const now = new Date();
+  const laStr = now.toLocaleString('en-US', {
+    timeZone: 'America/Los_Angeles',
+    hour: 'numeric',
+    minute: '2-digit',
+    hour12: true
+  }).toLowerCase();
+
+  el.textContent = `${count} specials loading...\n${laStr} PT`;
+}
+
 // --- Time formatting: 24h → 12h ---
 function formatTime12h(timeStr) {
   const [h, m] = timeStr.split(':').map(Number);
@@ -403,6 +423,7 @@ async function init() {
       const geojson = buildGeoJSON(venues);
       addVenueLayer(map, geojson);
       setupPopups(map);
+      updateDebugPanel(venues);
 
       // Fit map to venue bounds
       const bounds = new mapboxgl.LngLatBounds();
@@ -415,6 +436,7 @@ async function init() {
       setInterval(() => {
         const updated = buildGeoJSON(venues);
         map.getSource(SOURCE_ID).setData(updated);
+        updateDebugPanel(venues);
       }, REFRESH_INTERVAL);
     });
 
