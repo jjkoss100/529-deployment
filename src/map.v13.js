@@ -45,7 +45,7 @@ function ensureOfferIcons() {
   const icons = [
     {
       id: 'icon-happy',
-      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="18" fill="none" stroke="${ORANGE_COLOR}" stroke-width="6"/></svg>`
+      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="18" fill="none" stroke="${HAPPY_COLOR}" stroke-width="6"/></svg>`
     },
     {
       id: 'icon-menu',
@@ -62,7 +62,9 @@ function ensureOfferIcons() {
   ];
 
   icons.forEach((icon) => {
-    if (map.hasImage(icon.id)) return;
+    if (map.hasImage(icon.id)) {
+      map.removeImage(icon.id);
+    }
     const img = new Image(64, 64);
     img.onload = () => {
       if (!map.hasImage(icon.id)) {
