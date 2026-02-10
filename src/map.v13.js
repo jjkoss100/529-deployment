@@ -1364,6 +1364,7 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
   const todayKey = getDateKey(now);
   const todayKeyPad = getDateKey(now, true);
 
+  const featureByVenue = new Map();
   for (let i = 0; i < venues.length; i += 1) {
     const venue = venues[i];
     const times = venue.times || {};
@@ -1378,6 +1379,7 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     const isSpecial = promoType.includes('special');
     const isPopup = promoType.includes('pop');
     const isDistinct = promoType.includes('distinct');
+    const priority = isPopup ? 4 : isSpecial ? 3 : isHappy ? 2 : 1;
     let icon = 'icon-menu';
     let color = ORANGE_COLOR;
     let strokeColor = ORANGE_STROKE;
@@ -1404,7 +1406,7 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
       baseOpacity = 1;
     }
 
-    features.push({
+    const feature = {
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [venue.lng, venue.lat] },
       properties: {
@@ -1420,9 +1422,21 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
         icon,
         index: i,
         timeStr,
-        dateKey: todayKey
+        dateKey: todayKey,
+        _priority: priority
       }
-    });
+    };
+
+    const key = venue.name.toLowerCase();
+    const existing = featureByVenue.get(key);
+    if (!existing || (feature.properties._priority > existing.properties._priority)) {
+      featureByVenue.set(key, feature);
+    }
+  }
+
+  for (const feature of featureByVenue.values()) {
+    delete feature.properties._priority;
+    features.push(feature);
   }
 
   if (!map) return;
