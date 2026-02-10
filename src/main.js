@@ -1,5 +1,5 @@
 import { fetchVenues, updateAllVenueStatuses } from './data.js?v=30';
-import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=128';
+import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=129';
 
 // --- Configuration ---
 // Replace with your published Google Sheet CSV URL
@@ -77,12 +77,15 @@ async function init() {
     requestAnimationFrame(() => {
       setTimeout(() => overlay.classList.add('covert-overlay--hide'), 2000);
     });
-    overlay.addEventListener('animationend', () => {
+    const cleanupOverlay = () => {
+      if (!overlay.isConnected) return;
       overlay.remove();
       document.body.classList.remove('covert-active');
       const brand = document.getElementById('brand-widget');
       if (brand) brand.style.display = '';
-    }, { once: true });
+    };
+    overlay.addEventListener('animationend', cleanupOverlay, { once: true });
+    setTimeout(cleanupOverlay, 3200);
   }
 
   } catch (err) {
