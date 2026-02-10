@@ -68,7 +68,8 @@ function ensureUiLayer() {
 export function initMap(containerId, mapboxToken) {
   mapboxgl.accessToken = mapboxToken;
 
-  const styleUrl = 'mapbox://styles/mapbox/navigation-night-v1';
+  // Use a base style that doesn't require traffic/incidents tiles (avoids 404s on restricted tokens).
+  const styleUrl = 'mapbox://styles/mapbox/streets-v12';
   map = new mapboxgl.Map({
     container: containerId,
     style: styleUrl,
