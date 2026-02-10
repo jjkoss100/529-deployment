@@ -552,7 +552,7 @@ function getEventLifecycleState(timeStr) {
   return {
     opacity: 1,
     glow: 0,
-    pulse: isActive ? 1 : 0,
+    pulse: 0,
     active: isActive
   };
 }
@@ -879,25 +879,9 @@ function ensureOffersLayer() {
     });
   }
 
-  if (!offerPulseHandle) {
-    const animate = (t) => {
-      if (!map || !map.getLayer(OFFERS_LAYER_ID)) {
-        offerPulseHandle = null;
-        return;
-      }
-      const pulse = (Math.sin(t / 350) + 1) / 2; // 0..1
-      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-opacity', [
-        '*',
-        ['coalesce', ['get', 'opacity'], 1],
-        [
-          '+',
-          0.7,
-          ['*', ['coalesce', ['get', 'pulse'], 0], 0.3 * pulse]
-        ]
-      ]);
-      offerPulseHandle = requestAnimationFrame(animate);
-    };
-    offerPulseHandle = requestAnimationFrame(animate);
+  if (offerPulseHandle) {
+    cancelAnimationFrame(offerPulseHandle);
+    offerPulseHandle = null;
   }
 }
 
