@@ -26,6 +26,7 @@ const OFFERS_LAYER_ID = 'offers-circles';
 const OFFERS_POPUP_ID = 'offers-popups';
 const SUPER_LIMITED_COLOR = '#4b1a7a';
 const EVENT_PRESHOW_MINUTES = 300;
+const SHOW_ALL_TODAY = true;
 const POPUP_COLOR = '#ff5db8';
 const POPUP_ICON_ID = 'popup-diamond';
 
@@ -1200,15 +1201,22 @@ function ensureEnergyTrails() {
   });
 }
 
-function updateEnergyTrails(venues) {
+function updateEnergyTrails(items) {
   if (!map) return;
   const src = map.getSource(ENERGY_SOURCE_ID);
   if (!src) return;
 
   const features = [];
-  for (const venue of venues) {
-    const baseLng = venue.lng;
-    const baseLat = venue.lat;
+  for (const item of items) {
+    let baseLng = null;
+    let baseLat = null;
+    if (item && item.geometry && item.geometry.type === 'Point') {
+      baseLng = item.geometry.coordinates[0];
+      baseLat = item.geometry.coordinates[1];
+    } else if (item && typeof item.lng === 'number' && typeof item.lat === 'number') {
+      baseLng = item.lng;
+      baseLat = item.lat;
+    }
     if (isNaN(baseLng) || isNaN(baseLat)) continue;
 
     const segments = 3;
@@ -1262,7 +1270,6 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
   currentVenues = venues;
   currentLimitedOffers = limitedOffers;
   clearMarkers();
-  updateEnergyTrails(venues);
 
   const features = [];
   lastVenueCount = venues.length;
@@ -1281,7 +1288,11 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     const timeStr = times[todayKey] || times[todayKeyPad] || '';
     if (!timeStr) continue;
 
-    const state = getEventLifecycleState(timeStr);
+    let state = getEventLifecycleState(timeStr);
+    if (!state && SHOW_ALL_TODAY) {
+      // Show all of today's venues even if they are outside the preshow/active window.
+      state = { opacity: 0.35, glow: 0, pulse: 0, active: false };
+    }
     if (!state) continue;
 
     const normalizedPromo = (venue.promotionType || '').toLowerCase();
@@ -1310,6 +1321,7 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
   }
 
   if (!map) return;
+  updateEnergyTrails(features);
   // Offset concurrent markers for the same business name
   const byName = new Map();
   for (const feature of features) {
