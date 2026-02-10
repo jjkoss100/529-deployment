@@ -876,9 +876,15 @@ function ensureOffersLayer() {
           'circle-opacity': [
             '*',
             ['coalesce', ['get', 'opacity'], 1],
-            ['coalesce', ['get', 'baseOpacity'], 1]
+            ['coalesce', ['get', 'baseOpacity'], 1],
+            ['case', ['>', ['coalesce', ['get', 'iconOpacity'], 0], 0], 0, 1]
           ],
-          'circle-radius': ['coalesce', ['get', 'baseSize'], 0],
+          'circle-radius': [
+            'case',
+            ['>', ['coalesce', ['get', 'iconOpacity'], 0], 0],
+            0,
+            ['coalesce', ['get', 'baseSize'], 0]
+          ],
           'circle-blur': [
             '+',
             0.05,
@@ -1435,7 +1441,7 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
       }
     };
 
-    const key = venue.name.toLowerCase();
+    const key = `${venue.name.trim().toLowerCase()}|${venue.lng.toFixed(5)}|${venue.lat.toFixed(5)}`;
     const existing = featureByVenue.get(key);
     if (!existing || (feature.properties._priority > existing.properties._priority)) {
       featureByVenue.set(key, feature);
