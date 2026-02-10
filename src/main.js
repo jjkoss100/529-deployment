@@ -32,9 +32,14 @@ function buildPopupHTML(props) {
   const notes = props.notes || '';
   const time = formatLiveWindow(props.liveWindow);
   const link = props.link || '';
+  const instagram = props.instagram || '';
 
   let html = `<div class="venue-popup">`;
-  html += `<div class="venue-popup__name">${name}</div>`;
+  if (instagram) {
+    html += `<a class="venue-popup__name venue-popup__name--link" href="${instagram}" target="_blank" rel="noopener noreferrer">${name}</a>`;
+  } else {
+    html += `<div class="venue-popup__name">${name}</div>`;
+  }
   if (notes) html += `<div class="venue-popup__notes">${notes}</div>`;
   if (time) html += `<div class="venue-popup__time">${time}</div>`;
   if (link) {

@@ -101,6 +101,16 @@ html, body {
   color: #fff;
 }
 
+.venue-popup__name--link {
+  text-decoration: none;
+  color: #fff;
+  transition: color 0.15s;
+}
+
+.venue-popup__name--link:hover {
+  color: #00d4ff;
+}
+
 .venue-popup__notes {
   font-size: 11px;
   color: var(--text-muted);
