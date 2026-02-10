@@ -162,16 +162,15 @@
 
 /* --- Popup --- */
 .venue-popup .mapboxgl-popup-content {
-  background: rgba(7, 9, 15, 0.94);
-  color: #f2f2f2;
-  border: 1px solid rgba(242, 107, 45, 0.18);
-  border-radius: 14px;
+  background: #fff;
+  color: #222;
+  border: none;
+  border-radius: 12px;
   padding: 0;
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
   max-height: 400px;
   overflow: hidden;
   min-width: 220px;
-  backdrop-filter: blur(6px);
 }
 
 /* --- Map Controls (Zoom + Geolocate) --- */
@@ -215,7 +214,7 @@
 }
 
 .venue-popup .mapboxgl-popup-tip {
-  border-top-color: rgba(7, 9, 15, 0.94);
+  border-top-color: #fff;
 }
 
 /* Hide default close button — we use a custom one in the header */
@@ -234,7 +233,7 @@
 .popup-event-line {
   font-size: 16px;
   font-weight: 600;
-  color: #f2f2f2;
+  color: #1f1f1f;
   margin-bottom: 10px;
   line-height: 1.4;
   font-family: var(--font-body);
@@ -247,12 +246,12 @@
   display: grid;
   gap: 6px;
   font-family: var(--font-body);
-  color: rgba(242, 242, 242, 0.8);
+  color: #2c2c2c;
   font-size: 13px;
 }
 
 .popup-list a {
-  color: #f26b2d;
+  color: #1d1d1d;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
@@ -383,7 +382,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 10px 12px;
-  border-top: 1px solid rgba(242, 107, 45, 0.15);
+  border-top: 1px solid #eee;
 }
 
 .popup-footer-actions {
@@ -394,7 +393,7 @@
 
 .popup-time-status {
   font-size: 12px;
-  color: rgba(242, 242, 242, 0.85);
+  color: #000;
   font-style: italic;
   font-family: var(--font-mono);
 }
@@ -407,16 +406,16 @@
   width: 24px;
   height: 24px;
   border-radius: 7px;
-  color: #f2f2f2;
+  color: #222;
   background: transparent;
   box-shadow: none;
-  border: 1px solid rgba(242, 107, 45, 0.35);
+  border: 1px solid rgba(0, 0, 0, 0.25);
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .popup-menu-icon {
-  background: rgba(242, 107, 45, 0.08);
-  color: #f2f2f2;
+  background: rgba(0, 0, 0, 0.03);
+  color: #222;
 }
 
 .popup-ig-link:hover,
@@ -426,11 +425,11 @@
 }
 
 .popup-time-status--active {
-  color: #f2f2f2;
+  color: #000;
 }
 
 .popup-time-status--soon {
-  color: #ff5050;
+  color: #c32020;
 }
 
 .popup-time-status--alert {

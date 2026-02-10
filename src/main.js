@@ -1,5 +1,5 @@
 import { fetchVenues, updateAllVenueStatuses } from './data.js?v=30';
-import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=131';
+import { initMap, getMap, renderMarkers, fitToVenues } from './map.v13.js?v=116';
 
 // --- Configuration ---
 // Replace with your published Google Sheet CSV URL
@@ -77,15 +77,12 @@ async function init() {
     requestAnimationFrame(() => {
       setTimeout(() => overlay.classList.add('covert-overlay--hide'), 2000);
     });
-    const cleanupOverlay = () => {
-      if (!overlay.isConnected) return;
+    overlay.addEventListener('animationend', () => {
       overlay.remove();
       document.body.classList.remove('covert-active');
       const brand = document.getElementById('brand-widget');
       if (brand) brand.style.display = '';
-    };
-    overlay.addEventListener('animationend', cleanupOverlay, { once: true });
-    setTimeout(cleanupOverlay, 3200);
+    }, { once: true });
   }
 
   } catch (err) {
@@ -257,9 +254,20 @@ function updateLocalLabel(map, venues) {
 }
 
 function ensureCovertOverlay() {
-  const existing = document.getElementById('covert-overlay');
-  if (existing) existing.remove();
-  document.body.classList.remove('covert-active');
+  if (document.getElementById('covert-overlay')) return;
+  document.body.classList.add('covert-active');
+  const brand = document.getElementById('brand-widget');
+  if (brand) brand.style.display = 'none';
+  const overlay = document.createElement('div');
+  overlay.id = 'covert-overlay';
+  overlay.className = 'covert-overlay';
+  overlay.setAttribute('aria-hidden', 'true');
+  overlay.innerHTML = `
+    <div class="covert-overlay__inner">
+      <div class="covert-overlay__tag covert-overlay__tag--headline">SCANNING FOR SPECIALS AND POP-UPS</div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
 }
 
 function updateWeatherWidget(data, marineData) {

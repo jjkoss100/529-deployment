@@ -8,7 +8,6 @@ let currentLimitedOffers = [];
 let openPopup = null;
 let energyAnimationHandle = null;
 let offerPulseHandle = null;
-let offerPulseActive = false;
 let debugPanel = null;
 let pendingOfferFeatures = null;
 let lastOfferFeatureCount = 0;
@@ -24,57 +23,8 @@ const ENERGY_SOURCE_ID = 'energy-trails';
 const ENERGY_LAYER_ID = 'energy-trails-line';
 const OFFERS_SOURCE_ID = 'offers-points';
 const OFFERS_LAYER_ID = 'offers-circles';
-const OFFERS_ICON_ID = 'offers-icons';
-const OFFERS_LABEL_ID = 'offers-labels';
 const SUPER_LIMITED_COLOR = '#4b1a7a';
 const EVENT_PRESHOW_MINUTES = 300;
-const ORANGE_COLOR = '#f26b2d';
-const ORANGE_STROKE = '#f9a15f';
-const HAPPY_COLOR = '#ffd35f';
-const HAPPY_STROKE = '#ffe29a';
-const SPECIAL_COLOR = '#4aa3ff';
-const SPECIAL_STROKE = '#9fd0ff';
-const POPUP_COLOR = '#ff5db8';
-const POPUP_STROKE = '#ff9ed6';
-
-function makeSvgData(svg) {
-  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
-}
-
-function ensureOfferIcons() {
-  if (!map) return;
-  const icons = [
-    {
-      id: 'icon-happy',
-      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="18" fill="none" stroke="${HAPPY_COLOR}" stroke-width="6"/></svg>`
-    },
-    {
-      id: 'icon-menu',
-      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><circle cx="32" cy="32" r="20" fill="${ORANGE_COLOR}"/></svg>`
-    },
-    {
-      id: 'icon-special',
-      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path fill="${SPECIAL_COLOR}" d="M32 8l6.6 13.4 14.8 2.2-10.7 10.4 2.5 14.7L32 41.8 18.8 48.7l2.5-14.7L10.6 23.6l14.8-2.2L32 8z"/></svg>`
-    },
-    {
-      id: 'icon-popup',
-      svg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><path fill="${POPUP_COLOR}" d="M32 8l20 20-20 20-20-20z"/></svg>`
-    }
-  ];
-
-  icons.forEach((icon) => {
-    if (map.hasImage(icon.id)) {
-      map.removeImage(icon.id);
-    }
-    const img = new Image(64, 64);
-    img.onload = () => {
-      if (!map.hasImage(icon.id)) {
-        map.addImage(icon.id, img, { pixelRatio: 2 });
-      }
-    };
-    img.src = makeSvgData(icon.svg);
-  });
-}
 
 const IG_SVG = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="ig-grad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#405de6"/><stop offset="15%" stop-color="#5851db"/><stop offset="30%" stop-color="#833ab4"/><stop offset="45%" stop-color="#c13584"/><stop offset="60%" stop-color="#e1306c"/><stop offset="72%" stop-color="#fd1d1d"/><stop offset="82%" stop-color="#f56040"/><stop offset="90%" stop-color="#f77737"/><stop offset="96%" stop-color="#fcaf45"/><stop offset="100%" stop-color="#ffdc80"/></linearGradient></defs><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z" stroke="url(#ig-grad)" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 const MENU_SVG = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>`;
@@ -138,23 +88,27 @@ export function initMap(containerId, mapboxToken) {
   });
   map.on('idle', updateDebugPanel);
 
-  let styleWatchTicks = 0;
   const styleWatch = setInterval(() => {
     if (!map) {
       clearInterval(styleWatch);
       return;
     }
-    styleWatchTicks += 1;
     if (map.isStyleLoaded()) {
       ensureOffersLayer();
       updateDebugPanel();
-      clearInterval(styleWatch);
-    } else if (styleWatchTicks >= 12) {
       clearInterval(styleWatch);
     } else {
       updateDebugPanel();
     }
   }, 500);
+
+  setTimeout(() => {
+    if (!map) return;
+    if (!map.isStyleLoaded()) {
+      console.warn('Style still not loaded; forcing setStyle refresh.');
+      map.setStyle(styleUrl);
+    }
+  }, 3500);
 
   return map;
 }
@@ -823,7 +777,6 @@ function buildSuperLimitedPopup(offer, timeStr, dateKey) {
 function ensureOffersLayer() {
   if (!map) return;
   if (!map.getStyle || !map.getStyle()) return;
-  ensureOfferIcons();
   if (!map.getSource(OFFERS_SOURCE_ID)) {
     try {
       map.addSource(OFFERS_SOURCE_ID, {
@@ -869,67 +822,43 @@ function ensureOffersLayer() {
         type: 'circle',
         source: OFFERS_SOURCE_ID,
         paint: {
-          'circle-color': ['coalesce', ['get', 'color'], ORANGE_COLOR],
-          'circle-opacity': [
-            '*',
-            ['coalesce', ['get', 'opacity'], 1],
-            ['coalesce', ['get', 'baseOpacity'], 1],
-            ['case', ['>', ['coalesce', ['get', 'iconOpacity'], 0], 0], 0, 1]
-          ],
+          'circle-color': ['coalesce', ['get', 'color'], '#f26b2d'],
+          'circle-opacity': ['coalesce', ['get', 'opacity'], 1],
           'circle-radius': [
-            'case',
-            ['>', ['coalesce', ['get', 'iconOpacity'], 0], 0],
-            0,
-            ['coalesce', ['get', 'baseSize'], 0]
+            '+',
+            10,
+            ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 10],
+            ['*', ['coalesce', ['get', 'pulse'], 0], 4]
           ],
           'circle-blur': [
             '+',
-            0.05,
-            0
+            0.25,
+            ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 1.1],
+            ['*', ['coalesce', ['get', 'pulse'], 0], 0.4]
           ],
           'circle-translate': [0, -2],
           'circle-translate-anchor': 'viewport',
-          'circle-stroke-color': ['coalesce', ['get', 'strokeColor'], ORANGE_STROKE],
-          'circle-stroke-width': ['case', ['>', ['coalesce', ['get', 'baseOpacity'], 0], 0], 1.2, 0],
-          'circle-stroke-opacity': ['case', ['>', ['coalesce', ['get', 'baseOpacity'], 0], 0], 0.85, 0]
+          'circle-stroke-color': ['coalesce', ['get', 'strokeColor'], '#f9a15f'],
+          'circle-stroke-width': ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 1.6],
+          'circle-stroke-opacity': ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 0.9]
         }
       });
 
       map.addLayer({
-        id: OFFERS_ICON_ID,
-        type: 'symbol',
+        id: `${OFFERS_LAYER_ID}-shine`,
+        type: 'circle',
         source: OFFERS_SOURCE_ID,
-        layout: {
-          'icon-image': ['get', 'icon'],
-          'icon-size': ['coalesce', ['get', 'iconSize'], 0.6],
-          'icon-allow-overlap': true,
-          'icon-ignore-placement': true,
-          'icon-optional': true
-        },
         paint: {
-          'icon-opacity': ['coalesce', ['get', 'iconOpacity'], 1]
-        }
-      });
-
-      map.addLayer({
-        id: OFFERS_LABEL_ID,
-        type: 'symbol',
-        source: OFFERS_SOURCE_ID,
-        layout: {
-          'text-field': ['get', 'label'],
-          'text-font': ['Open Sans Regular', 'Arial Unicode MS Regular'],
-          'text-size': 12,
-          'text-anchor': 'left',
-          'text-offset': [0.9, -0.05],
-          'text-allow-overlap': true,
-          'text-optional': true
-        },
-        paint: {
-          'text-color': ['coalesce', ['get', 'color'], ORANGE_COLOR],
-          'text-halo-color': 'rgba(7, 9, 15, 0.85)',
-          'text-halo-width': 1.6,
-          'text-halo-blur': 0.6,
-          'text-opacity': 0.9
+          'circle-color': '#fff6ea',
+          'circle-opacity': ['*', ['coalesce', ['get', 'opacity'], 1], 0.25],
+          'circle-radius': [
+            '+',
+            4.5,
+            ['*', ['coalesce', ['get', 'pulse'], 0], 1.4]
+          ],
+          'circle-blur': 0.4,
+          'circle-translate': [0.8, -2.8],
+          'circle-translate-anchor': 'viewport'
         }
       });
     } catch (err) {
@@ -984,16 +913,45 @@ function ensureOffersLayer() {
 
   if (!offerPulseHandle) {
     const animate = (t) => {
-      if (!map || !map.getLayer(OFFERS_LAYER_ID) || !offerPulseActive) {
+      if (!map || !map.getLayer(OFFERS_LAYER_ID)) {
         offerPulseHandle = null;
         return;
       }
       const pulse = (Math.sin(t / 350) + 1) / 2; // 0..1
-      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-opacity', [
-        '*',
-        ['coalesce', ['get', 'opacity'], 1],
-        ['coalesce', ['get', 'baseOpacity'], 1]
+      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-radius', [
+        '+',
+        10,
+        ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 10],
+        ['*', ['coalesce', ['get', 'pulse'], 0], 6 * pulse]
       ]);
+      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-blur', [
+        '+',
+        0.25,
+        ['*', ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0], 1.1],
+        ['*', ['coalesce', ['get', 'pulse'], 0], 0.6 * pulse]
+      ]);
+      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-stroke-width', [
+        '*',
+        ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0],
+        1.6
+      ]);
+      map.setPaintProperty(OFFERS_LAYER_ID, 'circle-stroke-opacity', [
+        '*',
+        ['max', ['-', ['coalesce', ['get', 'glow'], 0], 0.35], 0],
+        0.9
+      ]);
+      if (map.getLayer(`${OFFERS_LAYER_ID}-shine`)) {
+        map.setPaintProperty(`${OFFERS_LAYER_ID}-shine`, 'circle-radius', [
+          '+',
+          4.5,
+          ['*', ['coalesce', ['get', 'pulse'], 0], 1.4 * pulse]
+        ]);
+        map.setPaintProperty(`${OFFERS_LAYER_ID}-shine`, 'circle-opacity', [
+          '*',
+          ['coalesce', ['get', 'opacity'], 1],
+          0.25 + 0.15 * pulse
+        ]);
+      }
       offerPulseHandle = requestAnimationFrame(animate);
     };
     offerPulseHandle = requestAnimationFrame(animate);
@@ -1124,16 +1082,6 @@ function stylizeBaseLayers() {
     try {
       const id = layer.id.toLowerCase();
 
-      const isOfferLayer = layer.id === OFFERS_LAYER_ID ||
-        layer.id === OFFERS_ICON_ID ||
-        layer.id === OFFERS_LABEL_ID ||
-        layer.id === 'offers-debug' ||
-        layer.id === ENERGY_LAYER_ID;
-
-      if (isOfferLayer) {
-        continue;
-      }
-
       if (layer.type === 'background') {
         map.setPaintProperty(layer.id, 'background-color', '#07090f');
       }
@@ -1199,7 +1147,7 @@ function stylizeBaseLayers() {
         map.setPaintProperty(layer.id, 'icon-opacity', 0);
       }
 
-      if (layer.id === OFFERS_LAYER_ID || layer.id === OFFERS_ICON_ID || layer.id === OFFERS_LABEL_ID || layer.id === 'offers-debug' || layer.id === ENERGY_LAYER_ID) {
+      if (layer.id === OFFERS_LAYER_ID || layer.id === 'offers-debug' || layer.id === ENERGY_LAYER_ID) {
         continue;
       }
 
@@ -1363,7 +1311,6 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
   const todayKey = getDateKey(now);
   const todayKeyPad = getDateKey(now, true);
 
-  const featureByVenue = new Map();
   for (let i = 0; i < venues.length; i += 1) {
     const venue = venues[i];
     const times = venue.times || {};
@@ -1373,94 +1320,25 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     const state = getEventLifecycleState(timeStr);
     if (!state) continue;
 
-    const promoType = (venue.promotionType || '').toLowerCase();
-    const isHappy = promoType.includes('happy');
-    const isSpecial = promoType.includes('special');
-    const isPopup = promoType.includes('pop');
-    const isDistinct = promoType.includes('distinct');
-    const priority = isPopup ? 4 : isSpecial ? 3 : isHappy ? 2 : 1;
-    let icon = 'icon-menu';
-    let color = ORANGE_COLOR;
-    let strokeColor = ORANGE_STROKE;
-    let baseOpacity = 1;
-    let baseSize = 10;
-    let iconSize = 0.6;
-    if (isHappy) {
-      icon = 'icon-happy';
-      color = HAPPY_COLOR;
-      strokeColor = HAPPY_STROKE;
-      baseOpacity = 0;
-      baseSize = 0;
-      iconSize = 0.7;
-    } else if (isSpecial) {
-      icon = 'icon-special';
-      color = SPECIAL_COLOR;
-      strokeColor = SPECIAL_STROKE;
-      baseOpacity = 0;
-      baseSize = 0;
-      iconSize = 0.8;
-    } else if (isPopup) {
-      icon = 'icon-popup';
-      color = POPUP_COLOR;
-      strokeColor = POPUP_STROKE;
-      baseOpacity = 0;
-      baseSize = 0;
-      iconSize = 0.8;
-    } else if (isDistinct) {
-      icon = 'icon-menu';
-      color = ORANGE_COLOR;
-      strokeColor = ORANGE_STROKE;
-      baseOpacity = 1;
-      baseSize = 11;
-      iconSize = 0;
-    }
-
-    const feature = {
+    features.push({
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [venue.lng, venue.lat] },
       properties: {
         opacity: state.opacity,
         glow: state.glow,
         pulse: state.pulse,
-        color,
-        strokeColor,
-        baseOpacity,
-        baseSize,
-        iconSize,
-        iconOpacity: (isHappy || isSpecial || isPopup) ? 1 : 0,
+        color: '#f26b2d',
+        strokeColor: '#f9a15f',
         popupType: 'event',
-        label: venue.name,
-        icon,
         index: i,
         timeStr,
-        dateKey: todayKey,
-        _priority: priority
+        dateKey: todayKey
       }
-    };
-
-    const key = `${venue.name.trim().toLowerCase()}|${venue.lng.toFixed(5)}|${venue.lat.toFixed(5)}`;
-    const existing = featureByVenue.get(key);
-    if (!existing || (feature.properties._priority > existing.properties._priority)) {
-      featureByVenue.set(key, feature);
-    }
-  }
-
-  let hasPulse = false;
-  for (const feature of featureByVenue.values()) {
-    delete feature.properties._priority;
-    if (feature.properties.pulse > 0) {
-      hasPulse = true;
-    }
-    features.push(feature);
+    });
   }
 
   if (!map) return;
   lastVisibleCount = features.length;
-  offerPulseActive = hasPulse;
-  if (!offerPulseActive && offerPulseHandle) {
-    cancelAnimationFrame(offerPulseHandle);
-    offerPulseHandle = null;
-  }
 
   const setOfferData = (items) => {
     ensureOffersLayer();
