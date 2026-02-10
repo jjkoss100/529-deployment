@@ -1282,25 +1282,51 @@ export function renderMarkers(venues, filters, limitedOffers = []) {
     const state = getEventLifecycleState(timeStr);
     if (!state) continue;
 
-    features.push({
-      type: 'Feature',
-      geometry: { type: 'Point', coordinates: [venue.lng, venue.lat] },
-      properties: {
-        opacity: state.opacity,
-        glow: state.glow,
-        pulse: state.pulse,
-        color: '#f26b2d',
-        strokeColor: '#f9a15f',
-        promoType: (venue.promotionType || '').toLowerCase().includes('pop') ? 'popup' : 'default',
-        popupType: 'event',
-        index: i,
-        timeStr,
-        dateKey: todayKey
-      }
-    });
+    const promoType = (venue.promotionType || '').toLowerCase().includes('pop') ? 'popup' : 'default';
+    const featureKey = `${venue.name.toLowerCase()}|${timeStr}|${promoType}`;
+    const existing = features.find(f => f.properties && f.properties._key === featureKey);
+    if (!existing) {
+      features.push({
+        type: 'Feature',
+        geometry: { type: 'Point', coordinates: [venue.lng, venue.lat] },
+        properties: {
+          opacity: state.opacity,
+          glow: state.glow,
+          pulse: state.pulse,
+          color: '#f26b2d',
+          strokeColor: '#f9a15f',
+          promoType,
+          popupType: 'event',
+          index: i,
+          timeStr,
+          dateKey: todayKey,
+          _key: featureKey
+        }
+      });
+    }
   }
 
   if (!map) return;
+  // Offset concurrent markers for the same business name
+  const byName = new Map();
+  for (const feature of features) {
+    const nameKey = (feature.properties && feature.properties._key) ? feature.properties._key.split('|')[0] : '';
+    if (!byName.has(nameKey)) byName.set(nameKey, []);
+    byName.get(nameKey).push(feature);
+  }
+  for (const group of byName.values()) {
+    if (group.length <= 1) continue;
+    const count = group.length;
+    for (let i = 0; i < group.length; i += 1) {
+      const offset = (i - (count - 1) / 2) * LNG_OFFSET;
+      group[i].geometry.coordinates[0] += offset;
+    }
+  }
+  for (const feature of features) {
+    if (feature.properties) {
+      delete feature.properties._key;
+    }
+  }
   lastVisibleCount = features.length;
 
   const setOfferData = (items) => {
