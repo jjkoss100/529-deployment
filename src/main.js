@@ -114,6 +114,7 @@ function updateDebugPanel(venues) {
 
   const upcoming = venues.filter(isVenueUpcoming);
   const count = upcoming.length;
+  console.log(`Upcoming deals (${count}):`, upcoming.map(v => `${v.name} [${v.liveWindow}] ${v.eventName || v.promotionType}`));
 
   // Get current LA time formatted
   const now = new Date();
