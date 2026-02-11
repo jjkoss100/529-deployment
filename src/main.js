@@ -85,6 +85,29 @@ function isDealComingSoon(deal) {
   return false;
 }
 
+// --- Check if a deal's start time is still ahead of now (hasn't started yet) ---
+function isDealStillAhead(deal) {
+  if (!deal.liveWindow) return false;
+
+  const nowMin = getLAMinutes();
+  const ranges = deal.liveWindow.split(',');
+
+  for (const range of ranges) {
+    const parts = range.trim().split('-');
+    if (parts.length !== 2) continue;
+
+    const start = parseMinutes(parts[0].trim());
+    if (start === null) continue;
+
+    // Deal is still ahead if start > now (same day)
+    // or if start is small (early morning tomorrow, e.g. 01:00) and now is evening
+    if (start > nowMin) return true;
+    if (start < 6 * 60 && nowMin > 12 * 60) return true; // early morning = tomorrow
+  }
+
+  return false;
+}
+
 // --- Debug panel ---
 function updateDebugPanel(venues) {
   const el = document.getElementById('debug-panel');
@@ -98,8 +121,9 @@ function updateDebugPanel(venues) {
     hour12: true
   }).toLowerCase();
 
-  const upcoming = venues.filter(isDealComingSoon);
-  const count = upcoming.length;
+  // Count deals that are NOT active and NOT coming soon (more than 5h out, still waiting)
+  const queued = venues.filter(v => v.liveWindow && !isDealActiveNow(v) && !isDealComingSoon(v) && isDealStillAhead(v));
+  const count = queued.length;
   el.textContent = `${count} deal${count !== 1 ? 's' : ''} loading...\n${laStr} PT`;
 }
 
