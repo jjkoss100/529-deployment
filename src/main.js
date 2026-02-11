@@ -125,7 +125,7 @@ function updateDebugPanel(venues) {
   // Count deals that are NOT active and NOT coming soon (more than 5h out, still waiting)
   const queued = venues.filter(v => v.liveWindow && !isDealActiveNow(v) && !isDealComingSoon(v) && isDealStillAhead(v));
   const count = queued.length;
-  el.textContent = `${count} deal${count !== 1 ? 's' : ''} still coming later today...\n${laStr} PT`;
+  el.textContent = `${count} deal${count !== 1 ? 's' : ''} still coming later today...`;
 }
 
 // --- Time formatting: 24h → 12h ---
@@ -174,7 +174,7 @@ function buildPopupHTML(props) {
 // --- SVG Marker Icons ---
 const MARKER_SVGS = {
   'Special': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-    <path fill="#22c55e" d="M32 4 L39.5 24.5 L60 24.5 L43 38 L49 58 L32 46 L15 58 L21 38 L4 24.5 L24.5 24.5 Z"/>
+    <path fill="#3b82f6" d="M32 4 L39.5 24.5 L60 24.5 L43 38 L49 58 L32 46 L15 58 L21 38 L4 24.5 L24.5 24.5 Z"/>
   </svg>`,
 
   'Happy Hour': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
@@ -506,7 +506,7 @@ async function init() {
           'circle-radius': 18,
           'circle-color': [
             'match', ['get', 'promotionType'],
-            'Special',       '#22c55e',
+            'Special',       '#3b82f6',
             'Happy Hour',    '#facc15',
             'Distinct Menu', '#f97316',
             'Limited',       '#a855f7',
