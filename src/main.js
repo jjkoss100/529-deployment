@@ -7,6 +7,7 @@ const MAP_STYLE = 'mapbox://styles/mapbox/dark-v11';
 const SOURCE_ID = 'venues';
 const LAYER_ID = 'venue-markers';
 const LNG_OFFSET = 0.00012;
+const GLOW_LAYER_ID = 'venue-glow';
 const PRESHOW_HOURS = 5;
 const REFRESH_INTERVAL = 60000; // re-filter every 60s
 
@@ -478,6 +479,53 @@ async function init() {
 
       const geojson = buildGeoJSON(venues);
       addVenueLayer(map, geojson);
+
+      // --- Effect 1: Fog & atmosphere ---
+      map.setFog({
+        'range': [-1, 8],
+        'horizon-blend': 0.3,
+        'color': '#1a1a2e',
+        'high-color': '#0f1419',
+        'space-color': '#050810',
+        'star-intensity': 0.6
+      });
+
+      // --- Effect 2: Water breathing animation ---
+      setInterval(() => {
+        const t = (Math.sin(Date.now() / 3000) + 1) / 2;
+        const opacity = 0.5 + t * 0.2;
+        map.setPaintProperty('water', 'fill-opacity', opacity);
+      }, 50);
+
+      // --- Effect 3: Pulsing glow rings behind markers ---
+      map.addLayer({
+        id: GLOW_LAYER_ID,
+        type: 'circle',
+        source: SOURCE_ID,
+        paint: {
+          'circle-radius': 18,
+          'circle-color': [
+            'match', ['get', 'promotionType'],
+            'Special',       '#22c55e',
+            'Happy Hour',    '#facc15',
+            'Distinct Menu', '#f97316',
+            'Limited',       '#a855f7',
+            'Pop-up',        '#ef4444',
+            '#22c55e'
+          ],
+          'circle-opacity': 0.25,
+          'circle-blur': 0.8,
+        }
+      }, LAYER_ID);
+
+      let glowFrame = 0;
+      setInterval(() => {
+        glowFrame++;
+        const t = (Math.sin(glowFrame * 0.06) + 1) / 2;
+        map.setPaintProperty(GLOW_LAYER_ID, 'circle-radius', 16 + t * 10);
+        map.setPaintProperty(GLOW_LAYER_ID, 'circle-opacity', 0.15 + t * 0.18);
+      }, 50);
+
       setupPopups(map);
       setupToggle(map, venues);
       updateDebugPanel(venues);
