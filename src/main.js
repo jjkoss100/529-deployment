@@ -378,6 +378,9 @@ function setupPopups(map) {
         .setLngLat(feature.geometry.coordinates)
         .setHTML(buildPopupHTML(feature.properties))
         .addTo(map);
+
+      const popupEl = popup.getElement();
+      if (popupEl) popupEl.addEventListener('click', (ev) => ev.stopPropagation());
     });
 
     map.on('click', (e) => {
@@ -409,11 +412,12 @@ function setupPopups(map) {
         .setHTML(buildPopupHTML(feature.properties))
         .addTo(map);
 
-      // Keep popup alive while hovering its content
+      // Keep popup alive while hovering its content & stop link clicks from hitting the map
       const el = popup.getElement();
       if (el) {
         el.addEventListener('mouseenter', cancelClose);
         el.addEventListener('mouseleave', scheduleClose);
+        el.addEventListener('click', (ev) => ev.stopPropagation());
       }
     });
 
