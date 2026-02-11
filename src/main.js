@@ -25,8 +25,8 @@ function parseMinutes(timeStr) {
   return h * 60 + (m || 0);
 }
 
-// --- Toggle state ---
-let currentMode = 'now'; // 'now' or 'soon'
+// --- Toggle state (persisted across refreshes) ---
+let currentMode = localStorage.getItem('529-mode') || 'now';
 
 // --- Check if a deal is currently active (NOW mode) ---
 // Active = current LA time falls within the live window (start ≤ now ≤ end).
@@ -428,12 +428,19 @@ function setupPopups(map) {
 // --- Toggle setup ---
 function setupToggle(map, venues) {
   const btns = document.querySelectorAll('.mode-toggle__btn');
+
+  // Restore saved toggle state on load
+  btns.forEach(b => {
+    b.classList.toggle('mode-toggle__btn--active', b.dataset.mode === currentMode);
+  });
+
   btns.forEach(btn => {
     btn.addEventListener('click', () => {
       const mode = btn.dataset.mode;
       if (mode === currentMode) return;
 
       currentMode = mode;
+      localStorage.setItem('529-mode', mode);
 
       // Update active class
       btns.forEach(b => b.classList.remove('mode-toggle__btn--active'));
