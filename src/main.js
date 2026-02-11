@@ -24,17 +24,18 @@ function parseMinutes(timeStr) {
   return h * 60 + (m || 0);
 }
 
-// --- Check if a venue should be visible right now ---
-// Show if: current time is within 5 hours before start, OR during the active window.
-// Hide if: more than 5 hours before start, OR after the window ends.
-// Venues with no liveWindow are always shown.
-function isVenueVisible(venue) {
-  if (!venue.liveWindow) return true;
+// --- Toggle state ---
+let currentMode = 'now'; // 'now' or 'soon'
+
+// --- Check if a deal is currently active (NOW mode) ---
+// Active = current LA time falls within the live window (start ≤ now ≤ end).
+// Deals with no liveWindow are always shown in NOW mode.
+function isDealActiveNow(deal) {
+  if (!deal.liveWindow) return true;
 
   const nowMin = getLAMinutes();
+  const ranges = deal.liveWindow.split(',');
 
-  // Check each time range (comma-separated)
-  const ranges = venue.liveWindow.split(',');
   for (const range of ranges) {
     const parts = range.trim().split('-');
     if (parts.length !== 2) continue;
@@ -43,65 +44,42 @@ function isVenueVisible(venue) {
     const end = parseMinutes(parts[1].trim());
     if (start === null || end === null) continue;
 
-    // Handle midnight-crossing windows (e.g. 22:00-02:00)
     const crossesMidnight = end <= start;
-    const preshowStart = start - PRESHOW_HOURS * 60;
 
     if (crossesMidnight) {
-      // Active window spans midnight: start..1440 + 0..end
-      // Preshow: preshowStart..start
-      // Visible if: nowMin >= preshowStart AND nowMin <= end (next day)
-      if (preshowStart >= 0) {
-        if (nowMin >= preshowStart) return true; // preshow or active (evening side)
-        if (nowMin <= end) return true;           // active (morning side)
-      } else {
-        // Preshow wraps to previous day
-        if (nowMin >= (preshowStart + 1440)) return true;
-        if (nowMin >= start) return true;
-        if (nowMin <= end) return true;
-      }
+      // e.g. 22:00-02:00 — active if now >= start OR now <= end
+      if (nowMin >= start || nowMin <= end) return true;
     } else {
-      // Normal window: start..end same day
-      if (preshowStart >= 0) {
-        if (nowMin >= preshowStart && nowMin <= end) return true;
-      } else {
-        // Preshow wraps to previous day (e.g. event at 03:00, preshow starts at 22:00 prev day)
-        if (nowMin >= (preshowStart + 1440) || nowMin <= end) return true;
-      }
+      // e.g. 15:00-18:00 — active if start <= now <= end
+      if (nowMin >= start && nowMin <= end) return true;
     }
   }
 
   return false;
 }
 
-// --- Check if a venue is upcoming but not yet visible ---
-// Upcoming = has a liveWindow, is NOT currently on the map, and hasn't fully ended yet.
-// This includes late-night deals that bleed into early morning tomorrow.
-function isVenueUpcoming(venue) {
-  if (!venue.liveWindow) return false;
-  if (isVenueVisible(venue)) return false; // already showing on map
+// --- Check if a deal is coming soon (SOON mode) ---
+// Coming soon = starts within the next 5 hours AND is NOT currently active.
+// Deals with no liveWindow are never shown in SOON mode.
+function isDealComingSoon(deal) {
+  if (!deal.liveWindow) return false;
+  if (isDealActiveNow(deal)) return false;
 
   const nowMin = getLAMinutes();
-  const ranges = venue.liveWindow.split(',');
+  const ranges = deal.liveWindow.split(',');
 
   for (const range of ranges) {
     const parts = range.trim().split('-');
     if (parts.length !== 2) continue;
 
     const start = parseMinutes(parts[0].trim());
-    const end = parseMinutes(parts[1].trim());
-    if (start === null || end === null) continue;
+    if (start === null) continue;
 
-    const crossesMidnight = end <= start;
+    // Minutes until start (handles midnight wrap)
+    let minsUntilStart = start - nowMin;
+    if (minsUntilStart < 0) minsUntilStart += 1440; // wrap to next day
 
-    if (crossesMidnight) {
-      // e.g. 22:00-02:00 — hasn't ended if now < end (morning side) or now < start (evening side, not started)
-      // Since isVenueVisible already returned false, this deal is waiting to start
-      if (nowMin < start) return true;
-    } else {
-      // Normal window — upcoming if now is before the end time
-      if (nowMin < end) return true;
-    }
+    if (minsUntilStart <= PRESHOW_HOURS * 60) return true;
   }
 
   return false;
@@ -112,11 +90,6 @@ function updateDebugPanel(venues) {
   const el = document.getElementById('debug-panel');
   if (!el) return;
 
-  const upcoming = venues.filter(isVenueUpcoming);
-  const count = upcoming.length;
-  console.log(`Upcoming deals (${count}):`, upcoming.map(v => `${v.name} [${v.liveWindow}] ${v.eventName || v.promotionType}`));
-
-  // Get current LA time formatted
   const now = new Date();
   const laStr = now.toLocaleString('en-US', {
     timeZone: 'America/Los_Angeles',
@@ -125,7 +98,13 @@ function updateDebugPanel(venues) {
     hour12: true
   }).toLowerCase();
 
-  el.textContent = `${count} deal${count !== 1 ? 's' : ''} loading...\n${laStr} PT`;
+  if (currentMode === 'now') {
+    const active = venues.filter(isDealActiveNow);
+    el.textContent = `${active.length} deal${active.length !== 1 ? 's' : ''} live\n${laStr} PT`;
+  } else {
+    const upcoming = venues.filter(isDealComingSoon);
+    el.textContent = `${upcoming.length} deal${upcoming.length !== 1 ? 's' : ''} loading...\n${laStr} PT`;
+  }
 }
 
 // --- Time formatting: 24h → 12h ---
@@ -279,10 +258,11 @@ async function fetchAndParseCSV(url) {
   return venues;
 }
 
-// --- Build GeoJSON from venues (only visible ones) ---
+// --- Build GeoJSON from venues (filtered by current mode) ---
 function buildGeoJSON(venues) {
-  const visible = venues.filter(isVenueVisible);
-  console.log(`Showing ${visible.length} of ${venues.length} venues`);
+  const filterFn = currentMode === 'now' ? isDealActiveNow : isDealComingSoon;
+  const visible = venues.filter(filterFn);
+  console.log(`[${currentMode.toUpperCase()}] Showing ${visible.length} of ${venues.length} deals`);
 
   // Group by venue name to offset overlapping markers
   const byName = new Map();
@@ -420,6 +400,28 @@ function setupPopups(map) {
   }
 }
 
+// --- Toggle setup ---
+function setupToggle(map, venues) {
+  const btns = document.querySelectorAll('.mode-toggle__btn');
+  btns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const mode = btn.dataset.mode;
+      if (mode === currentMode) return;
+
+      currentMode = mode;
+
+      // Update active class
+      btns.forEach(b => b.classList.remove('mode-toggle__btn--active'));
+      btn.classList.add('mode-toggle__btn--active');
+
+      // Re-filter and update map
+      const updated = buildGeoJSON(venues);
+      map.getSource(SOURCE_ID).setData(updated);
+      updateDebugPanel(venues);
+    });
+  });
+}
+
 // --- Initialize Mapbox map ---
 function initMap() {
   mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -457,6 +459,7 @@ async function init() {
       const geojson = buildGeoJSON(venues);
       addVenueLayer(map, geojson);
       setupPopups(map);
+      setupToggle(map, venues);
       updateDebugPanel(venues);
 
       // Fit map to venue bounds
