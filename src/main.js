@@ -98,13 +98,9 @@ function updateDebugPanel(venues) {
     hour12: true
   }).toLowerCase();
 
-  if (currentMode === 'now') {
-    const active = venues.filter(isDealActiveNow);
-    el.textContent = `${active.length} deal${active.length !== 1 ? 's' : ''} live\n${laStr} PT`;
-  } else {
-    const upcoming = venues.filter(isDealComingSoon);
-    el.textContent = `${upcoming.length} deal${upcoming.length !== 1 ? 's' : ''} loading...\n${laStr} PT`;
-  }
+  const upcoming = venues.filter(isDealComingSoon);
+  const count = upcoming.length;
+  el.textContent = `${count} deal${count !== 1 ? 's' : ''} loading...\n${laStr} PT`;
 }
 
 // --- Time formatting: 24h → 12h ---
