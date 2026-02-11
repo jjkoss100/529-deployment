@@ -185,4 +185,10 @@ html, body {
   pointer-events: none;
   white-space: pre;
   letter-spacing: 0.02em;
+  animation: debugPulse 3s ease-in-out infinite;
+}
+
+@keyframes debugPulse {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
 }

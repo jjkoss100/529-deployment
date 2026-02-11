@@ -124,7 +124,7 @@ function updateDebugPanel(venues) {
   // Count deals that are NOT active and NOT coming soon (more than 5h out, still waiting)
   const queued = venues.filter(v => v.liveWindow && !isDealActiveNow(v) && !isDealComingSoon(v) && isDealStillAhead(v));
   const count = queued.length;
-  el.textContent = `${count} deal${count !== 1 ? 's' : ''} still coming later today\n${laStr} PT`;
+  el.textContent = `${count} deal${count !== 1 ? 's' : ''} still coming later today...\n${laStr} PT`;
 }
 
 // --- Time formatting: 24h → 12h ---
