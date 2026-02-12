@@ -91,7 +91,7 @@ html, body {
 .venue-popup {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 
 .venue-popup__name {
@@ -123,7 +123,8 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 4px;
+  margin-top: 6px;
+  gap: 12px;
 }
 
 .venue-popup__time {
