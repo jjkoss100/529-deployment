@@ -124,14 +124,19 @@ function updateDebugPanel(venues) {
 
   // Count deals that are NOT active and NOT coming soon (more than 5h out, still waiting)
   const queued = venues.filter(v => v.liveWindow && !isDealActiveNow(v) && !isDealComingSoon(v) && isDealStillAhead(v));
-  const count = queued.length;
+  const active = venues.filter(v => v.liveWindow && isDealActiveNow(v));
 
-  if (count === 0) {
+  if (queued.length > 0) {
+    el.style.display = '';
+    el.textContent = `${queued.length} deal${queued.length !== 1 ? 's' : ''} still coming later today...`;
+  } else if (active.length > 0) {
     el.style.display = 'none';
-    return;
+  } else {
+    // Today is over — show tomorrow's deal count
+    const total = venues.filter(v => v.liveWindow).length;
+    el.style.display = '';
+    el.textContent = `${total} deal${total !== 1 ? 's' : ''} loading for tomorrow...`;
   }
-  el.style.display = '';
-  el.textContent = `${count} deal${count !== 1 ? 's' : ''} still coming later today...`;
 }
 
 // --- Time formatting: 24h → 12h ---
