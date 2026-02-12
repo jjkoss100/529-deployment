@@ -103,13 +103,14 @@ html, body {
 
 .venue-popup__name--link {
   display: block;
-  text-decoration: none;
+  text-decoration: underline;
   color: #fff;
   cursor: pointer;
+  outline: none;
 }
 
-.venue-popup__name--link:hover {
-  text-decoration: underline;
+.venue-popup__name--link:focus {
+  outline: none;
 }
 
 .venue-popup__notes {
