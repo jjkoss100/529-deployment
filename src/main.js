@@ -175,6 +175,7 @@ function buildPopupHTML(props) {
   if (time) html += `<div class="venue-popup__time">${time}</div>`;
   if (link) {
     const linkLabels = {
+      'Special': 'see special',
       'Happy Hour': 'see drinks',
       'Distinct Menu': 'see menu',
       'Limited': 'see details',
