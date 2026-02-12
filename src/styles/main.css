@@ -104,7 +104,7 @@ html, body {
 .venue-popup__name--link {
   display: block;
   text-decoration: none;
-  color: #00d4ff;
+  color: #fff;
   cursor: pointer;
 }
 
