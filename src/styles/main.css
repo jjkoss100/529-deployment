@@ -183,7 +183,7 @@ html, body {
 /* --- Mode toggle --- */
 .mode-toggle {
   position: fixed;
-  top: 60px;
+  top: 68px;
   left: 16px;
   z-index: 10;
   display: flex;
