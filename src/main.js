@@ -25,8 +25,9 @@ function parseMinutes(timeStr) {
   return h * 60 + (m || 0);
 }
 
-// --- Toggle state (persisted across refreshes) ---
-let currentMode = localStorage.getItem('529-mode') || 'now';
+// --- Toggle state (persisted within session, resets to NOW on new visit) ---
+let currentMode = sessionStorage.getItem('529-mode') || 'now';
+let activePopup = null;
 
 // --- Check if a deal is currently active (NOW mode) ---
 // Active = current LA time falls within the live window (start ≤ now ≤ end).
@@ -466,6 +467,7 @@ function setupPopups(map) {
     maxWidth: '280px',
     offset: 12,
   });
+  activePopup = popup;
 
   const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
 
@@ -539,11 +541,14 @@ function setupToggle(map, venues) {
       if (mode === currentMode) return;
 
       currentMode = mode;
-      localStorage.setItem('529-mode', mode);
+      sessionStorage.setItem('529-mode', mode);
 
       // Update active class
       btns.forEach(b => b.classList.remove('mode-toggle__btn--active'));
       btn.classList.add('mode-toggle__btn--active');
+
+      // Close any open popup
+      if (activePopup) activePopup.remove();
 
       // Re-filter and update map
       const updated = buildGeoJSON(venues);
