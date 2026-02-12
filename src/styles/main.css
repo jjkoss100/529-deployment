@@ -114,7 +114,7 @@ html, body {
 }
 
 .venue-popup__notes {
-  font-size: 13px;
+  font-size: 15px;
   color: var(--text-muted);
   line-height: 1.4;
 }
@@ -127,7 +127,7 @@ html, body {
 }
 
 .venue-popup__time {
-  font-size: 12px;
+  font-size: 10px;
   color: #facc15;
 }
 
@@ -135,6 +135,7 @@ html, body {
   display: inline-flex;
   align-items: center;
   color: #00d4ff;
+  font-size: 10px;
   text-decoration: none;
   transition: color 0.15s;
 }
