@@ -178,7 +178,7 @@ const MARKER_SVGS = {
   </svg>`,
 
   'Happy Hour': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-    <circle cx="32" cy="32" r="22" fill="none" stroke="#f97316" stroke-width="8"/>
+    <circle cx="32" cy="32" r="18" fill="none" stroke="#f97316" stroke-width="8"/>
   </svg>`,
 
   'Distinct Menu': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
