@@ -157,6 +157,9 @@ html, body {
   pointer-events: none;
   text-shadow: 0 0 8px rgba(0, 255, 136, 0.4), 0 0 20px rgba(0, 255, 136, 0.15);
   animation: debugPulse 3s ease-in-out infinite;
+  box-sizing: border-box;
+  text-align: center;
+  width: 130px;
 }
 
 .logo-badge__mid {
@@ -184,13 +187,17 @@ html, body {
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 0.05em;
+  width: 130px;
+  box-sizing: border-box;
 }
 
 .mode-toggle__btn {
   background: transparent;
   border: none;
   color: var(--text-muted);
-  padding: 6px 14px;
+  padding: 6px 0;
+  flex: 1;
+  text-align: center;
   cursor: pointer;
   transition: color 0.15s, background 0.15s;
   text-transform: uppercase;
