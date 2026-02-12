@@ -178,7 +178,7 @@ const MARKER_SVGS = {
   </svg>`,
 
   'Happy Hour': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-    <circle cx="32" cy="32" r="22" fill="none" stroke="#facc15" stroke-width="8"/>
+    <circle cx="32" cy="32" r="22" fill="none" stroke="#f97316" stroke-width="8"/>
   </svg>`,
 
   'Distinct Menu': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
@@ -518,7 +518,7 @@ async function init() {
           'circle-color': [
             'match', ['get', 'promotionType'],
             'Special',       '#3b82f6',
-            'Happy Hour',    '#facc15',
+            'Happy Hour',    '#f97316',
             'Distinct Menu', '#f97316',
             'Limited',       '#a855f7',
             'Pop-up',        '#ef4444',
