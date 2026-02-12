@@ -115,7 +115,7 @@ html, body {
 
 .venue-popup__notes {
   font-size: 15px;
-  color: var(--text-muted);
+  color: #aaa;
   line-height: 1.4;
 }
 

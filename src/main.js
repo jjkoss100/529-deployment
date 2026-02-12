@@ -226,9 +226,9 @@ function buildPopupHTML(props) {
   const instagram = props.instagram || '';
   const promoType = props.promotionType || '';
 
-  // Time color: red if Happy Hour/Distinct Menu near end, otherwise match marker color
+  // Time color: red if Happy Hour/Distinct Menu near end, otherwise muted gray
   const useRed = (promoType === 'Happy Hour' || promoType === 'Distinct Menu') && isNearEnd(props.liveWindow);
-  const timeColor = useRed ? '#ef4444' : (PROMO_COLORS[promoType] || '#facc15');
+  const timeColor = useRed ? '#ef4444' : '#888';
 
   let html = `<div class="venue-popup">`;
   if (instagram) {
