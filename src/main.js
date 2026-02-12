@@ -157,6 +157,43 @@ function formatLiveWindow(liveWindow) {
   }).join(', ');
 }
 
+// --- Marker color map ---
+const PROMO_COLORS = {
+  'Special':       '#3b82f6',
+  'Happy Hour':    '#f97316',
+  'Distinct Menu': '#f97316',
+  'Limited':       '#a855f7',
+  'Pop-up':        '#ef4444',
+};
+
+// --- Check if deal is within 45 min of ending ---
+function isNearEnd(liveWindow) {
+  if (!liveWindow) return false;
+  const nowMin = getLAMinutes();
+  const ranges = liveWindow.split(',');
+  for (const range of ranges) {
+    const parts = range.trim().split('-');
+    if (parts.length !== 2) continue;
+    const start = parseMinutes(parts[0].trim());
+    const end = parseMinutes(parts[1].trim());
+    if (start === null || end === null) continue;
+    const crossesMidnight = end <= start;
+    // Check if currently active first
+    let active = false;
+    if (crossesMidnight) {
+      if (nowMin >= start || nowMin <= end) active = true;
+    } else {
+      if (nowMin >= start && nowMin <= end) active = true;
+    }
+    if (!active) continue;
+    // Minutes until end
+    let minsLeft = end - nowMin;
+    if (minsLeft < 0) minsLeft += 1440;
+    if (minsLeft <= 45) return true;
+  }
+  return false;
+}
+
 // --- Popup HTML builder ---
 function buildPopupHTML(props) {
   const name = props.name || '';
@@ -164,6 +201,11 @@ function buildPopupHTML(props) {
   const time = formatLiveWindow(props.liveWindow);
   const link = props.link || '';
   const instagram = props.instagram || '';
+  const promoType = props.promotionType || '';
+
+  // Time color: red if Happy Hour/Distinct Menu near end, otherwise match marker color
+  const useRed = (promoType === 'Happy Hour' || promoType === 'Distinct Menu') && isNearEnd(props.liveWindow);
+  const timeColor = useRed ? '#ef4444' : (PROMO_COLORS[promoType] || '#facc15');
 
   let html = `<div class="venue-popup">`;
   if (instagram) {
@@ -172,7 +214,7 @@ function buildPopupHTML(props) {
     html += `<div class="venue-popup__name">${name}</div>`;
   }
   if (notes) html += `<div class="venue-popup__notes">${notes}</div>`;
-  if (time) html += `<div class="venue-popup__time">${time}</div>`;
+  if (time) html += `<div class="venue-popup__time" style="color:${timeColor}">${time}</div>`;
   if (link) {
     const linkLabels = {
       'Special': 'see special',
