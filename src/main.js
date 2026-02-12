@@ -636,6 +636,20 @@ async function init() {
         map.setPaintProperty(GLOW_LAYER_ID, 'circle-opacity', 0.15 + t * 0.18);
       }, 50);
 
+      // --- Effect 4: Map texture — roads, buildings, water tint ---
+      try {
+        map.setPaintProperty('water', 'fill-color', '#0a1e2e');
+        map.setPaintProperty('road-street', 'line-color', '#1a2a3a');
+        map.setPaintProperty('road-minor-low', 'line-color', '#1a2a3a');
+        map.setPaintProperty('road-minor-case', 'line-color', '#0f1a25');
+        map.setPaintProperty('road-secondary-tertiary', 'line-color', '#1e3040');
+        map.setPaintProperty('road-primary', 'line-color', '#1e3040');
+        map.setPaintProperty('building', 'fill-color', '#141e2a');
+        map.setPaintProperty('building', 'fill-opacity', 0.7);
+      } catch (e) {
+        console.warn('Map texture: some layers not found', e.message);
+      }
+
       setupPopups(map);
       setupToggle(map, venues);
       updateDebugPanel(venues);
