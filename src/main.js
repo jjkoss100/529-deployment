@@ -148,8 +148,30 @@ function formatTime12h(timeStr) {
   return m ? `${hour12}:${String(m).padStart(2, '0')}${suffix}` : `${hour12}${suffix}`;
 }
 
-function formatLiveWindow(liveWindow) {
+function formatLiveWindow(liveWindow, active) {
   if (!liveWindow) return '';
+
+  // If deal is active, show "ends at X" for the active range
+  if (active) {
+    const nowMin = getLAMinutes();
+    const ranges = liveWindow.split(',');
+    for (const range of ranges) {
+      const parts = range.trim().split('-');
+      if (parts.length !== 2) continue;
+      const start = parseMinutes(parts[0].trim());
+      const end = parseMinutes(parts[1].trim());
+      if (start === null || end === null) continue;
+      const crossesMidnight = end <= start;
+      let isActive = false;
+      if (crossesMidnight) {
+        if (nowMin >= start || nowMin <= end) isActive = true;
+      } else {
+        if (nowMin >= start && nowMin <= end) isActive = true;
+      }
+      if (isActive) return `ends at ${formatTime12h(parts[1].trim())}`;
+    }
+  }
+
   return liveWindow.split(',').map(range => {
     const parts = range.trim().split('-');
     if (parts.length !== 2) return range.trim();
@@ -198,7 +220,8 @@ function isNearEnd(liveWindow) {
 function buildPopupHTML(props) {
   const name = props.name || '';
   const notes = props.notes || '';
-  const time = formatLiveWindow(props.liveWindow);
+  const dealActive = isDealActiveNow({ liveWindow: props.liveWindow });
+  const time = formatLiveWindow(props.liveWindow, dealActive);
   const link = props.link || '';
   const instagram = props.instagram || '';
   const promoType = props.promotionType || '';
