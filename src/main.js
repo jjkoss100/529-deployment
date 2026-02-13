@@ -247,7 +247,7 @@ function buildPopupHTML(props) {
     'Limited': 'see details',
   };
   const hasLink = !!link;
-  const hasTime = !!time;
+  const hasTime = !!time && promoType !== 'Limited';
   if (hasLink || hasTime) {
     html += `<div class="venue-popup__footer">`;
     if (hasLink) {
