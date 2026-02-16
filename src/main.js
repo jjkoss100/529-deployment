@@ -346,6 +346,11 @@ async function fetchAndParseCSV(url) {
     transformHeader: h => h.trim()
   });
 
+  // Column K (index 10) holds today's time windows — header changes daily (e.g. "2/16", "2/17")
+  const headers = parsed.meta.fields || [];
+  const timeColumnName = headers[10] || '';
+  console.log(`Time column detected: "${timeColumnName}" (column K)`);
+
   const venues = [];
   const rows = parsed.data || [];
 
@@ -353,8 +358,8 @@ async function fetchAndParseCSV(url) {
     const name = (row['Venue'] || '').trim();
     if (!name) continue;
 
-    const lng = parseFloat(row['Long']);
-    const lat = parseFloat(row['Lat']);
+    const lng = parseFloat(row['Longitude']);
+    const lat = parseFloat(row['Latitude']);
     if (isNaN(lng) || isNaN(lat)) continue;
 
     const promoType = (row['Promotion Type'] || '').trim();
@@ -372,7 +377,7 @@ async function fetchAndParseCSV(url) {
       promotionType: promoType,
       link: (row['Link'] || '').trim(),
       notes: (row['Notes'] || '').trim(),
-      liveWindow: (row['Live Window'] || '').trim(),
+      liveWindow: (row[timeColumnName] || '').trim(),
     });
   }
 
