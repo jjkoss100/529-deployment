@@ -346,10 +346,10 @@ async function fetchAndParseCSV(url) {
     transformHeader: h => h.trim()
   });
 
-  // Column K (index 10) holds today's time windows — header changes daily (e.g. "2/16", "2/17")
+  // Last column holds today's time windows — header changes daily (e.g. "2/16", "2/17")
   const headers = parsed.meta.fields || [];
-  const timeColumnName = headers[10] || '';
-  console.log(`Time column detected: "${timeColumnName}" (column K)`);
+  const timeColumnName = headers.length > 0 ? headers[headers.length - 1] : '';
+  console.log(`Time column detected: "${timeColumnName}" (last column)`);
 
   const venues = [];
   const rows = parsed.data || [];
