@@ -11,6 +11,31 @@ const GLOW_LAYER_ID = 'venue-glow';
 const PRESHOW_HOURS = 5;
 const REFRESH_INTERVAL = 60000; // re-filter every 60s
 
+// --- Weather Configuration ---
+const WEATHER_API_URL = 'https://api.open-meteo.com/v1/forecast?latitude=33.989&longitude=-118.469&current=weather_code,temperature_2m,wind_speed_10m,cloud_cover,is_day&timezone=America/Los_Angeles';
+const WEATHER_REFRESH_MS = 10 * 60 * 1000; // refresh weather every 10 min
+const FOG_TRANSITION_MS = 2000;             // 2s smooth fog transition
+const FOG_TRANSITION_STEPS = 40;            // frames per transition
+
+// Weather profiles keyed by WMO code — { fog, particles }
+const WEATHER_PROFILES = {
+  clear:        { fog: { range: [-1, 8],    hb: 0.3,  color: '#1a1a2e', high: '#0f1419', space: '#050810', stars: 0.8  }, particles: { type: 'none' } },
+  mainlyClear:  { fog: { range: [-1, 7],    hb: 0.35, color: '#1a1a2e', high: '#0f1419', space: '#050810', stars: 0.5  }, particles: { type: 'none' } },
+  partlyCloudy: { fog: { range: [-0.5, 6],  hb: 0.4,  color: '#1e1e30', high: '#111620', space: '#070a12', stars: 0.25 }, particles: { type: 'none' } },
+  overcast:     { fog: { range: [0, 5],     hb: 0.5,  color: '#222236', high: '#151a24', space: '#0a0d16', stars: 0.05 }, particles: { type: 'none' } },
+  fog:          { fog: { range: [0.5, 3],   hb: 0.7,  color: '#2a2a3e', high: '#1a1f2a', space: '#0e1118', stars: 0.0  }, particles: { type: 'none' } },
+  drizzleLight: { fog: { range: [0, 5.5],   hb: 0.45, color: '#1e1e32', high: '#121722', space: '#080b14', stars: 0.1  }, particles: { type: 'rain', count: 40,  speedMin: 4,  speedMax: 6,  baseAngle: 75, opacity: 0.15, sizeMin: 6,  sizeMax: 10 } },
+  drizzleMod:   { fog: { range: [0, 5],     hb: 0.5,  color: '#202034', high: '#131824', space: '#090c15', stars: 0.05 }, particles: { type: 'rain', count: 80,  speedMin: 5,  speedMax: 7,  baseAngle: 75, opacity: 0.2,  sizeMin: 8,  sizeMax: 12 } },
+  drizzleDense: { fog: { range: [0.5, 4.5], hb: 0.55, color: '#222236', high: '#141a26', space: '#0a0d16', stars: 0.0  }, particles: { type: 'rain', count: 120, speedMin: 6,  speedMax: 8,  baseAngle: 75, opacity: 0.25, sizeMin: 10, sizeMax: 14 } },
+  rainSlight:   { fog: { range: [0, 5],     hb: 0.5,  color: '#1c1c30', high: '#111620', space: '#080b14', stars: 0.05 }, particles: { type: 'rain', count: 100, speedMin: 8,  speedMax: 12, baseAngle: 78, opacity: 0.25, sizeMin: 12, sizeMax: 18 } },
+  rainMod:      { fog: { range: [0.5, 4],   hb: 0.55, color: '#1e1e32', high: '#121722', space: '#090c15', stars: 0.0  }, particles: { type: 'rain', count: 200, speedMin: 10, speedMax: 15, baseAngle: 78, opacity: 0.3,  sizeMin: 14, sizeMax: 22 } },
+  rainHeavy:    { fog: { range: [1, 3],     hb: 0.65, color: '#222238', high: '#151a28', space: '#0a0e18', stars: 0.0  }, particles: { type: 'rain', count: 350, speedMin: 14, speedMax: 20, baseAngle: 80, opacity: 0.35, sizeMin: 18, sizeMax: 28 } },
+  snowSlight:   { fog: { range: [0, 5],     hb: 0.5,  color: '#202038', high: '#141a2e', space: '#0a0e1a', stars: 0.1  }, particles: { type: 'snow', count: 50,  speedMin: 1,  speedMax: 2,  baseAngle: 90, opacity: 0.4,  sizeMin: 1.5, sizeMax: 3 } },
+  snowMod:      { fog: { range: [0.5, 4],   hb: 0.55, color: '#22223c', high: '#161c30', space: '#0c101c', stars: 0.05 }, particles: { type: 'snow', count: 120, speedMin: 1.5, speedMax: 2.5, baseAngle: 90, opacity: 0.5, sizeMin: 2,   sizeMax: 3.5 } },
+  snowHeavy:    { fog: { range: [1, 3],     hb: 0.65, color: '#24243e', high: '#181e32', space: '#0e121e', stars: 0.0  }, particles: { type: 'snow', count: 220, speedMin: 2,  speedMax: 3,  baseAngle: 90, opacity: 0.55, sizeMin: 2.5, sizeMax: 4 } },
+  thunderstorm: { fog: { range: [0.5, 3.5], hb: 0.6,  color: '#1a1a30', high: '#101520', space: '#080b14', stars: 0.0  }, particles: { type: 'rain', count: 300, speedMin: 14, speedMax: 20, baseAngle: 80, opacity: 0.35, sizeMin: 18, sizeMax: 28, flash: true } },
+};
+
 // --- Get current time in LA timezone as minutes since midnight ---
 function getLAMinutes() {
   const now = new Date();
@@ -28,6 +53,12 @@ function parseMinutes(timeStr) {
 // --- Toggle state (persisted within session, resets to NOW on new visit) ---
 let currentMode = sessionStorage.getItem('529-mode') || 'now';
 let activePopup = null;
+
+// --- Weather state ---
+let currentFogState = null;
+let fogTransitionTimer = null;
+let waterOpacityBase = 0.5;
+let waterOpacitySwing = 0.2;
 
 // --- Check if a deal is currently active (NOW mode) ---
 // Active = current LA time falls within the live window (start ≤ now ≤ end).
@@ -215,6 +246,340 @@ function isNearEnd(liveWindow) {
     if (minsLeft <= 45) return true;
   }
   return false;
+}
+
+// --- Weather: Utility functions ---
+function lerp(a, b, t) { return a + (b - a) * t; }
+
+function hexToRgb(hex) {
+  const n = parseInt(hex.slice(1), 16);
+  return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+}
+
+function rgbToHex(r, g, b) {
+  return '#' + ((1 << 24) + (Math.round(r) << 16) + (Math.round(g) << 8) + Math.round(b)).toString(16).slice(1);
+}
+
+function lerpColor(hexA, hexB, t) {
+  const a = hexToRgb(hexA), b = hexToRgb(hexB);
+  return rgbToHex(lerp(a.r, b.r, t), lerp(a.g, b.g, t), lerp(a.b, b.b, t));
+}
+
+// --- Weather: Fetch current conditions from Open-Meteo ---
+async function fetchWeather() {
+  try {
+    const res = await fetch(WEATHER_API_URL);
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    const c = data.current;
+    return {
+      weatherCode: c.weather_code,
+      temperature: c.temperature_2m,
+      windSpeed: c.wind_speed_10m,
+      cloudCover: c.cloud_cover,
+      isDay: c.is_day === 1,
+    };
+  } catch (e) {
+    console.warn('[Weather] fetch failed:', e.message);
+    return null;
+  }
+}
+
+// --- Weather: Map WMO code to profile ---
+function getWeatherProfile(code) {
+  if (code === 0) return WEATHER_PROFILES.clear;
+  if (code === 1) return WEATHER_PROFILES.mainlyClear;
+  if (code === 2) return WEATHER_PROFILES.partlyCloudy;
+  if (code === 3) return WEATHER_PROFILES.overcast;
+  if (code === 45 || code === 48) return WEATHER_PROFILES.fog;
+  if (code === 51 || code === 56) return WEATHER_PROFILES.drizzleLight;
+  if (code === 53) return WEATHER_PROFILES.drizzleMod;
+  if (code === 55 || code === 57) return WEATHER_PROFILES.drizzleDense;
+  if (code === 61 || code === 66 || code === 80) return WEATHER_PROFILES.rainSlight;
+  if (code === 63 || code === 81) return WEATHER_PROFILES.rainMod;
+  if (code === 65 || code === 67 || code === 82) return WEATHER_PROFILES.rainHeavy;
+  if (code === 71 || code === 77 || code === 85) return WEATHER_PROFILES.snowSlight;
+  if (code === 73) return WEATHER_PROFILES.snowMod;
+  if (code === 75 || code === 86) return WEATHER_PROFILES.snowHeavy;
+  if (code === 95 || code === 96 || code === 99) return WEATHER_PROFILES.thunderstorm;
+  return WEATHER_PROFILES.clear;
+}
+
+function mapWeatherToEffects(weather) {
+  const profile = getWeatherProfile(weather.weatherCode);
+  const f = profile.fog;
+
+  // Build fog params — modulate stars by cloud cover and day/night
+  let stars = f.stars;
+  stars *= (1 - weather.cloudCover / 100);
+  if (weather.isDay) stars = 0;
+
+  const fog = {
+    range: [...f.range],
+    'horizon-blend': f.hb + (weather.cloudCover * 0.001),
+    color: f.color,
+    'high-color': f.high,
+    'space-color': f.space,
+    'star-intensity': Math.max(0, stars),
+  };
+
+  // Build particle config — apply wind to angle
+  const p = profile.particles;
+  let particles;
+  if (p.type === 'none') {
+    particles = { type: 'none', count: 0 };
+  } else {
+    const windAngleOffset = Math.min(15, weather.windSpeed * 0.5);
+    particles = {
+      type: p.type,
+      count: p.count,
+      speedMin: p.speedMin,
+      speedMax: p.speedMax,
+      angle: p.type === 'snow' ? 90 : p.baseAngle + windAngleOffset,
+      opacity: p.opacity,
+      sizeMin: p.sizeMin,
+      sizeMax: p.sizeMax,
+      flash: p.flash || false,
+    };
+  }
+
+  // Adjust water for heavy conditions
+  const isHeavy = [65, 67, 82, 75, 86, 95, 96, 99].includes(weather.weatherCode);
+  const waterColor = isHeavy ? '#081a28' : '#0a1e2e';
+
+  return { fog, particles, waterColor };
+}
+
+// --- Weather: Smooth fog transition ---
+function transitionFog(map, targetFog) {
+  // Cancel any running transition
+  if (fogTransitionTimer) {
+    clearInterval(fogTransitionTimer);
+    fogTransitionTimer = null;
+  }
+
+  // First call — snap to baseline
+  if (!currentFogState) {
+    currentFogState = { ...targetFog, range: [...targetFog.range] };
+    map.setFog(targetFog);
+    return;
+  }
+
+  const from = { ...currentFogState, range: [...currentFogState.range] };
+  let step = 0;
+  const interval = FOG_TRANSITION_MS / FOG_TRANSITION_STEPS;
+
+  fogTransitionTimer = setInterval(() => {
+    step++;
+    const t = step / FOG_TRANSITION_STEPS;
+
+    const interpolated = {
+      range: [lerp(from.range[0], targetFog.range[0], t), lerp(from.range[1], targetFog.range[1], t)],
+      'horizon-blend': lerp(from['horizon-blend'], targetFog['horizon-blend'], t),
+      color: lerpColor(from.color, targetFog.color, t),
+      'high-color': lerpColor(from['high-color'], targetFog['high-color'], t),
+      'space-color': lerpColor(from['space-color'], targetFog['space-color'], t),
+      'star-intensity': lerp(from['star-intensity'], targetFog['star-intensity'], t),
+    };
+
+    map.setFog(interpolated);
+
+    if (step >= FOG_TRANSITION_STEPS) {
+      clearInterval(fogTransitionTimer);
+      fogTransitionTimer = null;
+      currentFogState = { ...targetFog, range: [...targetFog.range] };
+    } else {
+      // Track current position in case we need to interrupt
+      currentFogState = { ...interpolated, range: [...interpolated.range] };
+    }
+  }, interval);
+}
+
+// --- Weather: Canvas particle system ---
+function createParticleSystem() {
+  const canvas = document.createElement('canvas');
+  canvas.id = 'weather-canvas';
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:2;';
+  document.body.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  let w = window.innerWidth;
+  let h = window.innerHeight;
+
+  function resize() {
+    w = window.innerWidth;
+    h = window.innerHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.scale(dpr, dpr);
+  }
+  resize();
+
+  let resizeTimer = null;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      ctx.setTransform(1, 0, 0, 1, 0, 0); // reset scale before re-applying
+      resize();
+      initParticles();
+    }, 200);
+  });
+
+  let particles = [];
+  let config = { type: 'none', count: 0 };
+  let rafId = null;
+  let lastTs = 0;
+
+  function initParticles() {
+    particles = [];
+    if (config.type === 'none' || config.count === 0) return;
+    const scaledCount = Math.round(config.count * (w / 1000));
+    for (let i = 0; i < scaledCount; i++) {
+      particles.push(makeParticle(true));
+    }
+  }
+
+  function makeParticle(scatter) {
+    const p = {
+      x: Math.random() * w,
+      y: scatter ? Math.random() * h : -(Math.random() * 100),
+      speed: config.speedMin + Math.random() * (config.speedMax - config.speedMin),
+      length: config.sizeMin + Math.random() * (config.sizeMax - config.sizeMin),
+      size: config.sizeMin + Math.random() * (config.sizeMax - config.sizeMin),
+      opacity: config.opacity * (0.6 + Math.random() * 0.4),
+      sineOffset: Math.random() * Math.PI * 2,
+      sineAmp: 0.3 + Math.random() * 0.7,
+    };
+    return p;
+  }
+
+  function updateRain(p, dt) {
+    const rad = (config.angle || 78) * Math.PI / 180;
+    p.x += Math.sin(rad) * p.speed * dt;
+    p.y += Math.cos(rad) * p.speed * dt;
+    if (p.y > h || p.x > w + 50 || p.x < -50) {
+      p.x = Math.random() * w;
+      p.y = -(Math.random() * 80);
+      p.speed = config.speedMin + Math.random() * (config.speedMax - config.speedMin);
+    }
+  }
+
+  function drawRain(p) {
+    const rad = (config.angle || 78) * Math.PI / 180;
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y);
+    ctx.lineTo(p.x + Math.sin(rad) * p.length, p.y + Math.cos(rad) * p.length);
+    ctx.strokeStyle = `rgba(180,200,230,${p.opacity})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  function updateSnow(p, dt) {
+    p.y += p.speed * dt;
+    p.sineOffset += 0.02 * dt;
+    p.x += Math.sin(p.sineOffset) * p.sineAmp * dt;
+    if (p.y > h) {
+      p.x = Math.random() * w;
+      p.y = -10;
+      p.speed = config.speedMin + Math.random() * (config.speedMax - config.speedMin);
+    }
+    if (p.x > w) p.x = 0;
+    if (p.x < 0) p.x = w;
+  }
+
+  function drawSnow(p) {
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(220,230,245,${p.opacity})`;
+    ctx.fill();
+  }
+
+  function drawFlash() {
+    ctx.fillStyle = 'rgba(200,210,255,0.06)';
+    ctx.fillRect(0, 0, w, h);
+    setTimeout(() => {
+      if (config.flash) {
+        ctx.fillStyle = 'rgba(200,210,255,0.03)';
+        ctx.fillRect(0, 0, w, h);
+      }
+    }, 80 + Math.random() * 70);
+  }
+
+  function loop(ts) {
+    const dt = Math.min((ts - lastTs) / 16.67, 3);
+    lastTs = ts;
+
+    ctx.clearRect(0, 0, w, h);
+
+    if (config.type !== 'none' && particles.length > 0) {
+      const isRain = config.type === 'rain';
+      for (const p of particles) {
+        if (isRain) { updateRain(p, dt); drawRain(p); }
+        else { updateSnow(p, dt); drawSnow(p); }
+      }
+      if (config.flash && Math.random() < 0.002) drawFlash();
+    }
+
+    rafId = requestAnimationFrame(loop);
+  }
+
+  rafId = requestAnimationFrame(loop);
+
+  return {
+    updateConfig(newConfig) {
+      config = { ...newConfig };
+      initParticles();
+    },
+    destroy() {
+      if (rafId) cancelAnimationFrame(rafId);
+      canvas.remove();
+    }
+  };
+}
+
+// --- Weather: System orchestrator ---
+function initWeatherSystem(map) {
+  // Baseline fog state (matches Effect 1 values)
+  currentFogState = {
+    range: [-1, 8],
+    'horizon-blend': 0.3,
+    color: '#1a1a2e',
+    'high-color': '#0f1419',
+    'space-color': '#050810',
+    'star-intensity': 0.6,
+  };
+
+  const particleSystem = createParticleSystem();
+
+  async function applyWeather() {
+    const weather = await fetchWeather();
+    if (!weather) return;
+
+    console.log(`[Weather] code=${weather.weatherCode}, cloud=${weather.cloudCover}%, wind=${weather.windSpeed}km/h, day=${weather.isDay}`);
+
+    const effects = mapWeatherToEffects(weather);
+
+    // Smooth fog transition
+    transitionFog(map, effects.fog);
+
+    // Update particles
+    particleSystem.updateConfig(effects.particles);
+
+    // Update water color
+    try { map.setPaintProperty('water', 'fill-color', effects.waterColor); } catch (e) { /* ok */ }
+
+    // Adjust water breathing for heavy conditions
+    const isHeavy = [65, 67, 82, 75, 86, 95, 96, 99].includes(weather.weatherCode);
+    waterOpacityBase = isHeavy ? 0.6 : 0.5;
+    waterOpacitySwing = isHeavy ? 0.1 : 0.2;
+  }
+
+  // Initial weather check (slight delay to let map render)
+  setTimeout(applyWeather, 1500);
+
+  // Periodic refresh
+  setInterval(applyWeather, WEATHER_REFRESH_MS);
 }
 
 // --- Popup HTML builder ---
@@ -613,7 +978,7 @@ async function init() {
       // --- Effect 2: Water breathing animation ---
       setInterval(() => {
         const t = (Math.sin(Date.now() / 3000) + 1) / 2;
-        const opacity = 0.5 + t * 0.2;
+        const opacity = waterOpacityBase + t * waterOpacitySwing;
         map.setPaintProperty('water', 'fill-opacity', opacity);
       }, 50);
 
@@ -659,6 +1024,9 @@ async function init() {
       } catch (e) {
         console.warn('Map texture: some layers not found', e.message);
       }
+
+      // --- Effect 5: Hybrid weather overlay ---
+      initWeatherSystem(map);
 
       setupPopups(map);
       setupToggle(map, venues);
