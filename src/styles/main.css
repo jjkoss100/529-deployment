@@ -187,6 +187,7 @@
   --text-muted: #888;
   --font-display: 'Zalando Sans Expanded', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
+  --font-card: 'DM Mono', monospace;
 }
 
 /* --- Reset --- */
@@ -261,7 +262,7 @@ html, body {
   border: none;
   border-radius: 6px;
   padding: 10px 12px;
-  font-family: var(--font-mono);
+  font-family: var(--font-card);
   color: #1a1a1a;
   backdrop-filter: none;
   box-shadow: 0 4px 16px rgba(0,0,0,0.4);
