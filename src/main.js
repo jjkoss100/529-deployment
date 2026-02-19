@@ -441,8 +441,13 @@ function createParticleSystem() {
   }
 
   function makeParticle(scatter) {
+    const rad = (config.angle || 78) * Math.PI / 180;
+    // How far right a particle drifts while falling the full screen height
+    const fullDrift = Math.tan(rad - Math.PI / 2) * h;
     const p = {
-      x: Math.random() * w,
+      // Scatter across full width plus offset left so right-drifting particles
+      // still cover the whole screen rather than exiting the right edge early
+      x: scatter ? Math.random() * (w + Math.abs(fullDrift)) - Math.abs(fullDrift) : Math.random() * w,
       y: scatter ? Math.random() * h : -(Math.random() * 100),
       speed: config.speedMin + Math.random() * (config.speedMax - config.speedMin),
       length: config.sizeMin + Math.random() * (config.sizeMax - config.sizeMin),
