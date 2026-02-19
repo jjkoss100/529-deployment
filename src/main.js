@@ -456,14 +456,12 @@ function createParticleSystem() {
 
   function updateRain(p, dt) {
     const rad = (config.angle || 78) * Math.PI / 180;
-    p.x += Math.cos(rad) * p.speed * dt;
-    p.y += Math.sin(rad) * p.speed * dt;
-    if (p.y > h + 50 || p.x > w + 50 || p.x < -50) {
+    p.x += Math.sin(rad) * p.speed * dt;
+    p.y += Math.cos(rad) * p.speed * dt;
+    if (p.y > h || p.x > w + 50 || p.x < -50) {
       p.x = Math.random() * w;
-      p.y = Math.random() * h;
+      p.y = -(Math.random() * 80);
       p.speed = config.speedMin + Math.random() * (config.speedMax - config.speedMin);
-      p.length = config.sizeMin + Math.random() * (config.sizeMax - config.sizeMin);
-      p.opacity = config.opacity * (0.6 + Math.random() * 0.4);
     }
   }
 
@@ -471,7 +469,7 @@ function createParticleSystem() {
     const rad = (config.angle || 78) * Math.PI / 180;
     ctx.beginPath();
     ctx.moveTo(p.x, p.y);
-    ctx.lineTo(p.x + Math.cos(rad) * p.length, p.y + Math.sin(rad) * p.length);
+    ctx.lineTo(p.x + Math.sin(rad) * p.length, p.y + Math.cos(rad) * p.length);
     ctx.strokeStyle = `rgba(180,200,230,${p.opacity})`;
     ctx.lineWidth = 1;
     ctx.stroke();
