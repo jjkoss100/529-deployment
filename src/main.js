@@ -207,7 +207,16 @@ function formatLiveWindow(liveWindow, active) {
   return liveWindow.split(',').map(range => {
     const parts = range.trim().split('-');
     if (parts.length !== 2) return range.trim();
-    return `${formatTime12h(parts[0].trim())} – ${formatTime12h(parts[1].trim())}`;
+    const startFull = formatTime12h(parts[0].trim());
+    const endFull = formatTime12h(parts[1].trim());
+    const startSuffix = startFull.endsWith('am') ? 'am' : 'pm';
+    const endSuffix = endFull.endsWith('am') ? 'am' : 'pm';
+    // If both share the same suffix, strip it from the start time
+    if (startSuffix === endSuffix) {
+      const startStripped = startFull.slice(0, -2);
+      return `${startStripped}–${endFull}`;
+    }
+    return `${startFull}–${endFull}`;
   }).join(', ');
 }
 
