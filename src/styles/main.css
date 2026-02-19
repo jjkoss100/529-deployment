@@ -281,13 +281,13 @@ html, body {
   font-family: var(--font-display);
   font-weight: 600;
   font-size: 16px;
-  color: #1a1a1a;
+  color: #0D0D16;
 }
 
 .venue-popup__name--link {
   display: block;
   text-decoration: underline;
-  color: #1a1a1a;
+  color: #0D0D16;
   cursor: pointer;
   outline: none;
 }
