@@ -664,7 +664,9 @@ function loadMarkerImages(map) {
       return new Promise((resolve) => {
         const imageId = `marker-${venueType}`;
         if (map.hasImage(imageId)) { resolve(); return; }
-        const img = new Image(64, 64);
+        // Load at 2× native size (84×110) for hi-DPI sharpness, then declare pixelRatio:2
+        // so Mapbox treats it as a 42×55 logical-pixel image, preserving aspect ratio.
+        const img = new Image(84, 110);
         img.onload = () => {
           if (!map.hasImage(imageId)) {
             map.addImage(imageId, img, { pixelRatio: 2 });
@@ -804,6 +806,7 @@ function addVenueLayer(map, geojson) {
     layout: {
       'icon-image': ['get', 'icon'],
       'icon-size': 0.675,
+      'icon-anchor': 'bottom',
       'icon-allow-overlap': true,
       'icon-ignore-placement': true,
     },
@@ -856,11 +859,9 @@ function setupVenueLabels(map) {
         container.appendChild(el);
       }
 
-      // Offset: icon is 37px tall at 0.675 scale (55 * 0.675 ≈ 37), centered at point.
-      // So pin bottom ≈ point.y + 18.5. Place label 4px below that = point.y + 22.5.
-      // Horizontal: -50% centering done via translateX(-50%) in the transform.
+      // icon-anchor:'bottom' means point = pin tip. Label goes just below the tip.
       const lx = Math.round(point.x);
-      const ly = Math.round(point.y + 23);
+      const ly = Math.round(point.y + 5);
       el.style.transform = `translate(calc(${lx}px - 50%), ${ly}px)`;
     }
 
