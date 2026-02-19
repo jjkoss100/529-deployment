@@ -806,23 +806,71 @@ function addVenueLayer(map, geojson) {
       'icon-size': 0.675,
       'icon-allow-overlap': true,
       'icon-ignore-placement': true,
-
-      'text-field': ['get', 'name'],
-      'text-font': ['Open Sans Bold'],
-      'text-size': 16.5,
-      'text-offset': [0, 1.4],
-      'text-anchor': 'top',
-      'text-allow-overlap': false,
-      'text-optional': true,
-      'text-max-width': 12,
     },
     paint: {
       'icon-opacity': 1,
-      'text-color': '#d6deeb',
-      'text-halo-color': '#07090f',
-      'text-halo-width': 1.2,
     }
   });
+}
+
+// --- HTML venue name labels (uses Zalando Sans Expanded via CSS) ---
+function setupVenueLabels(map) {
+  const container = document.createElement('div');
+  container.id = 'venue-labels';
+  document.getElementById('map').appendChild(container);
+
+  function updateLabels() {
+    const features = map.queryRenderedFeatures({ layers: [LAYER_ID] });
+
+    // Deduplicate by name+coords (Mapbox can return duplicates across tiles)
+    const seen = new Set();
+    const unique = features.filter(f => {
+      const key = `${f.properties.name}|${f.geometry.coordinates.join(',')}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+    // Sync DOM: build a map of existing label elements
+    const existing = new Map();
+    for (const el of container.children) {
+      existing.set(el.dataset.key, el);
+    }
+
+    const active = new Set();
+
+    for (const f of unique) {
+      const coords = f.geometry.coordinates;
+      const name = f.properties.name;
+      const key = `${name}|${coords.join(',')}`;
+      active.add(key);
+
+      const point = map.project(coords);
+
+      let el = existing.get(key);
+      if (!el) {
+        el = document.createElement('div');
+        el.className = 'venue-label';
+        el.dataset.key = key;
+        el.textContent = name;
+        container.appendChild(el);
+      }
+
+      // Offset: icon is 37px tall at 0.675 scale (55 * 0.675 ≈ 37), centered at point.
+      // So pin bottom ≈ point.y + 18.5. Place label 4px below that = point.y + 22.5.
+      // Horizontal: -50% centering done via translateX(-50%) in the transform.
+      const lx = Math.round(point.x);
+      const ly = Math.round(point.y + 23);
+      el.style.transform = `translate(calc(${lx}px - 50%), ${ly}px)`;
+    }
+
+    // Remove stale labels
+    for (const [key, el] of existing) {
+      if (!active.has(key)) el.remove();
+    }
+  }
+
+  map.on('render', updateLabels);
 }
 
 // --- Popup interactions (hover on desktop, click on mobile) ---
@@ -961,6 +1009,7 @@ async function init() {
 
       const geojson = buildGeoJSON(venues);
       addVenueLayer(map, geojson);
+      setupVenueLabels(map);
 
       // --- Effect 1: Fog & atmosphere ---
       map.setFog({
