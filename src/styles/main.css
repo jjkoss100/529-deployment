@@ -1,3 +1,167 @@
+/* --- Splash Screen --- */
+#splash-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: #1c1b1f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.6s ease;
+}
+
+#splash-screen.fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#splash-logo {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: clamp(22px, 6vw, 32px);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #eeeeee;
+  text-transform: uppercase;
+  animation: splashLogoIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes splashLogoIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* --- Onboarding Overlay --- */
+#onboarding-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(10, 10, 20, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: onboardingOverlayIn 0.5s ease both;
+}
+
+#onboarding-overlay.hidden {
+  display: none;
+}
+
+#onboarding-overlay.fade-out {
+  animation: onboardingOverlayOut 0.4s ease forwards;
+}
+
+@keyframes onboardingOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes onboardingOverlayOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+#onboarding-card {
+  background: #ffffff;
+  border-radius: 4px;
+  padding: 36px 28px 28px;
+  max-width: 340px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  animation: onboardingCardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+@keyframes onboardingCardIn {
+  from {
+    opacity: 0;
+    transform: translateY(24px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+#onboarding-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+#onboarding-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 22px;
+  font-weight: 700;
+  color: #111111;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+#onboarding-subtitle {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 11px;
+  font-weight: 400;
+  color: #555555;
+  letter-spacing: 0.02em;
+}
+
+#onboarding-illustration {
+  width: 100%;
+  max-width: 200px;
+  margin: 0 auto 20px;
+}
+
+#onboarding-illustration svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+#onboarding-body {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 12px;
+  font-weight: 400;
+  color: #444444;
+  text-align: center;
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+#onboarding-cta {
+  width: 100%;
+  padding: 14px 0;
+  background: #ffffff;
+  border: 1.5px solid #111111;
+  border-radius: 2px;
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: #111111;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+#onboarding-cta:hover,
+#onboarding-cta:focus {
+  background: #111111;
+  color: #ffffff;
+  outline: none;
+}
+
 /* --- CSS Variables --- */
 :root {
   --bg-primary: #0a0a14;

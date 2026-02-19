@@ -1058,4 +1058,43 @@ async function init() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', init);
+// --- Splash Screen & Onboarding ---
+function runSplashAndOnboarding() {
+  const splash = document.getElementById('splash-screen');
+  const onboarding = document.getElementById('onboarding-overlay');
+  const ctaBtn = document.getElementById('onboarding-cta');
+
+  const ONBOARDING_KEY = '529-onboarding-done';
+  const onboardingDone = sessionStorage.getItem(ONBOARDING_KEY);
+
+  // Phase 1: show splash for 1.6s, then fade it out
+  setTimeout(() => {
+    splash.classList.add('fade-out');
+
+    // After fade-out transition completes, remove from layout
+    splash.addEventListener('transitionend', () => {
+      splash.style.display = 'none';
+    }, { once: true });
+
+    // Phase 2: if onboarding not yet shown this session, reveal it
+    if (!onboardingDone) {
+      setTimeout(() => {
+        onboarding.classList.remove('hidden');
+      }, 200);
+    }
+  }, 1600);
+
+  // Phase 3: LET'S GO button dismisses onboarding
+  ctaBtn.addEventListener('click', () => {
+    onboarding.classList.add('fade-out');
+    onboarding.addEventListener('animationend', () => {
+      onboarding.style.display = 'none';
+    }, { once: true });
+    sessionStorage.setItem(ONBOARDING_KEY, '1');
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  runSplashAndOnboarding();
+  init();
+});
