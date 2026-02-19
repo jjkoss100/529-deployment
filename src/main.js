@@ -585,6 +585,7 @@ function initWeatherSystem(map) {
 // --- Popup HTML builder ---
 function buildPopupHTML(props) {
   const name = props.name || '';
+  const eventName = props.eventName || '';
   const notes = props.notes || '';
   const dealActive = isDealActiveNow({ liveWindow: props.liveWindow });
   const time = formatLiveWindow(props.liveWindow, dealActive);
@@ -597,14 +598,21 @@ function buildPopupHTML(props) {
   const timeColor = useRed ? '#ef4444' : '#888';
 
   let html = `<div class="venue-popup">`;
+
+  // Venue name (row 1)
   if (instagram) {
     html += `<a class="venue-popup__name venue-popup__name--link" href="${instagram}" target="_blank" rel="noopener noreferrer">@${name}</a>`;
   } else {
     html += `<div class="venue-popup__name">${name}</div>`;
   }
+
+  // Event/description subtitle (row 2)
+  if (eventName) html += `<div class="venue-popup__event">${eventName}</div>`;
+
+  // Notes — deal details (middle block)
   if (notes) html += `<div class="venue-popup__notes">${notes}</div>`;
 
-  // Footer row: link left, time right
+  // Footer row: time left, link right
   const linkLabels = {
     'Special': 'see special',
     'Happy Hour': 'see drinks',
@@ -615,6 +623,11 @@ function buildPopupHTML(props) {
   const hasTime = !!time && promoType !== 'Limited';
   if (hasLink || hasTime) {
     html += `<div class="venue-popup__footer">`;
+    if (hasTime) {
+      html += `<span class="venue-popup__time" style="color:${timeColor}">${time}</span>`;
+    } else {
+      html += `<span></span>`;
+    }
     if (hasLink) {
       const label = linkLabels[props.promotionType];
       html += `<a class="venue-popup__link" href="${link}" target="_blank" rel="noopener noreferrer">`;
@@ -624,11 +637,6 @@ function buildPopupHTML(props) {
         html += `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>`;
       }
       html += `</a>`;
-    } else {
-      html += `<span></span>`;
-    }
-    if (hasTime) {
-      html += `<span class="venue-popup__time" style="color:${timeColor}">${time}</span>`;
     }
     html += `</div>`;
   }
