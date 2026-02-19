@@ -595,7 +595,7 @@ function buildPopupHTML(props) {
 
   // Time color: red if Happy Hour/Distinct Menu near end, otherwise muted gray
   const useRed = (promoType === 'Happy Hour' || promoType === 'Distinct Menu' || promoType === 'Special') && isNearEnd(props.liveWindow);
-  const timeColor = useRed ? '#ef4444' : '#888';
+  const timeColor = useRed ? '#ef4444' : '#333';
 
   let html = `<div class="venue-popup">`;
 
