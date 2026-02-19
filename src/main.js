@@ -459,9 +459,12 @@ function createParticleSystem() {
     p.x += Math.sin(rad) * p.speed * dt;
     p.y += Math.cos(rad) * p.speed * dt;
     if (p.y > h + 50 || p.x > w + 50 || p.x < -50) {
-      p.x = Math.random() * (w + 100) - 50;
-      p.y = Math.random() < 0.5 ? -(Math.random() * 80) : Math.random() * h;
-      p.speed = config.speedMin + Math.random() * (config.speedMax - config.speedMin);
+      const reset = makeParticle(true);
+      p.x = reset.x;
+      p.y = reset.y;
+      p.speed = reset.speed;
+      p.length = reset.length;
+      p.opacity = reset.opacity;
     }
   }
 
