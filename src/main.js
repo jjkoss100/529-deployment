@@ -460,7 +460,7 @@ function createParticleSystem() {
     p.y += Math.cos(rad) * p.speed * dt;
     if (p.y > h + 50 || p.x > w + 50 || p.x < -50) {
       p.x = Math.random() * (w + 100) - 50;
-      p.y = -(Math.random() * h);
+      p.y = Math.random() < 0.5 ? -(Math.random() * 80) : Math.random() * h;
       p.speed = config.speedMin + Math.random() * (config.speedMax - config.speedMin);
     }
   }
