@@ -1029,34 +1029,6 @@ async function init() {
         map.setPaintProperty('water', 'fill-opacity', opacity);
       }, 50);
 
-      // --- Effect 3: Pulsing glow rings behind markers ---
-      map.addLayer({
-        id: GLOW_LAYER_ID,
-        type: 'circle',
-        source: SOURCE_ID,
-        paint: {
-          'circle-radius': 18,
-          'circle-color': [
-            'match', ['get', 'promotionType'],
-            'Special',       '#3b82f6',
-            'Happy Hour',    '#f97316',
-            'Distinct Menu', '#f97316',
-            'Limited',       '#a855f7',
-            'Pop-up',        '#ef4444',
-            '#22c55e'
-          ],
-          'circle-opacity': 0.25,
-          'circle-blur': 0.8,
-        }
-      }, LAYER_ID);
-
-      let glowFrame = 0;
-      setInterval(() => {
-        glowFrame++;
-        const t = (Math.sin(glowFrame * 0.06) + 1) / 2;
-        map.setPaintProperty(GLOW_LAYER_ID, 'circle-radius', 16 + t * 10);
-        map.setPaintProperty(GLOW_LAYER_ID, 'circle-opacity', 0.15 + t * 0.18);
-      }, 50);
 
       // --- Effect 4: Map texture — roads, buildings, water tint ---
       try {
