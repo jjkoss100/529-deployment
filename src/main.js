@@ -458,9 +458,9 @@ function createParticleSystem() {
     const rad = (config.angle || 78) * Math.PI / 180;
     p.x += Math.sin(rad) * p.speed * dt;
     p.y += Math.cos(rad) * p.speed * dt;
-    if (p.y > h || p.x > w + 50 || p.x < -50) {
-      p.x = Math.random() * w;
-      p.y = -(Math.random() * 80);
+    if (p.y > h + 50 || p.x > w + 50 || p.x < -50) {
+      p.x = Math.random() * (w + 100) - 50;
+      p.y = -(Math.random() * h);
       p.speed = config.speedMin + Math.random() * (config.speedMax - config.speedMin);
     }
   }
