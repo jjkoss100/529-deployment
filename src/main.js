@@ -464,12 +464,14 @@ function createParticleSystem() {
     p.x += Math.sin(rad) * p.speed * dt;
     p.y += Math.cos(rad) * p.speed * dt;
     if (p.y > h + 50 || p.x > w + 50 || p.x < -50) {
-      const reset = makeParticle(true);
-      p.x = reset.x;
-      p.y = reset.y;
-      p.speed = reset.speed;
-      p.length = reset.length;
-      p.opacity = reset.opacity;
+      // Always re-enter from the top with x spread wide enough that
+      // right-drifting particles still reach the right edge of the screen
+      const drift = Math.sin(rad) / Math.cos(rad) * h;
+      p.x = Math.random() * (w + drift) - drift;
+      p.y = -(Math.random() * 20);
+      p.speed = config.speedMin + Math.random() * (config.speedMax - config.speedMin);
+      p.length = config.sizeMin + Math.random() * (config.sizeMax - config.sizeMin);
+      p.opacity = config.opacity * (0.6 + Math.random() * 0.4);
     }
   }
 
