@@ -636,27 +636,20 @@ function buildPopupHTML(props) {
   return html;
 }
 
-// --- SVG Marker Icons ---
-const MARKER_SVGS = {
-  'Special': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-    <path fill="#3b82f6" d="M32 4 L39.5 24.5 L60 24.5 L43 38 L49 58 L32 46 L15 58 L21 38 L4 24.5 L24.5 24.5 Z"/>
-  </svg>`,
+// --- SVG Marker Icons (keyed by Venue Type) ---
+const VENUE_TYPE_SVGS = {
+  'Restaurant': `<svg width="42" height="55" viewBox="0 0 42 55" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M21 0C32.598 0 42 9.40202 42 21C42 22.4157 41.8599 23.7986 41.5929 25.1358C39.7394 39.1032 21.1103 55 21.1103 55C21.1103 55 5.25689 41.4717 1.34456 28.4096C0.475506 26.1054 0 23.6083 0 21C0 9.40202 9.40202 0 21 0Z" fill="#D9D9D9"/><path d="M38 21C38 11.6112 30.3888 4 21 4C11.6112 4 4 11.6112 4 21C4 30.3888 11.6112 38 21 38C30.3888 38 38 30.3888 38 21Z" fill="white"/><mask id="mask0_63_672" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="9" y="9" width="24" height="24"><rect x="9" y="9" width="24" height="24" fill="#D9D9D9"/></mask><g mask="url(#mask0_63_672)"><path d="M21 32.3L17.65 29H13V24.35L9.70001 21L13 17.65V13H17.65L21 9.70001L24.35 13H29V17.65L32.3 21L29 24.35V29H24.35L21 32.3ZM21 29.5L23 27.5V23.8C22.5667 23.55 22.2083 23.1292 21.925 22.5375C21.6417 21.9458 21.5 21.2667 21.5 20.5C21.5 19.5333 21.7167 18.7083 22.15 18.025C22.5833 17.3417 23.1167 17 23.75 17C24.3667 17 24.8958 17.3417 25.3375 18.025C25.7792 18.7083 26 19.5333 26 20.5C26 21.2833 25.8583 21.9708 25.575 22.5625C25.2917 23.1542 24.9333 23.5667 24.5 23.8V27H27V23.5L29.5 21L27 18.5V15H23.5L21 12.5L18.5 15H15V18.5L12.5 21L15 23.5V27H17.5V23C17.0667 22.9 16.7083 22.6708 16.425 22.3125C16.1417 21.9542 16 21.5417 16 21.075V17H17V20.775H17.75V17H18.75V20.775H19.5V17H20.5V21.075C20.5 21.5417 20.3583 21.9542 20.075 22.3125C19.7917 22.6708 19.4333 22.9 19 23V27.5L21 29.5Z" fill="#1C1B1F"/></g></svg>`,
 
-  'Happy Hour': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-    <circle cx="32" cy="32" r="18" fill="none" stroke="#f97316" stroke-width="8"/>
-  </svg>`,
-
-  'Distinct Menu': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-    <circle cx="32" cy="32" r="22" fill="#f97316"/>
-  </svg>`,
-
-  'Limited': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-    <path fill="#a855f7" d="M32 6 L58 32 L32 58 L6 32 Z"/>
-  </svg>`,
-
-  'Pop-up': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-    <path fill="#ef4444" d="M32 6 L58 56 L6 56 Z"/>
-  </svg>`,
+  // Remaining venue types — SVGs to be added as they are provided
+  'Bar': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 55"><path fill-rule="evenodd" clip-rule="evenodd" d="M21 0C32.598 0 42 9.40202 42 21C42 22.4157 41.8599 23.7986 41.5929 25.1358C39.7394 39.1032 21.1103 55 21.1103 55C21.1103 55 5.25689 41.4717 1.34456 28.4096C0.475506 26.1054 0 23.6083 0 21C0 9.40202 9.40202 0 21 0Z" fill="#D9D9D9"/><path d="M38 21C38 11.6112 30.3888 4 21 4C11.6112 4 4 11.6112 4 21C4 30.3888 11.6112 38 21 38C30.3888 38 38 30.3888 38 21Z" fill="white"/></svg>`,
+  'Cafe': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 55"><path fill-rule="evenodd" clip-rule="evenodd" d="M21 0C32.598 0 42 9.40202 42 21C42 22.4157 41.8599 23.7986 41.5929 25.1358C39.7394 39.1032 21.1103 55 21.1103 55C21.1103 55 5.25689 41.4717 1.34456 28.4096C0.475506 26.1054 0 23.6083 0 21C0 9.40202 9.40202 0 21 0Z" fill="#D9D9D9"/><path d="M38 21C38 11.6112 30.3888 4 21 4C11.6112 4 4 11.6112 4 21C4 30.3888 11.6112 38 21 38C30.3888 38 38 30.3888 38 21Z" fill="white"/></svg>`,
+  'Ice Cream': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 55"><path fill-rule="evenodd" clip-rule="evenodd" d="M21 0C32.598 0 42 9.40202 42 21C42 22.4157 41.8599 23.7986 41.5929 25.1358C39.7394 39.1032 21.1103 55 21.1103 55C21.1103 55 5.25689 41.4717 1.34456 28.4096C0.475506 26.1054 0 23.6083 0 21C0 9.40202 9.40202 0 21 0Z" fill="#D9D9D9"/><path d="M38 21C38 11.6112 30.3888 4 21 4C11.6112 4 4 11.6112 4 21C4 30.3888 11.6112 38 21 38C30.3888 38 38 30.3888 38 21Z" fill="white"/></svg>`,
+  'Bakery': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 55"><path fill-rule="evenodd" clip-rule="evenodd" d="M21 0C32.598 0 42 9.40202 42 21C42 22.4157 41.8599 23.7986 41.5929 25.1358C39.7394 39.1032 21.1103 55 21.1103 55C21.1103 55 5.25689 41.4717 1.34456 28.4096C0.475506 26.1054 0 23.6083 0 21C0 9.40202 9.40202 0 21 0Z" fill="#D9D9D9"/><path d="M38 21C38 11.6112 30.3888 4 21 4C11.6112 4 4 11.6112 4 21C4 30.3888 11.6112 38 21 38C30.3888 38 38 30.3888 38 21Z" fill="white"/></svg>`,
+  'Wellness': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 55"><path fill-rule="evenodd" clip-rule="evenodd" d="M21 0C32.598 0 42 9.40202 42 21C42 22.4157 41.8599 23.7986 41.5929 25.1358C39.7394 39.1032 21.1103 55 21.1103 55C21.1103 55 5.25689 41.4717 1.34456 28.4096C0.475506 26.1054 0 23.6083 0 21C0 9.40202 9.40202 0 21 0Z" fill="#D9D9D9"/><path d="M38 21C38 11.6112 30.3888 4 21 4C11.6112 4 4 11.6112 4 21C4 30.3888 11.6112 38 21 38C30.3888 38 38 30.3888 38 21Z" fill="white"/></svg>`,
+  'Run Club': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 55"><path fill-rule="evenodd" clip-rule="evenodd" d="M21 0C32.598 0 42 9.40202 42 21C42 22.4157 41.8599 23.7986 41.5929 25.1358C39.7394 39.1032 21.1103 55 21.1103 55C21.1103 55 5.25689 41.4717 1.34456 28.4096C0.475506 26.1054 0 23.6083 0 21C0 9.40202 9.40202 0 21 0Z" fill="#D9D9D9"/><path d="M38 21C38 11.6112 30.3888 4 21 4C11.6112 4 4 11.6112 4 21C4 30.3888 11.6112 38 21 38C30.3888 38 38 30.3888 38 21Z" fill="white"/></svg>`,
+  'Music': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 55"><path fill-rule="evenodd" clip-rule="evenodd" d="M21 0C32.598 0 42 9.40202 42 21C42 22.4157 41.8599 23.7986 41.5929 25.1358C39.7394 39.1032 21.1103 55 21.1103 55C21.1103 55 5.25689 41.4717 1.34456 28.4096C0.475506 26.1054 0 23.6083 0 21C0 9.40202 9.40202 0 21 0Z" fill="#D9D9D9"/><path d="M38 21C38 11.6112 30.3888 4 21 4C11.6112 4 4 11.6112 4 21C4 30.3888 11.6112 38 21 38C30.3888 38 38 30.3888 38 21Z" fill="white"/></svg>`,
+  'Fitness': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 55"><path fill-rule="evenodd" clip-rule="evenodd" d="M21 0C32.598 0 42 9.40202 42 21C42 22.4157 41.8599 23.7986 41.5929 25.1358C39.7394 39.1032 21.1103 55 21.1103 55C21.1103 55 5.25689 41.4717 1.34456 28.4096C0.475506 26.1054 0 23.6083 0 21C0 9.40202 9.40202 0 21 0Z" fill="#D9D9D9"/><path d="M38 21C38 11.6112 30.3888 4 21 4C11.6112 4 4 11.6112 4 21C4 30.3888 11.6112 38 21 38C30.3888 38 38 30.3888 38 21Z" fill="white"/></svg>`,
+  'Food Truck': `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 42 55"><path fill-rule="evenodd" clip-rule="evenodd" d="M21 0C32.598 0 42 9.40202 42 21C42 22.4157 41.8599 23.7986 41.5929 25.1358C39.7394 39.1032 21.1103 55 21.1103 55C21.1103 55 5.25689 41.4717 1.34456 28.4096C0.475506 26.1054 0 23.6083 0 21C0 9.40202 9.40202 0 21 0Z" fill="#D9D9D9"/><path d="M38 21C38 11.6112 30.3888 4 21 4C11.6112 4 4 11.6112 4 21C4 30.3888 11.6112 38 21 38C30.3888 38 38 30.3888 38 21Z" fill="white"/></svg>`,
 };
 
 // --- SVG Helper ---
@@ -667,9 +660,9 @@ function makeSvgData(svg) {
 // --- Load marker images into Mapbox ---
 function loadMarkerImages(map) {
   return Promise.all(
-    Object.entries(MARKER_SVGS).map(([promoType, svg]) => {
+    Object.entries(VENUE_TYPE_SVGS).map(([venueType, svg]) => {
       return new Promise((resolve) => {
-        const imageId = `marker-${promoType}`;
+        const imageId = `marker-${venueType}`;
         if (map.hasImage(imageId)) { resolve(); return; }
         const img = new Image(64, 64);
         img.onload = () => {
@@ -679,7 +672,7 @@ function loadMarkerImages(map) {
           resolve();
         };
         img.onerror = () => {
-          console.warn(`Failed to load marker image for "${promoType}"`);
+          console.warn(`Failed to load marker image for "${venueType}"`);
           resolve();
         };
         img.src = makeSvgData(svg);
@@ -728,8 +721,9 @@ async function fetchAndParseCSV(url) {
     if (isNaN(lng) || isNaN(lat)) continue;
 
     const promoType = (row['Promotion Type'] || '').trim();
-    if (!MARKER_SVGS[promoType]) {
-      console.warn(`Unknown promotion type "${promoType}" for "${name}", skipping`);
+    const venueType = (row['Venue Type'] || '').trim();
+    if (!VENUE_TYPE_SVGS[venueType]) {
+      console.warn(`Unknown venue type "${venueType}" for "${name}", skipping`);
       continue;
     }
 
@@ -740,6 +734,7 @@ async function fetchAndParseCSV(url) {
       instagram: (row['Venue Instagram'] || '').trim(),
       eventName: (row['Event Name/Description'] || '').trim(),
       promotionType: promoType,
+      venueType,
       link: (row['Link'] || '').trim(),
       notes: (row['Notes'] || '').trim(),
       liveWindow: (row[timeColumnName] || '').trim(),
@@ -780,7 +775,8 @@ function buildGeoJSON(venues) {
         properties: {
           name: v.name,
           promotionType: v.promotionType,
-          icon: `marker-${v.promotionType}`,
+          venueType: v.venueType,
+          icon: `marker-${v.venueType}`,
           eventName: v.eventName,
           liveWindow: v.liveWindow,
           notes: v.notes,
