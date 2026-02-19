@@ -1,3 +1,20 @@
+/* --- Zalando Sans Expanded --- */
+@font-face {
+  font-family: 'Zalando Sans Expanded';
+  src: url('/public/fonts/ZalandoSansExpanded-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Zalando Sans Expanded';
+  src: url('/public/fonts/ZalandoSansExpanded-Italic-VariableFont_wght.ttf') format('truetype');
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
 /* --- Splash Screen --- */
 #splash-screen {
   position: fixed;
@@ -16,10 +33,10 @@
 }
 
 #splash-logo {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: 'Zalando Sans Expanded', sans-serif;
   font-size: clamp(22px, 6vw, 32px);
-  font-weight: 700;
-  letter-spacing: 0.06em;
+  font-weight: 800;
+  letter-spacing: -0.04em;
   color: #eeeeee;
   text-transform: uppercase;
   animation: splashLogoIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) both;
@@ -70,15 +87,14 @@
 }
 
 #onboarding-card {
-  background: #ffffff;
-  border-radius: 4px;
+  background: #f2f2f2;
+  border-radius: 16px;
   padding: 36px 28px 28px;
-  max-width: 340px;
+  max-width: 360px;
   width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
   animation: onboardingCardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
 }
 
@@ -95,35 +111,35 @@
 
 #onboarding-header {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 #onboarding-title {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 22px;
-  font-weight: 700;
+  font-family: 'Zalando Sans Expanded', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
   color: #111111;
-  letter-spacing: -0.01em;
-  line-height: 1.2;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
   text-transform: uppercase;
-  margin-bottom: 10px;
+  margin-bottom: 14px;
 }
 
 #onboarding-subtitle {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 400;
-  color: #555555;
-  letter-spacing: 0.02em;
+  color: #333333;
+  letter-spacing: 0;
 }
 
 #onboarding-illustration {
   width: 100%;
-  max-width: 200px;
-  margin: 0 auto 20px;
+  max-width: 240px;
+  margin: 0 auto 16px;
 }
 
-#onboarding-illustration svg {
+#onboarding-illustration img {
   width: 100%;
   height: auto;
   display: block;
@@ -131,34 +147,36 @@
 
 #onboarding-body {
   font-family: 'IBM Plex Mono', monospace;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
-  color: #444444;
+  color: #333333;
   text-align: center;
   line-height: 1.6;
-  margin-bottom: 24px;
+  margin-bottom: 0;
 }
 
 #onboarding-cta {
   width: 100%;
-  padding: 14px 0;
-  background: #ffffff;
-  border: 1.5px solid #111111;
-  border-radius: 2px;
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.12em;
+  margin-top: 20px;
+  padding: 18px 0;
+  background: #f2f2f2;
+  border: none;
+  border-radius: 12px;
+  font-family: 'Zalando Sans Expanded', sans-serif;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
   color: #111111;
   text-transform: uppercase;
   cursor: pointer;
   transition: background 0.15s, color 0.15s;
+  box-shadow: 0 0 0 1.5px #111111;
 }
 
 #onboarding-cta:hover,
 #onboarding-cta:focus {
   background: #111111;
-  color: #ffffff;
+  color: #f2f2f2;
   outline: none;
 }
 
@@ -167,7 +185,7 @@
   --bg-primary: #0a0a14;
   --text-primary: #d6deeb;
   --text-muted: #888;
-  --font-display: 'Crimson Pro', serif;
+  --font-display: 'Zalando Sans Expanded', sans-serif;
   --font-mono: 'IBM Plex Mono', monospace;
 }
 
