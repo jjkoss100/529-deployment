@@ -6,7 +6,7 @@ const MAP_ZOOM = 14;
 const MAP_STYLE = 'mapbox://styles/mapbox/dark-v11';
 const SOURCE_ID = 'venues';
 const LAYER_ID = 'venue-markers';
-const LNG_OFFSET = 0.00012;
+const LNG_OFFSET = 0.00022;
 const GLOW_LAYER_ID = 'venue-glow';
 const PRESHOW_HOURS = 5;
 const REFRESH_INTERVAL = 60000; // re-filter every 60s
@@ -755,15 +755,16 @@ function buildGeoJSON(venues) {
   const visible = venues.filter(filterFn);
   console.log(`[${currentMode.toUpperCase()}] Showing ${visible.length} of ${venues.length} deals`);
 
-  // Group by venue name to offset overlapping markers
-  const byName = new Map();
+  // Group by coordinates to offset any markers sharing the same location
+  const byCoord = new Map();
   for (const v of visible) {
-    if (!byName.has(v.name)) byName.set(v.name, []);
-    byName.get(v.name).push(v);
+    const key = `${v.lng.toFixed(5)},${v.lat.toFixed(5)}`;
+    if (!byCoord.has(key)) byCoord.set(key, []);
+    byCoord.get(key).push(v);
   }
 
   const features = [];
-  for (const [name, group] of byName) {
+  for (const [coord, group] of byCoord) {
     for (let i = 0; i < group.length; i++) {
       const v = group[i];
       const offset = group.length > 1
