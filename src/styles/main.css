@@ -521,8 +521,10 @@ html, body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-top: 8px;
+  margin-top: 10px;
   padding: 0 2px;
+  border-top: 1px solid rgba(0,0,0,0.08);
+  padding-top: 8px;
 }
 
 .tooltip-btn {
@@ -541,4 +543,40 @@ html, body {
   font-family: 'DM Mono', monospace;
   font-size: 12px;
   color: #555;
+}
+
+/* Onboarding spotlight ring — soft pulsing glow around the chosen marker */
+#onboarding-spotlight-el {
+  position: absolute;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  background: transparent;
+  box-shadow:
+    0 0 0 2.5px rgba(255, 255, 255, 0.85),
+    0 0 0 6px rgba(255, 255, 255, 0.18),
+    0 0 18px 6px rgba(255, 255, 255, 0.12);
+  animation: spotlightPulse 1.8s ease-in-out infinite;
+  display: none;
+}
+
+#onboarding-spotlight-el.active {
+  display: block;
+}
+
+@keyframes spotlightPulse {
+  0%, 100% {
+    box-shadow:
+      0 0 0 2.5px rgba(255, 255, 255, 0.85),
+      0 0 0 6px rgba(255, 255, 255, 0.18),
+      0 0 18px 6px rgba(255, 255, 255, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 0 2.5px rgba(255, 255, 255, 0.95),
+      0 0 0 10px rgba(255, 255, 255, 0.22),
+      0 0 28px 10px rgba(255, 255, 255, 0.16);
+  }
 }

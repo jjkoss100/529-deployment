@@ -1370,37 +1370,24 @@ function positionAndShowTooltips(tooltipOverlay, showStep, attempt = 0) {
 
   const map = _onboardingMap;
 
-  // Add a pulsing spotlight circle layer on the chosen marker via Mapbox
-  // Uses a single-feature GeoJSON source so only this one marker is highlighted
-  const SPOTLIGHT_SOURCE = 'onboarding-spotlight-src';
-  const SPOTLIGHT_LAYER  = 'onboarding-spotlight';
+  // CSS div spotlight — tracks marker body center via map.on('render')
+  const spotEl = document.getElementById('onboarding-spotlight-el');
 
-  const spotGeoJSON = {
-    type: 'FeatureCollection',
-    features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [best.lng, best.lat] }, properties: {} }]
-  };
+  function updateSpotlight() {
+    if (!spotEl || !spotEl.classList.contains('active')) return;
+    const pt = map.project({ lng: best.lng, lat: best.lat });
+    // marker body center is ~22px above the pin tip (icon-anchor: bottom)
+    spotEl.style.left = pt.x + 'px';
+    spotEl.style.top  = (pt.y - 22) + 'px';
+  }
 
-  try {
-    if (map.getSource(SPOTLIGHT_SOURCE)) {
-      map.getSource(SPOTLIGHT_SOURCE).setData(spotGeoJSON);
-    } else {
-      map.addSource(SPOTLIGHT_SOURCE, { type: 'geojson', data: spotGeoJSON });
-      map.addLayer({
-        id: SPOTLIGHT_LAYER,
-        type: 'circle',
-        source: SPOTLIGHT_SOURCE,
-        paint: {
-          'circle-radius': 28,
-          'circle-color': 'transparent',
-          'circle-stroke-width': 2.5,
-          'circle-stroke-color': '#f2f2f2',
-          'circle-opacity': 0,
-          'circle-stroke-opacity': 0.9,
-          'circle-translate': [0, -22], // offset up so ring sits around the marker body, not the pin tip
-        }
-      }, LAYER_ID); // insert below the marker symbol layer so marker stays on top
-    }
-  } catch (e) { /* layer may not exist yet — not fatal */ }
+  if (spotEl) {
+    spotEl.classList.add('active');
+    updateSpotlight();
+    map.on('render', updateSpotlight);
+    // Store the handler so we can remove it later
+    spotEl._renderHandler = updateSpotlight;
+  }
 
   // Project the marker's lng/lat to screen pixels
   // icon-anchor = 'bottom' so pin tip = point; marker body center is ~22px above tip
@@ -1411,7 +1398,7 @@ function positionAndShowTooltips(tooltipOverlay, showStep, attempt = 0) {
   const BUBBLE_W = 210;
   const MARGIN = 12;
   const pinX = point.x;
-  const pinY = point.y - 22; // marker body center (above pin tip)
+  const pinY = point.y - 22; // marker body center
 
   const left = Math.max(MARGIN, Math.min(pinX - BUBBLE_W / 2, window.innerWidth - BUBBLE_W - MARGIN));
   // Bottom of the tooltip div sits 12px above the marker body center
@@ -1426,13 +1413,15 @@ function positionAndShowTooltips(tooltipOverlay, showStep, attempt = 0) {
   showStep(1);
 }
 
-// --- Remove the onboarding spotlight layer when done with step 1 ---
+// --- Remove the CSS spotlight ring when done with step 1 ---
 function removeOnboardingSpotlight() {
-  if (!_onboardingMap) return;
-  try {
-    if (_onboardingMap.getLayer('onboarding-spotlight')) _onboardingMap.removeLayer('onboarding-spotlight');
-    if (_onboardingMap.getSource('onboarding-spotlight-src')) _onboardingMap.removeSource('onboarding-spotlight-src');
-  } catch (e) { /* ok */ }
+  const spotEl = document.getElementById('onboarding-spotlight-el');
+  if (!spotEl) return;
+  spotEl.classList.remove('active');
+  if (_onboardingMap && spotEl._renderHandler) {
+    _onboardingMap.off('render', spotEl._renderHandler);
+    spotEl._renderHandler = null;
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -16,7 +16,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <!-- App styles -->
-  <link rel="stylesheet" href="src/styles/main.css?v=72">
+  <link rel="stylesheet" href="src/styles/main.css?v=73">
 </head>
 <body>
   <!-- Splash screen -->
@@ -42,23 +42,26 @@
 
   <!-- Tooltip tutorial overlay (shown after welcome card) -->
   <div id="tooltip-overlay" class="hidden">
+    <!-- Spotlight ring — positioned via JS on map.on('render') -->
+    <div id="onboarding-spotlight-el"></div>
+
     <div class="tooltip-step active" data-step="1">
       <div class="tooltip-bubble tooltip-bubble--down">
         <p>Check the icons to see which deals are around</p>
-      </div>
-      <div class="tooltip-nav">
-        <span class="tooltip-counter">1/2</span>
-        <button class="tooltip-btn tooltip-next">→</button>
+        <div class="tooltip-nav">
+          <span class="tooltip-counter">1/2</span>
+          <button class="tooltip-btn tooltip-next">→</button>
+        </div>
       </div>
     </div>
     <div class="tooltip-step" data-step="2">
       <div class="tooltip-bubble tooltip-bubble--left">
         <p>Filter for deals happening now or in the future</p>
-      </div>
-      <div class="tooltip-nav">
-        <button class="tooltip-btn tooltip-prev">←</button>
-        <span class="tooltip-counter">2/2</span>
-        <button class="tooltip-btn tooltip-done">→</button>
+        <div class="tooltip-nav">
+          <button class="tooltip-btn tooltip-prev">←</button>
+          <span class="tooltip-counter">2/2</span>
+          <button class="tooltip-btn tooltip-done">→</button>
+        </div>
       </div>
     </div>
   </div>
@@ -69,6 +72,6 @@
     <button class="mode-toggle__btn mode-toggle__btn--active" data-mode="now">NOW</button>
     <button class="mode-toggle__btn" data-mode="soon">SOON</button>
   </div>
-  <script type="module" src="src/main.js?v=77"></script>
+  <script type="module" src="src/main.js?v=78"></script>
 </body>
 </html>
