@@ -959,7 +959,7 @@ function buildGeoJSON(venues) {
           venueType: v.venueType,
           icon: v.promotionType === 'Shoutout'
             ? `marker-${v.venueType}-shoutout`
-            : `marker-${v.venueType}${isNearEnd(v.liveWindow) ? '-alert' : ''}`,
+            : `marker-${v.venueType}${isNearEnd(v.liveWindow) && v.promotionType !== 'Limited' ? '-alert' : ''}`,
           eventName: v.eventName,
           liveWindow: v.liveWindow,
           notes: v.notes,
