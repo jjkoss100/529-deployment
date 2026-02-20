@@ -601,8 +601,7 @@ function createGridOverlay() {
     resize();
   });
 
-  const SPACING = 36;
-  // Drift speed: pixels per second (diagonal)
+  const SPACING = 40; // slightly wider cells — less dense
   const DRIFT_X = 4.5;
   const DRIFT_Y = 2.8;
   let t = 0;
@@ -610,46 +609,72 @@ function createGridOverlay() {
   let offsetY = 0;
   let last = performance.now();
 
+  // Glitch state: randomly skip/flash individual lines
+  let glitchTimer = 0;
+  let glitchLines = new Set(); // indices of lines currently glitching
+  let glitchBoost = 0;         // brief opacity surge on glitch frames
+
   function draw(now) {
-    const dt = Math.min((now - last) / 1000, 0.05); // seconds, capped
+    const dt = Math.min((now - last) / 1000, 0.05);
     last = now;
 
-    // Advance drift offsets, wrap within one cell
     offsetX = (offsetX + DRIFT_X * dt) % SPACING;
     offsetY = (offsetY + DRIFT_Y * dt) % SPACING;
-
     t += dt;
+
+    // Glitch: every 1.5–3.5s, randomly drop/flash a few lines for ~80ms
+    glitchTimer -= dt;
+    if (glitchTimer <= 0) {
+      glitchLines.clear();
+      const lineCount = Math.ceil(w / SPACING) + Math.ceil(h / SPACING);
+      const numGlitch = Math.floor(Math.random() * 4) + 1;
+      for (let i = 0; i < numGlitch; i++) {
+        glitchLines.add(Math.floor(Math.random() * lineCount));
+      }
+      glitchBoost = 0.06; // brief brightness flash
+      glitchTimer = 1.5 + Math.random() * 2.0;
+    }
+    glitchBoost = Math.max(0, glitchBoost - dt * 0.8); // decay fast
 
     ctx.clearRect(0, 0, w, h);
 
-    // Pulse: 0.038–0.085 opacity
-    const pulse = 0.038 + 0.047 * ((Math.sin(t * 0.45) + 1) / 2);
+    // Base pulse: pulled down to 0.016–0.038 — subtle but present
+    const pulse = 0.016 + 0.022 * ((Math.sin(t * 0.45) + 1) / 2);
 
-    ctx.strokeStyle = `rgba(255, 130, 40, ${pulse})`;
-    ctx.lineWidth = 0.7;
+    ctx.lineWidth = 0.6;
 
-    // Vertical lines — start one cell before edge so lines scroll in cleanly
+    let lineIdx = 0;
+
+    // Vertical lines
     for (let x = -SPACING + offsetX; x < w + SPACING; x += SPACING) {
+      const isGlitch = glitchLines.has(lineIdx);
+      const alpha = isGlitch ? 0 : pulse + (glitchBoost * (Math.random() > 0.5 ? 1 : 0));
+      ctx.strokeStyle = `rgba(255, 130, 40, ${alpha})`;
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, h);
       ctx.stroke();
+      lineIdx++;
     }
     // Horizontal lines
     for (let y = -SPACING + offsetY; y < h + SPACING; y += SPACING) {
+      const isGlitch = glitchLines.has(lineIdx);
+      const alpha = isGlitch ? 0 : pulse + (glitchBoost * (Math.random() > 0.5 ? 1 : 0));
+      ctx.strokeStyle = `rgba(255, 130, 40, ${alpha})`;
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(w, y);
       ctx.stroke();
+      lineIdx++;
     }
 
-    // Intersection dots — brighter, slightly larger
-    const dotPulse = pulse * 2.0;
+    // Intersection dots — match reduced opacity
+    const dotPulse = pulse * 1.6;
     ctx.fillStyle = `rgba(255, 155, 60, ${dotPulse})`;
     for (let x = -SPACING + offsetX; x < w + SPACING; x += SPACING) {
       for (let y = -SPACING + offsetY; y < h + SPACING; y += SPACING) {
         ctx.beginPath();
-        ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+        ctx.arc(x, y, 1.2, 0, Math.PI * 2);
         ctx.fill();
       }
     }
