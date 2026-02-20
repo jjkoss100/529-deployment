@@ -1299,13 +1299,15 @@ function runSplashAndOnboarding() {
   }, 2100);
 
   // LET'S GO: slide card down, then show tooltip steps anchored to a real marker
+  // Use setTimeout instead of transitionend — transitionend is unreliable when the
+  // element starts at translateY(100vh) and slide-out returns it there (no movement = no event)
   ctaBtn.addEventListener('click', () => {
     onboarding.classList.remove('slide-in');
     onboarding.classList.add('slide-out');
-    inner.addEventListener('transitionend', () => {
+    setTimeout(() => {
       onboarding.style.display = 'none';
       positionAndShowTooltips(tooltipOverlay, showStep);
-    }, { once: true });
+    }, 420); // slide-out transition is 0.4s
   });
 
   // Wire tooltip nav buttons
@@ -1320,11 +1322,16 @@ function runSplashAndOnboarding() {
 }
 
 // --- Position and show tooltip overlay, anchored to the most recently started active marker ---
-function positionAndShowTooltips(tooltipOverlay, showStep) {
+function positionAndShowTooltips(tooltipOverlay, showStep, attempt = 0) {
   if (!tooltipOverlay) return;
 
-  // If map or venues not ready yet, skip tooltips
-  if (!_onboardingMap || !_onboardingVenues || _onboardingVenues.length === 0) return;
+  // If map or venues not ready yet, retry up to 10 times (~3s total) before giving up
+  if (!_onboardingMap || !_onboardingVenues || _onboardingVenues.length === 0) {
+    if (attempt < 10) {
+      setTimeout(() => positionAndShowTooltips(tooltipOverlay, showStep, attempt + 1), 300);
+    }
+    return;
+  }
 
   // Find the active venue whose deal started most recently
   const now = getLAMinutes();
