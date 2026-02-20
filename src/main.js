@@ -850,10 +850,10 @@ function setupVenueLabels(map) {
   function updateLabels() {
     const features = map.queryRenderedFeatures({ layers: [LAYER_ID] });
 
-    // Deduplicate by name+coords (Mapbox can return duplicates across tiles)
+    // Deduplicate: one label per venue name (first marker wins for position)
     const seen = new Set();
     const unique = features.filter(f => {
-      const key = `${f.properties.name}|${f.geometry.coordinates.join(',')}`;
+      const key = f.properties.name;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
@@ -870,7 +870,7 @@ function setupVenueLabels(map) {
     for (const f of unique) {
       const coords = f.geometry.coordinates;
       const name = f.properties.name;
-      const key = `${name}|${coords.join(',')}`;
+      const key = name;
       active.add(key);
 
       const point = map.project(coords);
