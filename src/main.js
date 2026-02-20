@@ -332,7 +332,7 @@ function mapWeatherToEffects(weather) {
 
   // Adjust water for heavy conditions
   const isHeavy = [65, 67, 82, 75, 86, 95, 96, 99].includes(weather.weatherCode);
-  const waterColor = isHeavy ? '#081a28' : '#0a1e2e';
+  const waterColor = isHeavy ? '#0d191d' : '#111e22';
 
   return { fog, particles, waterColor };
 }
@@ -529,35 +529,45 @@ function createParticleSystem() {
 function applyTimeOfDayColors(map, isDay) {
   try {
     if (isDay) {
-      map.setPaintProperty('water', 'fill-color', '#1a4a6e');
-      map.setPaintProperty('road-street', 'line-color', '#c87030');
-      map.setPaintProperty('road-minor-low', 'line-color', '#c87030');
-      map.setPaintProperty('road-minor-case', 'line-color', '#8a4820');
-      map.setPaintProperty('road-secondary-tertiary', 'line-color', '#e08040');
-      map.setPaintProperty('road-primary', 'line-color', '#f09050');
-      map.setPaintProperty('building', 'fill-color', '#2a3d52');
-      map.setPaintProperty('building', 'fill-opacity', 0.8);
+      map.setPaintProperty('water', 'fill-color', '#1a2e32');
+      map.setPaintProperty('road-street', 'line-color', '#e07828');
+      map.setPaintProperty('road-minor-low', 'line-color', '#e07828');
+      map.setPaintProperty('road-minor-case', 'line-color', '#a05020');
+      map.setPaintProperty('road-secondary-tertiary', 'line-color', '#f08c38');
+      map.setPaintProperty('road-primary', 'line-color', '#ffa048');
+      map.setPaintProperty('building', 'fill-color', '#1e2a38');
+      map.setPaintProperty('building', 'fill-opacity', 0.85);
       // Road casings — bright orange-white outlines for fractal glow
-      try { map.setPaintProperty('road-street-case', 'line-color', '#ff9a50'); } catch (_) {}
-      try { map.setPaintProperty('road-secondary-tertiary-case', 'line-color', '#ffaa60'); } catch (_) {}
-      try { map.setPaintProperty('road-primary-case', 'line-color', '#ffb870'); } catch (_) {}
-      try { map.setPaintProperty('road-motorway', 'line-color', '#ffa060'); } catch (_) {}
-      try { map.setPaintProperty('road-motorway-case', 'line-color', '#ffc080'); } catch (_) {}
+      try { map.setPaintProperty('road-street-case', 'line-color', '#ffaa58'); } catch (_) {}
+      try { map.setPaintProperty('road-secondary-tertiary-case', 'line-color', '#ffba68'); } catch (_) {}
+      try { map.setPaintProperty('road-primary-case', 'line-color', '#ffcc78'); } catch (_) {}
+      try { map.setPaintProperty('road-motorway', 'line-color', '#ffb060'); } catch (_) {}
+      try { map.setPaintProperty('road-motorway-case', 'line-color', '#ffcc80'); } catch (_) {}
+      // Land/background — slightly lighter steel-blue for day
+      try { map.setPaintProperty('land', 'background-color', '#131c28'); } catch (_) {}
+      try { map.setPaintProperty('background', 'background-color', '#131c28'); } catch (_) {}
+      try { map.setPaintProperty('landcover', 'fill-color', '#141e2a'); } catch (_) {}
+      try { map.setPaintProperty('landuse', 'fill-color', '#141e2a'); } catch (_) {}
     } else {
-      map.setPaintProperty('water', 'fill-color', '#071d30');
-      map.setPaintProperty('road-street', 'line-color', '#c45a18');
-      map.setPaintProperty('road-minor-low', 'line-color', '#c45a18');
-      map.setPaintProperty('road-minor-case', 'line-color', '#7a3210');
-      map.setPaintProperty('road-secondary-tertiary', 'line-color', '#e06820');
-      map.setPaintProperty('road-primary', 'line-color', '#f57e28');
-      map.setPaintProperty('building', 'fill-color', '#0e1a28');
-      map.setPaintProperty('building', 'fill-opacity', 0.95);
+      map.setPaintProperty('water', 'fill-color', '#0e1c20');
+      map.setPaintProperty('road-street', 'line-color', '#e86820');
+      map.setPaintProperty('road-minor-low', 'line-color', '#e86820');
+      map.setPaintProperty('road-minor-case', 'line-color', '#b04010');
+      map.setPaintProperty('road-secondary-tertiary', 'line-color', '#f57a28');
+      map.setPaintProperty('road-primary', 'line-color', '#ff9035');
+      map.setPaintProperty('building', 'fill-color', '#111820');
+      map.setPaintProperty('building', 'fill-opacity', 0.98);
       // Road casings — bright neon orange outlines for fractal glow at night
-      try { map.setPaintProperty('road-street-case', 'line-color', '#ff7030'); } catch (_) {}
-      try { map.setPaintProperty('road-secondary-tertiary-case', 'line-color', '#ff8038'); } catch (_) {}
-      try { map.setPaintProperty('road-primary-case', 'line-color', '#ff9040'); } catch (_) {}
-      try { map.setPaintProperty('road-motorway', 'line-color', '#ff9040'); } catch (_) {}
-      try { map.setPaintProperty('road-motorway-case', 'line-color', '#ffaa50'); } catch (_) {}
+      try { map.setPaintProperty('road-street-case', 'line-color', '#ff7830'); } catch (_) {}
+      try { map.setPaintProperty('road-secondary-tertiary-case', 'line-color', '#ff8c3c'); } catch (_) {}
+      try { map.setPaintProperty('road-primary-case', 'line-color', '#ffa048'); } catch (_) {}
+      try { map.setPaintProperty('road-motorway', 'line-color', '#ffa048'); } catch (_) {}
+      try { map.setPaintProperty('road-motorway-case', 'line-color', '#ffb85a'); } catch (_) {}
+      // Land/background — force darker so roads pop
+      try { map.setPaintProperty('land', 'background-color', '#0a0e14'); } catch (_) {}
+      try { map.setPaintProperty('background', 'background-color', '#0a0e14'); } catch (_) {}
+      try { map.setPaintProperty('landcover', 'fill-color', '#0c1018'); } catch (_) {}
+      try { map.setPaintProperty('landuse', 'fill-color', '#0c1018'); } catch (_) {}
     }
   } catch (e) { /* layer may not exist */ }
 }
@@ -587,41 +597,55 @@ function createGridOverlay() {
     resize();
   });
 
-  const SPACING = 36; // grid cell size in px
+  const SPACING = 36;
+  // Drift speed: pixels per second (diagonal)
+  const DRIFT_X = 4.5;
+  const DRIFT_Y = 2.8;
   let t = 0;
+  let offsetX = 0;
+  let offsetY = 0;
+  let last = performance.now();
 
-  function draw() {
+  function draw(now) {
+    const dt = Math.min((now - last) / 1000, 0.05); // seconds, capped
+    last = now;
+
+    // Advance drift offsets, wrap within one cell
+    offsetX = (offsetX + DRIFT_X * dt) % SPACING;
+    offsetY = (offsetY + DRIFT_Y * dt) % SPACING;
+
+    t += dt;
+
     ctx.clearRect(0, 0, w, h);
 
-    // Slow pulse: 0.018–0.055 opacity
-    const pulse = 0.018 + 0.022 * ((Math.sin(t * 0.4) + 1) / 2);
-    t += 0.016;
+    // Pulse: 0.038–0.085 opacity
+    const pulse = 0.038 + 0.047 * ((Math.sin(t * 0.45) + 1) / 2);
 
     ctx.strokeStyle = `rgba(255, 130, 40, ${pulse})`;
-    ctx.lineWidth = 0.5;
+    ctx.lineWidth = 0.7;
 
-    // Vertical lines
-    for (let x = 0; x < w; x += SPACING) {
+    // Vertical lines — start one cell before edge so lines scroll in cleanly
+    for (let x = -SPACING + offsetX; x < w + SPACING; x += SPACING) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
       ctx.lineTo(x, h);
       ctx.stroke();
     }
     // Horizontal lines
-    for (let y = 0; y < h; y += SPACING) {
+    for (let y = -SPACING + offsetY; y < h + SPACING; y += SPACING) {
       ctx.beginPath();
       ctx.moveTo(0, y);
       ctx.lineTo(w, y);
       ctx.stroke();
     }
 
-    // Intersection dots — slightly brighter
-    const dotPulse = pulse * 1.8;
-    ctx.fillStyle = `rgba(255, 150, 60, ${dotPulse})`;
-    for (let x = 0; x < w; x += SPACING) {
-      for (let y = 0; y < h; y += SPACING) {
+    // Intersection dots — brighter, slightly larger
+    const dotPulse = pulse * 2.0;
+    ctx.fillStyle = `rgba(255, 155, 60, ${dotPulse})`;
+    for (let x = -SPACING + offsetX; x < w + SPACING; x += SPACING) {
+      for (let y = -SPACING + offsetY; y < h + SPACING; y += SPACING) {
         ctx.beginPath();
-        ctx.arc(x, y, 1, 0, Math.PI * 2);
+        ctx.arc(x, y, 1.5, 0, Math.PI * 2);
         ctx.fill();
       }
     }
@@ -1151,10 +1175,12 @@ async function init() {
 
       // --- Effect 4: Map texture baseline (roads/buildings updated by weather system) ---
       try {
-        map.setPaintProperty('water', 'fill-color', '#071d30'); // baseline; overridden by applyWeather
-        try { map.setPaintProperty('park', 'fill-color', '#0d2820'); } catch (_) {}
-        try { map.setPaintProperty('national-park', 'fill-color', '#0d2820'); } catch (_) {}
-        try { map.setPaintProperty('landuse', 'fill-color', '#0d1f35'); } catch (_) {}
+        map.setPaintProperty('water', 'fill-color', '#0e1c20'); // baseline; overridden by applyWeather
+        try { map.setPaintProperty('park', 'fill-color', '#0d2016'); } catch (_) {}
+        try { map.setPaintProperty('national-park', 'fill-color', '#0d2016'); } catch (_) {}
+        try { map.setPaintProperty('landuse', 'fill-color', '#0c1018'); } catch (_) {}
+        try { map.setPaintProperty('landcover', 'fill-color', '#0c1018'); } catch (_) {}
+        try { map.setPaintProperty('background', 'background-color', '#0a0e14'); } catch (_) {}
       } catch (e) {
         console.warn('Map texture: some layers not found', e.message);
       }
@@ -1224,9 +1250,18 @@ function runSplashAndOnboarding() {
   const splash = document.getElementById('splash-screen');
   const onboarding = document.getElementById('onboarding-overlay');
   const ctaBtn = document.getElementById('onboarding-cta');
+  const inner = document.getElementById('onboarding-inner');
+  const tooltipOverlay = document.getElementById('tooltip-overlay');
+  const steps = tooltipOverlay ? tooltipOverlay.querySelectorAll('.tooltip-step') : [];
 
   const ONBOARDING_KEY = '529-onboarding-done';
-  const onboardingDone = sessionStorage.getItem(ONBOARDING_KEY);
+  const onboardingDone = localStorage.getItem(ONBOARDING_KEY);
+
+  function showStep(n) {
+    steps.forEach(s => s.classList.remove('active'));
+    const target = tooltipOverlay.querySelector(`.tooltip-step[data-step="${n}"]`);
+    if (target) target.classList.add('active');
+  }
 
   // t=50ms: elevator doors slide open
   setTimeout(() => {
@@ -1243,7 +1278,7 @@ function runSplashAndOnboarding() {
     splash.classList.add('logo-out');
   }, 1700);
 
-  // t=2100ms: show onboarding sliding up from bottom, then hide splash
+  // t=2100ms: show onboarding card (if not done), then hide splash
   setTimeout(() => {
     if (!onboardingDone) {
       onboarding.classList.remove('hidden');
@@ -1255,16 +1290,29 @@ function runSplashAndOnboarding() {
     }, 200);
   }, 2100);
 
-  // ENTER: slide inner wrapper back down, then hide overlay
-  const inner = document.getElementById('onboarding-inner');
+  // LET'S GO: slide card down, then show tooltip steps
   ctaBtn.addEventListener('click', () => {
     onboarding.classList.remove('slide-in');
     onboarding.classList.add('slide-out');
     inner.addEventListener('transitionend', () => {
       onboarding.style.display = 'none';
+      // Show tooltip overlay, step 1 already .active in HTML
+      if (tooltipOverlay) {
+        tooltipOverlay.classList.remove('hidden');
+        showStep(1);
+      }
     }, { once: true });
-    sessionStorage.setItem(ONBOARDING_KEY, '1');
   });
+
+  // Wire tooltip nav buttons
+  if (tooltipOverlay) {
+    tooltipOverlay.querySelector('.tooltip-next').addEventListener('click', () => showStep(2));
+    tooltipOverlay.querySelector('.tooltip-prev').addEventListener('click', () => showStep(1));
+    tooltipOverlay.querySelector('.tooltip-done').addEventListener('click', () => {
+      tooltipOverlay.classList.add('hidden');
+      localStorage.setItem(ONBOARDING_KEY, '1');
+    });
+  }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
