@@ -681,9 +681,9 @@ function loadMarkerImages(map) {
       return new Promise((resolve) => {
         const imageId = `marker-${venueType}`;
         if (map.hasImage(imageId)) { resolve(); return; }
-        // Load at 2× native size (84×110) for hi-DPI sharpness, then declare pixelRatio:2
-        // so Mapbox treats it as a 42×55 logical-pixel image, preserving aspect ratio.
-        const img = new Image(84, 110);
+        // Load at 2× native size (63×83) for hi-DPI sharpness, then declare pixelRatio:2
+        // so Mapbox treats it as a ~31×41 logical-pixel image (75% of original 42×55).
+        const img = new Image(63, 83);
         img.onload = () => {
           if (!map.hasImage(imageId)) {
             map.addImage(imageId, img, { pixelRatio: 2 });
