@@ -654,6 +654,23 @@ function makeAlertSvg(svg) {
   );
 }
 
+// --- Load a single marker image into Mapbox ---
+function loadSingleMarkerImage(map, id, svg) {
+  return new Promise((resolve) => {
+    if (map.hasImage(id)) { resolve(true); return; }
+    const img = new Image(63, 83);
+    img.onload = () => {
+      if (!map.hasImage(id)) map.addImage(id, img, { pixelRatio: 2 });
+      resolve(true);
+    };
+    img.onerror = () => {
+      console.warn(`Failed to load marker image "${id}"`);
+      resolve(false);
+    };
+    img.src = makeSvgData(svg);
+  });
+}
+
 // --- Load marker images into Mapbox (normal + alert variants) ---
 function loadMarkerImages(map) {
   const entries = Object.entries(VENUE_TYPE_SVGS);
@@ -661,23 +678,7 @@ function loadMarkerImages(map) {
     ...entries.map(([venueType, svg]) => ({ id: `marker-${venueType}`, svg })),
     ...entries.map(([venueType, svg]) => ({ id: `marker-${venueType}-alert`, svg: makeAlertSvg(svg) })),
   ];
-  return Promise.all(
-    toLoad.map(({ id, svg }) => new Promise((resolve) => {
-      if (map.hasImage(id)) { resolve(); return; }
-      // Load at 2× native size (63×83) for hi-DPI sharpness, then declare pixelRatio:2
-      // so Mapbox treats it as a ~31×41 logical-pixel image (75% of original 42×55).
-      const img = new Image(63, 83);
-      img.onload = () => {
-        if (!map.hasImage(id)) map.addImage(id, img, { pixelRatio: 2 });
-        resolve();
-      };
-      img.onerror = () => {
-        console.warn(`Failed to load marker image "${id}"`);
-        resolve();
-      };
-      img.src = makeSvgData(svg);
-    }))
-  );
+  return Promise.all(toLoad.map(({ id, svg }) => loadSingleMarkerImage(map, id, svg)));
 }
 
 // --- Fetch and parse CSV ---
@@ -775,7 +776,7 @@ function buildGeoJSON(venues) {
           name: v.name,
           promotionType: v.promotionType,
           venueType: v.venueType,
-          icon: isNearEnd(v.liveWindow) ? `marker-${v.venueType}-alert` : `marker-${v.venueType}`,
+          icon: `marker-${v.venueType}${isNearEnd(v.liveWindow) ? '-alert' : ''}`,
           eventName: v.eventName,
           liveWindow: v.liveWindow,
           notes: v.notes,
@@ -801,7 +802,12 @@ function addVenueLayer(map, geojson) {
     type: 'symbol',
     source: SOURCE_ID,
     layout: {
-      'icon-image': ['get', 'icon'],
+      // Use the icon property, falling back to the base marker if the alert variant is missing
+      'icon-image': [
+        'coalesce',
+        ['image', ['get', 'icon']],
+        ['image', ['concat', 'marker-', ['get', 'venueType']]]
+      ],
       'icon-size': 0.675,
       'icon-anchor': 'bottom',
       'icon-allow-overlap': true,
@@ -1060,9 +1066,36 @@ async function init() {
         }, REFRESH_INTERVAL);
     });
 
-    // Re-register images if style reloads
-    map.on('styleimagemissing', () => {
-      loadMarkerImages(map);
+    // Re-register a specific missing image on demand (e.g. after style reload)
+    map.on('styleimagemissing', (e) => {
+      const missingId = e.id;
+      // Check if it's one of our marker images
+      for (const [venueType, svg] of Object.entries(VENUE_TYPE_SVGS)) {
+        const normalId = `marker-${venueType}`;
+        const alertId = `marker-${venueType}-alert`;
+        if (missingId === alertId) {
+          // Load alert variant; if it fails, copy the normal image as fallback
+          loadSingleMarkerImage(map, alertId, makeAlertSvg(svg)).then(ok => {
+            if (!ok && map.hasImage(normalId) && !map.hasImage(alertId)) {
+              // Fallback: alias alert to normal so marker still renders
+              const canvas = document.createElement('canvas');
+              canvas.width = 63; canvas.height = 83;
+              const ctx = canvas.getContext('2d');
+              const img = new Image(63, 83);
+              img.onload = () => {
+                ctx.drawImage(img, 0, 0);
+                if (!map.hasImage(alertId)) map.addImage(alertId, canvas, { pixelRatio: 2 });
+              };
+              img.src = makeSvgData(svg);
+            }
+          });
+          return;
+        }
+        if (missingId === normalId) {
+          loadSingleMarkerImage(map, normalId, svg);
+          return;
+        }
+      }
     });
 
   } catch (err) {
