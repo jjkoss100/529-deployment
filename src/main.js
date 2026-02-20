@@ -604,7 +604,7 @@ function buildPopupHTML(props) {
 
   // Time color: red if Happy Hour/Distinct Menu near end, otherwise muted gray
   const useRed = (promoType === 'Happy Hour' || promoType === 'Distinct Menu' || promoType === 'Special') && isNearEnd(props.liveWindow);
-  const timeColor = useRed ? '#ef4444' : '#333';
+  const timeColor = useRed ? '#FF6E7F' : '#333';
 
   let html = `<div class="venue-popup">`;
 
@@ -674,29 +674,37 @@ function makeSvgData(svg) {
   return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 }
 
-// --- Load marker images into Mapbox ---
+// --- Add pink alert ring to the white circle in a marker SVG ---
+function makeAlertSvg(svg) {
+  return svg.replace(
+    /(<path[^>]*fill="white"[^>]*)(\/?>)/,
+    '$1 stroke="#FF6E7F" stroke-width="2"$2'
+  );
+}
+
+// --- Load marker images into Mapbox (normal + alert variants) ---
 function loadMarkerImages(map) {
+  const entries = Object.entries(VENUE_TYPE_SVGS);
+  const toLoad = [
+    ...entries.map(([venueType, svg]) => ({ id: `marker-${venueType}`, svg })),
+    ...entries.map(([venueType, svg]) => ({ id: `marker-${venueType}-alert`, svg: makeAlertSvg(svg) })),
+  ];
   return Promise.all(
-    Object.entries(VENUE_TYPE_SVGS).map(([venueType, svg]) => {
-      return new Promise((resolve) => {
-        const imageId = `marker-${venueType}`;
-        if (map.hasImage(imageId)) { resolve(); return; }
-        // Load at 2× native size (63×83) for hi-DPI sharpness, then declare pixelRatio:2
-        // so Mapbox treats it as a ~31×41 logical-pixel image (75% of original 42×55).
-        const img = new Image(63, 83);
-        img.onload = () => {
-          if (!map.hasImage(imageId)) {
-            map.addImage(imageId, img, { pixelRatio: 2 });
-          }
-          resolve();
-        };
-        img.onerror = () => {
-          console.warn(`Failed to load marker image for "${venueType}"`);
-          resolve();
-        };
-        img.src = makeSvgData(svg);
-      });
-    })
+    toLoad.map(({ id, svg }) => new Promise((resolve) => {
+      if (map.hasImage(id)) { resolve(); return; }
+      // Load at 2× native size (63×83) for hi-DPI sharpness, then declare pixelRatio:2
+      // so Mapbox treats it as a ~31×41 logical-pixel image (75% of original 42×55).
+      const img = new Image(63, 83);
+      img.onload = () => {
+        if (!map.hasImage(id)) map.addImage(id, img, { pixelRatio: 2 });
+        resolve();
+      };
+      img.onerror = () => {
+        console.warn(`Failed to load marker image "${id}"`);
+        resolve();
+      };
+      img.src = makeSvgData(svg);
+    }))
   );
 }
 
@@ -795,7 +803,7 @@ function buildGeoJSON(venues) {
           name: v.name,
           promotionType: v.promotionType,
           venueType: v.venueType,
-          icon: `marker-${v.venueType}`,
+          icon: isNearEnd(v.liveWindow) ? `marker-${v.venueType}-alert` : `marker-${v.venueType}`,
           eventName: v.eventName,
           liveWindow: v.liveWindow,
           notes: v.notes,
