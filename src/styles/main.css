@@ -273,7 +273,7 @@ html, body {
 }
 
 .venue-mapbox-popup .mapboxgl-popup-tip {
-  border-top-color: #d9d9d9;
+  display: none;
 }
 
 .venue-popup {
