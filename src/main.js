@@ -19,8 +19,8 @@ const FOG_TRANSITION_STEPS = 40;            // frames per transition
 
 // Weather profiles keyed by WMO code — { fog, particles }
 const WEATHER_PROFILES = {
-  clear:        { fog: { range: [-1, 7],    hb: 0.25, color: '#0d1f35', high: '#091525', space: '#040d18', stars: 0.8  }, particles: { type: 'none' } },
-  mainlyClear:  { fog: { range: [-1, 7],    hb: 0.3,  color: '#0d1f35', high: '#091525', space: '#040d18', stars: 0.5  }, particles: { type: 'none' } },
+  clear:        { fog: { range: [-1, 9],    hb: 0.2,  color: '#1a3a5c', high: '#0f2540', space: '#071828', stars: 0.0  }, particles: { type: 'none' } },
+  mainlyClear:  { fog: { range: [-1, 8],    hb: 0.25, color: '#162e4a', high: '#0d1f35', space: '#060f1c', stars: 0.0  }, particles: { type: 'none' } },
   partlyCloudy: { fog: { range: [-0.5, 6],  hb: 0.4,  color: '#1e1e30', high: '#111620', space: '#070a12', stars: 0.25 }, particles: { type: 'none' } },
   overcast:     { fog: { range: [0, 5],     hb: 0.5,  color: '#222236', high: '#151a24', space: '#0a0d16', stars: 0.05 }, particles: { type: 'none' } },
   fog:          { fog: { range: [0.5, 3],   hb: 0.7,  color: '#2a2a3e', high: '#1a1f2a', space: '#0e1118', stars: 0.0  }, particles: { type: 'none' } },
@@ -295,12 +295,18 @@ function mapWeatherToEffects(weather) {
   stars *= (1 - weather.cloudCover / 100);
   if (weather.isDay) stars = 0;
 
+  // At night, shift clear-sky fog to deep ocean dark tones
+  const fogColor      = !weather.isDay ? '#0d1f35' : f.color;
+  const fogHighColor  = !weather.isDay ? '#091525' : f.high;
+  const fogSpaceColor = !weather.isDay ? '#040d18' : f.space;
+  const fogRange      = !weather.isDay ? [f.range[0] - 2, f.range[1] - 1] : f.range;
+
   const fog = {
-    range: [...f.range],
+    range: [...fogRange],
     'horizon-blend': f.hb + (weather.cloudCover * 0.001),
-    color: f.color,
-    'high-color': f.high,
-    'space-color': f.space,
+    color: fogColor,
+    'high-color': fogHighColor,
+    'space-color': fogSpaceColor,
     'star-intensity': Math.max(0, stars),
   };
 
@@ -519,6 +525,35 @@ function createParticleSystem() {
   };
 }
 
+// --- Time-of-day map colors ---
+function applyTimeOfDayColors(map, isDay) {
+  try {
+    if (isDay) {
+      // Daytime: muted steel-blue palette, lighter land, softer roads
+      map.setPaintProperty('water', 'fill-color', '#1a4a6e');
+      map.setPaintProperty('road-street', 'line-color', '#c87030');
+      map.setPaintProperty('road-minor-low', 'line-color', '#c87030');
+      map.setPaintProperty('road-minor-case', 'line-color', '#8a4820');
+      map.setPaintProperty('road-secondary-tertiary', 'line-color', '#e08040');
+      map.setPaintProperty('road-primary', 'line-color', '#f09050');
+      try { map.setPaintProperty('road-motorway', 'line-color', '#ffa060'); } catch (_) {}
+      map.setPaintProperty('building', 'fill-color', '#2a3d52');
+      map.setPaintProperty('building', 'fill-opacity', 0.8);
+    } else {
+      // Nighttime: deep ocean blue, vivid orange roads
+      map.setPaintProperty('water', 'fill-color', '#071d30');
+      map.setPaintProperty('road-street', 'line-color', '#c45a18');
+      map.setPaintProperty('road-minor-low', 'line-color', '#c45a18');
+      map.setPaintProperty('road-minor-case', 'line-color', '#7a3210');
+      map.setPaintProperty('road-secondary-tertiary', 'line-color', '#e06820');
+      map.setPaintProperty('road-primary', 'line-color', '#f57e28');
+      try { map.setPaintProperty('road-motorway', 'line-color', '#ff9040'); } catch (_) {}
+      map.setPaintProperty('building', 'fill-color', '#0e1a28');
+      map.setPaintProperty('building', 'fill-opacity', 0.95);
+    }
+  } catch (e) { /* layer may not exist */ }
+}
+
 // --- Weather: System orchestrator ---
 function initWeatherSystem(map) {
   // Baseline fog state (matches Effect 1 values)
@@ -554,6 +589,9 @@ function initWeatherSystem(map) {
     const isHeavy = [65, 67, 82, 75, 86, 95, 96, 99].includes(weather.weatherCode);
     waterOpacityBase = isHeavy ? 0.6 : 0.5;
     waterOpacitySwing = isHeavy ? 0.1 : 0.2;
+
+    // Time-of-day road/building colors
+    applyTimeOfDayColors(map, weather.isDay);
   }
 
   // Initial weather check (slight delay to let map render)
@@ -1033,17 +1071,9 @@ async function init() {
       }, 50);
 
 
-      // --- Effect 4: Map texture — roads, buildings, water tint ---
+      // --- Effect 4: Map texture baseline (roads/buildings updated by weather system) ---
       try {
-        map.setPaintProperty('water', 'fill-color', '#071d30');
-        map.setPaintProperty('road-street', 'line-color', '#c45a18');
-        map.setPaintProperty('road-minor-low', 'line-color', '#c45a18');
-        map.setPaintProperty('road-minor-case', 'line-color', '#7a3210');
-        map.setPaintProperty('road-secondary-tertiary', 'line-color', '#e06820');
-        map.setPaintProperty('road-primary', 'line-color', '#f57e28');
-        map.setPaintProperty('road-motorway', 'line-color', '#ff9040');
-        map.setPaintProperty('building', 'fill-color', '#0e1a28');
-        map.setPaintProperty('building', 'fill-opacity', 0.95);
+        map.setPaintProperty('water', 'fill-color', '#071d30'); // baseline; overridden by applyWeather
         try { map.setPaintProperty('park', 'fill-color', '#0d2820'); } catch (_) {}
         try { map.setPaintProperty('national-park', 'fill-color', '#0d2820'); } catch (_) {}
         try { map.setPaintProperty('landuse', 'fill-color', '#0d1f35'); } catch (_) {}
