@@ -768,9 +768,10 @@ function buildPopupHTML(props) {
     'Happy Hour': 'see drinks',
     'Distinct Menu': 'see menu',
     'Limited': 'see details',
+    'Shoutout': 'see details',
   };
   const hasLink = !!link;
-  const hasTime = !!time && promoType !== 'Limited';
+  const hasTime = !!time && promoType !== 'Limited' && promoType !== 'Shoutout';
   if (hasLink || hasTime) {
     html += `<div class="venue-popup__footer">`;
     if (hasTime) {
@@ -780,7 +781,8 @@ function buildPopupHTML(props) {
     }
     if (hasLink) {
       const label = linkLabels[props.promotionType];
-      html += `<a class="venue-popup__link" href="${link}" target="_blank" rel="noopener noreferrer">`;
+      const linkClass = promoType === 'Shoutout' ? 'venue-popup__link venue-popup__link--shoutout' : 'venue-popup__link';
+      html += `<a class="${linkClass}" href="${link}" target="_blank" rel="noopener noreferrer">`;
       if (label) {
         html += label;
       } else {
@@ -946,7 +948,7 @@ function buildGeoJSON(venues) {
           name: v.name,
           promotionType: v.promotionType,
           venueType: v.venueType,
-          icon: `marker-${v.venueType}${isNearEnd(v.liveWindow) ? '-alert' : ''}`,
+          icon: `marker-${v.venueType}${v.promotionType !== 'Shoutout' && isNearEnd(v.liveWindow) ? '-alert' : ''}`,
           eventName: v.eventName,
           liveWindow: v.liveWindow,
           notes: v.notes,
@@ -1045,6 +1047,26 @@ function setupVenueLabels(map) {
   }
 
   map.on('render', updateLabels);
+}
+
+// --- Shoutout glow rings (gold pulsing CSS divs tracked via map.on('render')) ---
+const _shoutoutGlows = new Map(); // key: venue name → { el, handler }
+
+function addShoutoutGlows(map, venues) {
+  const shoutouts = venues.filter(v => v.promotionType === 'Shoutout');
+  for (const v of shoutouts) {
+    const el = document.createElement('div');
+    el.className = 'shoutout-glow';
+    document.body.appendChild(el);
+
+    const handler = () => {
+      const pt = map.project([v.lng, v.lat]);
+      el.style.left = `${Math.round(pt.x)}px`;
+      el.style.top = `${Math.round(pt.y)}px`;
+    };
+    map.on('render', handler);
+    _shoutoutGlows.set(v.name, { el, handler });
+  }
 }
 
 // --- Popup interactions (hover on desktop, click on mobile) ---
@@ -1187,6 +1209,7 @@ async function init() {
       const geojson = buildGeoJSON(venues);
       addVenueLayer(map, geojson);
       setupVenueLabels(map);
+      addShoutoutGlows(map, venues);
 
       // --- Effect 1: Fog & atmosphere ---
       map.setFog({
