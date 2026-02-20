@@ -142,34 +142,6 @@ function isDealStillAhead(deal) {
 }
 
 // --- Debug panel ---
-function updateDebugPanel(venues) {
-  const el = document.getElementById('debug-panel');
-  if (!el) return;
-
-  const now = new Date();
-  const laStr = now.toLocaleString('en-US', {
-    timeZone: 'America/Los_Angeles',
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true
-  }).toLowerCase();
-
-  // Count deals that are NOT active and NOT coming soon (more than 5h out, still waiting)
-  const queued = venues.filter(v => v.liveWindow && !isDealActiveNow(v) && !isDealComingSoon(v) && isDealStillAhead(v));
-  const active = venues.filter(v => v.liveWindow && isDealActiveNow(v));
-
-  if (queued.length > 0) {
-    el.style.display = '';
-    el.textContent = `${queued.length} deal${queued.length !== 1 ? 's' : ''} still coming later today...`;
-  } else if (active.length > 0) {
-    el.style.display = 'none';
-  } else {
-    // Today is over — show tomorrow's deal count
-    const total = venues.filter(v => v.liveWindow).length;
-    el.style.display = '';
-    el.textContent = `${total} deal${total !== 1 ? 's' : ''} loading for tomorrow...`;
-  }
-}
 
 // --- Time formatting: 24h → 12h ---
 function formatTime12h(timeStr) {
@@ -994,7 +966,6 @@ function setupToggle(map, venues) {
       // Re-filter and update map
       const updated = buildGeoJSON(venues);
       map.getSource(SOURCE_ID).setData(updated);
-      updateDebugPanel(venues);
     });
   });
 }
@@ -1074,7 +1045,6 @@ async function init() {
 
       setupPopups(map);
       setupToggle(map, venues);
-      updateDebugPanel(venues);
 
       // Fit map to venue bounds
       const bounds = new mapboxgl.LngLatBounds();
@@ -1087,8 +1057,7 @@ async function init() {
       setInterval(() => {
         const updated = buildGeoJSON(venues);
         map.getSource(SOURCE_ID).setData(updated);
-        updateDebugPanel(venues);
-      }, REFRESH_INTERVAL);
+        }, REFRESH_INTERVAL);
     });
 
     // Re-register images if style reloads
