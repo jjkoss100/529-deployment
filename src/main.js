@@ -648,8 +648,9 @@ function makeSvgData(svg) {
 
 // --- Add pink alert ring to the white circle in a marker SVG ---
 function makeAlertSvg(svg) {
+  // Match <path ... fill="white" ... /> ensuring the / stays with the closing >
   return svg.replace(
-    /(<path[^>]*fill="white"[^>]*)(\/?>)/,
+    /(<path\b[^/]*?fill="white"[^/]*?)(\/?>)/,
     '$1 stroke="#FF6E7F" stroke-width="2"$2'
   );
 }
