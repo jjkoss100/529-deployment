@@ -1336,16 +1336,23 @@ function runSplashAndOnboarding() {
   });
 
   // Wire tooltip nav buttons
+  const dismissOnboarding = () => {
+    removeOnboardingSpotlight();
+    tooltipOverlay.classList.add('hidden');
+    localStorage.setItem(ONBOARDING_KEY, '1');
+  };
+
   if (tooltipOverlay) {
     tooltipOverlay.querySelector('.tooltip-next').addEventListener('click', () => {
-      removeOnboardingSpotlight(); // remove spotlight when leaving step 1
+      removeOnboardingSpotlight();
       showStep(2);
     });
     tooltipOverlay.querySelector('.tooltip-prev').addEventListener('click', () => showStep(1));
-    tooltipOverlay.querySelector('.tooltip-done').addEventListener('click', () => {
-      removeOnboardingSpotlight();
-      tooltipOverlay.classList.add('hidden');
-      localStorage.setItem(ONBOARDING_KEY, '1');
+
+    // Step 2 bubble: any click that isn't the back arrow dismisses
+    tooltipOverlay.querySelector('.tooltip-step[data-step="2"] .tooltip-bubble').addEventListener('click', (e) => {
+      if (e.target.closest('.tooltip-prev')) return; // let back arrow handle itself
+      dismissOnboarding();
     });
   }
 }

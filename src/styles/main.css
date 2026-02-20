@@ -539,6 +539,10 @@ html, body {
   line-height: 1;
 }
 
+.tooltip-bubble--tappable {
+  cursor: pointer;
+}
+
 .tooltip-counter {
   font-family: 'DM Mono', monospace;
   font-size: 12px;

@@ -16,7 +16,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <!-- App styles -->
-  <link rel="stylesheet" href="src/styles/main.css?v=73">
+  <link rel="stylesheet" href="src/styles/main.css?v=74">
 </head>
 <body>
   <!-- Splash screen -->
@@ -47,7 +47,7 @@
 
     <div class="tooltip-step active" data-step="1">
       <div class="tooltip-bubble tooltip-bubble--down">
-        <p>See the deal specifics by clicking on the marker</p>
+        <p>See the specifics of a deal by clicking on the marker</p>
         <div class="tooltip-nav">
           <span class="tooltip-counter">1/2</span>
           <button class="tooltip-btn tooltip-next">→</button>
@@ -55,12 +55,11 @@
       </div>
     </div>
     <div class="tooltip-step" data-step="2">
-      <div class="tooltip-bubble tooltip-bubble--left">
+      <div class="tooltip-bubble tooltip-bubble--left tooltip-bubble--tappable">
         <p>Filter for deals happening now or in the future</p>
         <div class="tooltip-nav">
           <button class="tooltip-btn tooltip-prev">←</button>
           <span class="tooltip-counter">2/2</span>
-          <button class="tooltip-btn tooltip-done">✓</button>
         </div>
       </div>
     </div>
@@ -72,6 +71,6 @@
     <button class="mode-toggle__btn mode-toggle__btn--active" data-mode="now">NOW</button>
     <button class="mode-toggle__btn" data-mode="soon">SOON</button>
   </div>
-  <script type="module" src="src/main.js?v=79"></script>
+  <script type="module" src="src/main.js?v=80"></script>
 </body>
 </html>
