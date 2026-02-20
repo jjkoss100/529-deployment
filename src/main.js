@@ -52,6 +52,10 @@ function parseMinutes(timeStr) {
 
 // --- Toggle state (persisted within session, resets to NOW on new visit) ---
 let currentMode = sessionStorage.getItem('529-mode') || 'now';
+
+// --- Onboarding: shared map+venue refs for tooltip positioning ---
+let _onboardingMap = null;
+let _onboardingVenues = null;
 let activePopup = null;
 
 // --- Weather state ---
@@ -1151,6 +1155,10 @@ async function init() {
         return;
       }
 
+      // Store refs for onboarding tooltip positioning
+      _onboardingMap = map;
+      _onboardingVenues = venues;
+
       const geojson = buildGeoJSON(venues);
       addVenueLayer(map, geojson);
       setupVenueLabels(map);
@@ -1290,17 +1298,13 @@ function runSplashAndOnboarding() {
     }, 200);
   }, 2100);
 
-  // LET'S GO: slide card down, then show tooltip steps
+  // LET'S GO: slide card down, then show tooltip steps anchored to a real marker
   ctaBtn.addEventListener('click', () => {
     onboarding.classList.remove('slide-in');
     onboarding.classList.add('slide-out');
     inner.addEventListener('transitionend', () => {
       onboarding.style.display = 'none';
-      // Show tooltip overlay, step 1 already .active in HTML
-      if (tooltipOverlay) {
-        tooltipOverlay.classList.remove('hidden');
-        showStep(1);
-      }
+      positionAndShowTooltips(tooltipOverlay, showStep);
     }, { once: true });
   });
 
@@ -1313,6 +1317,64 @@ function runSplashAndOnboarding() {
       localStorage.setItem(ONBOARDING_KEY, '1');
     });
   }
+}
+
+// --- Position and show tooltip overlay, anchored to the most recently started active marker ---
+function positionAndShowTooltips(tooltipOverlay, showStep) {
+  if (!tooltipOverlay) return;
+
+  // If map or venues not ready yet, skip tooltips
+  if (!_onboardingMap || !_onboardingVenues || _onboardingVenues.length === 0) return;
+
+  // Find the active venue whose deal started most recently
+  const now = getLAMinutes();
+  let best = null;
+  let bestElapsed = Infinity;
+
+  for (const v of _onboardingVenues) {
+    if (!isDealActiveNow(v) || !v.liveWindow) continue;
+    const windows = v.liveWindow.split(',');
+    for (const w of windows) {
+      const parts = w.trim().split('-');
+      const startMins = parseMinutes(parts[0]);
+      if (startMins === null) continue;
+      let elapsed = now - startMins;
+      if (elapsed < 0) elapsed += 1440; // midnight wrap
+      if (elapsed < bestElapsed) {
+        bestElapsed = elapsed;
+        best = v;
+      }
+    }
+  }
+
+  // No active venues — skip tooltips entirely, mark onboarding done
+  if (!best) {
+    localStorage.setItem('529-onboarding-done', '1');
+    return;
+  }
+
+  // Project the marker's lng/lat to screen pixels
+  // Icon anchor is 'bottom' so pin tip is at point.x, point.y
+  const point = _onboardingMap.project({ lng: best.lng, lat: best.lat });
+
+  // Position step 1 bubble centered above the pin tip
+  const step1 = tooltipOverlay.querySelector('.tooltip-step[data-step="1"]');
+  const BUBBLE_W = 210;
+  const MARGIN = 8;
+  const pinX = point.x;
+  const pinY = point.y;
+
+  const left = Math.max(MARGIN, Math.min(pinX - BUBBLE_W / 2, window.innerWidth - BUBBLE_W - MARGIN));
+  // Place bottom of step (including nav) ~16px above the pin tip
+  const bottomFromViewport = window.innerHeight - pinY + 16;
+
+  step1.style.left = left + 'px';
+  step1.style.bottom = bottomFromViewport + 'px';
+  step1.style.top = 'auto';
+
+  // Show overlay and activate step 1
+  tooltipOverlay.classList.remove('hidden');
+  showStep(1);
 }
 
 document.addEventListener('DOMContentLoaded', () => {

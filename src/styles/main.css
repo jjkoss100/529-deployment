@@ -470,11 +470,7 @@ html, body {
   pointer-events: auto;
 }
 
-/* Step 1: lower-left, tail points down toward map markers */
-.tooltip-step[data-step="1"] {
-  bottom: 200px;
-  left: 32px;
-}
+/* Step 1: position set dynamically by positionAndShowTooltips() in main.js */
 
 /* Step 2: right of the NOW/SOON toggle (top:78px left:16px ~80px wide) */
 .tooltip-step[data-step="2"] {
