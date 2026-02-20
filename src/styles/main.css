@@ -113,11 +113,6 @@
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
-#onboarding-header {
-  text-align: center;
-  margin-bottom: 16px;
-}
-
 #onboarding-title {
   font-family: 'Zalando Sans Expanded', sans-serif;
   font-size: 32px;
@@ -126,27 +121,8 @@
   letter-spacing: -0.02em;
   line-height: 1.1;
   text-transform: uppercase;
-  margin-bottom: 14px;
-}
-
-#onboarding-subtitle {
-  font-family: 'IBM Plex Mono', monospace;
-  font-size: 13px;
-  font-weight: 400;
-  color: #333333;
-  letter-spacing: 0;
-}
-
-#onboarding-illustration {
-  width: 100%;
-  max-width: 240px;
-  margin: 0 auto 16px;
-}
-
-#onboarding-illustration img {
-  width: 100%;
-  height: auto;
-  display: block;
+  text-align: center;
+  margin-bottom: 12px;
 }
 
 #onboarding-body {
@@ -155,7 +131,27 @@
   font-weight: 400;
   color: #333333;
   text-align: center;
-  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+#onboarding-illustration {
+  width: 100%;
+  max-width: 240px;
+  margin: 0 auto 12px;
+}
+
+#onboarding-illustration img {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+#onboarding-fast {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 20px;
+  font-weight: 500;
+  color: #111111;
+  text-align: center;
   margin-bottom: 0;
 }
 
@@ -169,7 +165,7 @@
   font-family: 'Zalando Sans Expanded', sans-serif;
   font-size: 16px;
   font-weight: 800;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.08em;
   color: #111111;
   text-transform: uppercase;
   cursor: pointer;
