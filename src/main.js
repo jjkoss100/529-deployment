@@ -878,7 +878,7 @@ function setupPopups(map) {
     closeOnClick: false,
     className: 'venue-mapbox-popup',
     maxWidth: '280px',
-    offset: [0, -60],
+    offset: [0, -46],
   });
   activePopup = popup;
 
