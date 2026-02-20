@@ -19,8 +19,8 @@ const FOG_TRANSITION_STEPS = 40;            // frames per transition
 
 // Weather profiles keyed by WMO code — { fog, particles }
 const WEATHER_PROFILES = {
-  clear:        { fog: { range: [-1, 8],    hb: 0.3,  color: '#1a1a2e', high: '#0f1419', space: '#050810', stars: 0.8  }, particles: { type: 'none' } },
-  mainlyClear:  { fog: { range: [-1, 7],    hb: 0.35, color: '#1a1a2e', high: '#0f1419', space: '#050810', stars: 0.5  }, particles: { type: 'none' } },
+  clear:        { fog: { range: [-1, 7],    hb: 0.25, color: '#0d1f35', high: '#091525', space: '#040d18', stars: 0.8  }, particles: { type: 'none' } },
+  mainlyClear:  { fog: { range: [-1, 7],    hb: 0.3,  color: '#0d1f35', high: '#091525', space: '#040d18', stars: 0.5  }, particles: { type: 'none' } },
   partlyCloudy: { fog: { range: [-0.5, 6],  hb: 0.4,  color: '#1e1e30', high: '#111620', space: '#070a12', stars: 0.25 }, particles: { type: 'none' } },
   overcast:     { fog: { range: [0, 5],     hb: 0.5,  color: '#222236', high: '#151a24', space: '#0a0d16', stars: 0.05 }, particles: { type: 'none' } },
   fog:          { fog: { range: [0.5, 3],   hb: 0.7,  color: '#2a2a3e', high: '#1a1f2a', space: '#0e1118', stars: 0.0  }, particles: { type: 'none' } },
@@ -523,12 +523,12 @@ function createParticleSystem() {
 function initWeatherSystem(map) {
   // Baseline fog state (matches Effect 1 values)
   currentFogState = {
-    range: [-1, 8],
-    'horizon-blend': 0.3,
-    color: '#1a1a2e',
-    'high-color': '#0f1419',
-    'space-color': '#050810',
-    'star-intensity': 0.6,
+    range: [-1, 7],
+    'horizon-blend': 0.25,
+    color: '#0d1f35',
+    'high-color': '#091525',
+    'space-color': '#040d18',
+    'star-intensity': 0.7,
   };
 
   const particleSystem = createParticleSystem();
@@ -1017,12 +1017,12 @@ async function init() {
 
       // --- Effect 1: Fog & atmosphere ---
       map.setFog({
-        'range': [-1, 8],
-        'horizon-blend': 0.3,
-        'color': '#1a1a2e',
-        'high-color': '#0f1419',
-        'space-color': '#050810',
-        'star-intensity': 0.6
+        'range': [-1, 7],
+        'horizon-blend': 0.25,
+        'color': '#0d1f35',
+        'high-color': '#091525',
+        'space-color': '#040d18',
+        'star-intensity': 0.7
       });
 
       // --- Effect 2: Water breathing animation ---
@@ -1035,14 +1035,17 @@ async function init() {
 
       // --- Effect 4: Map texture — roads, buildings, water tint ---
       try {
-        map.setPaintProperty('water', 'fill-color', '#0a1e2e');
-        map.setPaintProperty('road-street', 'line-color', '#1a2a3a');
-        map.setPaintProperty('road-minor-low', 'line-color', '#1a2a3a');
-        map.setPaintProperty('road-minor-case', 'line-color', '#0f1a25');
-        map.setPaintProperty('road-secondary-tertiary', 'line-color', '#1e3040');
-        map.setPaintProperty('road-primary', 'line-color', '#1e3040');
-        map.setPaintProperty('building', 'fill-color', '#141e2a');
-        map.setPaintProperty('building', 'fill-opacity', 0.7);
+        map.setPaintProperty('water', 'fill-color', '#08243e');
+        map.setPaintProperty('road-street', 'line-color', '#3d1f0a');
+        map.setPaintProperty('road-minor-low', 'line-color', '#3d1f0a');
+        map.setPaintProperty('road-minor-case', 'line-color', '#251206');
+        map.setPaintProperty('road-secondary-tertiary', 'line-color', '#5c2e0e');
+        map.setPaintProperty('road-primary', 'line-color', '#7a3a10');
+        map.setPaintProperty('building', 'fill-color', '#162030');
+        map.setPaintProperty('building', 'fill-opacity', 0.9);
+        try { map.setPaintProperty('park', 'fill-color', '#0d2820'); } catch (_) {}
+        try { map.setPaintProperty('national-park', 'fill-color', '#0d2820'); } catch (_) {}
+        try { map.setPaintProperty('landuse', 'fill-color', '#0d1f35'); } catch (_) {}
       } catch (e) {
         console.warn('Map texture: some layers not found', e.message);
       }
