@@ -529,29 +529,107 @@ function createParticleSystem() {
 function applyTimeOfDayColors(map, isDay) {
   try {
     if (isDay) {
-      // Daytime: muted steel-blue palette, lighter land, softer roads
       map.setPaintProperty('water', 'fill-color', '#1a4a6e');
       map.setPaintProperty('road-street', 'line-color', '#c87030');
       map.setPaintProperty('road-minor-low', 'line-color', '#c87030');
       map.setPaintProperty('road-minor-case', 'line-color', '#8a4820');
       map.setPaintProperty('road-secondary-tertiary', 'line-color', '#e08040');
       map.setPaintProperty('road-primary', 'line-color', '#f09050');
-      try { map.setPaintProperty('road-motorway', 'line-color', '#ffa060'); } catch (_) {}
       map.setPaintProperty('building', 'fill-color', '#2a3d52');
       map.setPaintProperty('building', 'fill-opacity', 0.8);
+      // Road casings — bright orange-white outlines for fractal glow
+      try { map.setPaintProperty('road-street-case', 'line-color', '#ff9a50'); } catch (_) {}
+      try { map.setPaintProperty('road-secondary-tertiary-case', 'line-color', '#ffaa60'); } catch (_) {}
+      try { map.setPaintProperty('road-primary-case', 'line-color', '#ffb870'); } catch (_) {}
+      try { map.setPaintProperty('road-motorway', 'line-color', '#ffa060'); } catch (_) {}
+      try { map.setPaintProperty('road-motorway-case', 'line-color', '#ffc080'); } catch (_) {}
     } else {
-      // Nighttime: deep ocean blue, vivid orange roads
       map.setPaintProperty('water', 'fill-color', '#071d30');
       map.setPaintProperty('road-street', 'line-color', '#c45a18');
       map.setPaintProperty('road-minor-low', 'line-color', '#c45a18');
       map.setPaintProperty('road-minor-case', 'line-color', '#7a3210');
       map.setPaintProperty('road-secondary-tertiary', 'line-color', '#e06820');
       map.setPaintProperty('road-primary', 'line-color', '#f57e28');
-      try { map.setPaintProperty('road-motorway', 'line-color', '#ff9040'); } catch (_) {}
       map.setPaintProperty('building', 'fill-color', '#0e1a28');
       map.setPaintProperty('building', 'fill-opacity', 0.95);
+      // Road casings — bright neon orange outlines for fractal glow at night
+      try { map.setPaintProperty('road-street-case', 'line-color', '#ff7030'); } catch (_) {}
+      try { map.setPaintProperty('road-secondary-tertiary-case', 'line-color', '#ff8038'); } catch (_) {}
+      try { map.setPaintProperty('road-primary-case', 'line-color', '#ff9040'); } catch (_) {}
+      try { map.setPaintProperty('road-motorway', 'line-color', '#ff9040'); } catch (_) {}
+      try { map.setPaintProperty('road-motorway-case', 'line-color', '#ffaa50'); } catch (_) {}
     }
   } catch (e) { /* layer may not exist */ }
+}
+
+// --- Radar grid pulse overlay ---
+function createGridOverlay() {
+  const canvas = document.createElement('canvas');
+  canvas.id = 'grid-canvas';
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:3;';
+  document.body.appendChild(canvas);
+
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  let w = window.innerWidth;
+  let h = window.innerHeight;
+
+  function resize() {
+    w = window.innerWidth;
+    h = window.innerHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    ctx.scale(dpr, dpr);
+  }
+  resize();
+  window.addEventListener('resize', () => {
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    resize();
+  });
+
+  const SPACING = 36; // grid cell size in px
+  let t = 0;
+
+  function draw() {
+    ctx.clearRect(0, 0, w, h);
+
+    // Slow pulse: 0.018–0.055 opacity
+    const pulse = 0.018 + 0.022 * ((Math.sin(t * 0.4) + 1) / 2);
+    t += 0.016;
+
+    ctx.strokeStyle = `rgba(255, 130, 40, ${pulse})`;
+    ctx.lineWidth = 0.5;
+
+    // Vertical lines
+    for (let x = 0; x < w; x += SPACING) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+    }
+    // Horizontal lines
+    for (let y = 0; y < h; y += SPACING) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(w, y);
+      ctx.stroke();
+    }
+
+    // Intersection dots — slightly brighter
+    const dotPulse = pulse * 1.8;
+    ctx.fillStyle = `rgba(255, 150, 60, ${dotPulse})`;
+    for (let x = 0; x < w; x += SPACING) {
+      for (let y = 0; y < h; y += SPACING) {
+        ctx.beginPath();
+        ctx.arc(x, y, 1, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    requestAnimationFrame(draw);
+  }
+
+  requestAnimationFrame(draw);
 }
 
 // --- Weather: System orchestrator ---
@@ -1083,6 +1161,9 @@ async function init() {
 
       // --- Effect 5: Hybrid weather overlay ---
       initWeatherSystem(map);
+
+      // --- Effect 6: Radar grid pulse ---
+      createGridOverlay();
 
       setupPopups(map);
       setupToggle(map, venues);
