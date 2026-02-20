@@ -1140,11 +1140,12 @@ function runSplashAndOnboarding() {
     }, 200);
   }, 2100);
 
-  // LET'S GO: slide card back down, then hide overlay
+  // ENTER: slide inner wrapper back down, then hide overlay
+  const inner = document.getElementById('onboarding-inner');
   ctaBtn.addEventListener('click', () => {
     onboarding.classList.remove('slide-in');
     onboarding.classList.add('slide-out');
-    onboarding.addEventListener('transitionend', () => {
+    inner.addEventListener('transitionend', () => {
       onboarding.style.display = 'none';
     }, { once: true });
     sessionStorage.setItem(ONBOARDING_KEY, '1');
