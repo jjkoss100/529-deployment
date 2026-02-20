@@ -380,7 +380,7 @@ html, body {
 /* --- Mode toggle --- */
 .mode-toggle {
   position: fixed;
-  top: 96px;
+  top: 78px;
   left: 16px;
   z-index: 10;
   display: flex;
