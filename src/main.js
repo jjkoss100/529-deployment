@@ -1312,16 +1312,20 @@ function runSplashAndOnboarding() {
 
   // Wire tooltip nav buttons
   if (tooltipOverlay) {
-    tooltipOverlay.querySelector('.tooltip-next').addEventListener('click', () => showStep(2));
+    tooltipOverlay.querySelector('.tooltip-next').addEventListener('click', () => {
+      removeOnboardingSpotlight(); // remove spotlight when leaving step 1
+      showStep(2);
+    });
     tooltipOverlay.querySelector('.tooltip-prev').addEventListener('click', () => showStep(1));
     tooltipOverlay.querySelector('.tooltip-done').addEventListener('click', () => {
+      removeOnboardingSpotlight();
       tooltipOverlay.classList.add('hidden');
       localStorage.setItem(ONBOARDING_KEY, '1');
     });
   }
 }
 
-// --- Position and show tooltip overlay, anchored to the most recently started active marker ---
+// --- Position and show tooltip overlay, anchored to the most isolated active marker ---
 function positionAndShowTooltips(tooltipOverlay, showStep, attempt = 0) {
   if (!tooltipOverlay) return;
 
@@ -1333,47 +1337,85 @@ function positionAndShowTooltips(tooltipOverlay, showStep, attempt = 0) {
     return;
   }
 
-  // Find the active venue whose deal started most recently
-  const now = getLAMinutes();
-  let best = null;
-  let bestElapsed = Infinity;
-
-  for (const v of _onboardingVenues) {
-    if (!isDealActiveNow(v) || !v.liveWindow) continue;
-    const windows = v.liveWindow.split(',');
-    for (const w of windows) {
-      const parts = w.trim().split('-');
-      const startMins = parseMinutes(parts[0]);
-      if (startMins === null) continue;
-      let elapsed = now - startMins;
-      if (elapsed < 0) elapsed += 1440; // midnight wrap
-      if (elapsed < bestElapsed) {
-        bestElapsed = elapsed;
-        best = v;
-      }
-    }
-  }
+  // Collect all currently active venues
+  const active = _onboardingVenues.filter(v => isDealActiveNow(v));
 
   // No active venues — skip tooltips entirely, mark onboarding done
-  if (!best) {
+  if (active.length === 0) {
     localStorage.setItem('529-onboarding-done', '1');
     return;
   }
 
-  // Project the marker's lng/lat to screen pixels
-  // Icon anchor is 'bottom' so pin tip is at point.x, point.y
-  const point = _onboardingMap.project({ lng: best.lng, lat: best.lat });
+  // Pick the most isolated venue: largest minimum distance (in degrees) to all other active venues
+  // This ensures the tooltip points at a lone, easy-to-read marker
+  let best = active[0];
+  let bestMinDist = -1;
 
-  // Position step 1 bubble centered above the pin tip
+  for (const v of active) {
+    let minDist = Infinity;
+    for (const other of active) {
+      if (other === v) continue;
+      const dx = v.lng - other.lng;
+      const dy = v.lat - other.lat;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      if (d < minDist) minDist = d;
+    }
+    // Single venue has no neighbours — it wins outright
+    if (active.length === 1) minDist = Infinity;
+    if (minDist > bestMinDist) {
+      bestMinDist = minDist;
+      best = v;
+    }
+  }
+
+  const map = _onboardingMap;
+
+  // Add a pulsing spotlight circle layer on the chosen marker via Mapbox
+  // Uses a single-feature GeoJSON source so only this one marker is highlighted
+  const SPOTLIGHT_SOURCE = 'onboarding-spotlight-src';
+  const SPOTLIGHT_LAYER  = 'onboarding-spotlight';
+
+  const spotGeoJSON = {
+    type: 'FeatureCollection',
+    features: [{ type: 'Feature', geometry: { type: 'Point', coordinates: [best.lng, best.lat] }, properties: {} }]
+  };
+
+  try {
+    if (map.getSource(SPOTLIGHT_SOURCE)) {
+      map.getSource(SPOTLIGHT_SOURCE).setData(spotGeoJSON);
+    } else {
+      map.addSource(SPOTLIGHT_SOURCE, { type: 'geojson', data: spotGeoJSON });
+      map.addLayer({
+        id: SPOTLIGHT_LAYER,
+        type: 'circle',
+        source: SPOTLIGHT_SOURCE,
+        paint: {
+          'circle-radius': 28,
+          'circle-color': 'transparent',
+          'circle-stroke-width': 2.5,
+          'circle-stroke-color': '#f2f2f2',
+          'circle-opacity': 0,
+          'circle-stroke-opacity': 0.9,
+          'circle-translate': [0, -22], // offset up so ring sits around the marker body, not the pin tip
+        }
+      }, LAYER_ID); // insert below the marker symbol layer so marker stays on top
+    }
+  } catch (e) { /* layer may not exist yet — not fatal */ }
+
+  // Project the marker's lng/lat to screen pixels
+  // icon-anchor = 'bottom' so pin tip = point; marker body center is ~22px above tip
+  const point = map.project({ lng: best.lng, lat: best.lat });
+
+  // Position step 1 bubble: tail points down at the marker body center
   const step1 = tooltipOverlay.querySelector('.tooltip-step[data-step="1"]');
   const BUBBLE_W = 210;
-  const MARGIN = 8;
+  const MARGIN = 12;
   const pinX = point.x;
-  const pinY = point.y;
+  const pinY = point.y - 22; // marker body center (above pin tip)
 
   const left = Math.max(MARGIN, Math.min(pinX - BUBBLE_W / 2, window.innerWidth - BUBBLE_W - MARGIN));
-  // Place bottom of step (including nav) ~16px above the pin tip
-  const bottomFromViewport = window.innerHeight - pinY + 16;
+  // Bottom of the tooltip div sits 12px above the marker body center
+  const bottomFromViewport = window.innerHeight - pinY + 12;
 
   step1.style.left = left + 'px';
   step1.style.bottom = bottomFromViewport + 'px';
@@ -1382,6 +1424,15 @@ function positionAndShowTooltips(tooltipOverlay, showStep, attempt = 0) {
   // Show overlay and activate step 1
   tooltipOverlay.classList.remove('hidden');
   showStep(1);
+}
+
+// --- Remove the onboarding spotlight layer when done with step 1 ---
+function removeOnboardingSpotlight() {
+  if (!_onboardingMap) return;
+  try {
+    if (_onboardingMap.getLayer('onboarding-spotlight')) _onboardingMap.removeLayer('onboarding-spotlight');
+    if (_onboardingMap.getSource('onboarding-spotlight-src')) _onboardingMap.removeSource('onboarding-spotlight-src');
+  } catch (e) { /* ok */ }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
