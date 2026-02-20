@@ -1079,27 +1079,38 @@ function runSplashAndOnboarding() {
   const ONBOARDING_KEY = '529-onboarding-done';
   const onboardingDone = sessionStorage.getItem(ONBOARDING_KEY);
 
-  // Phase 1: show splash for 1.6s, then fade it out
+  // t=50ms: elevator doors slide open
   setTimeout(() => {
-    splash.classList.add('fade-out');
+    splash.classList.add('doors-open');
+  }, 50);
 
-    // After fade-out transition completes, remove from layout
-    splash.addEventListener('transitionend', () => {
-      splash.style.display = 'none';
-    }, { once: true });
+  // t=300ms: logo slides up from bottom into center
+  setTimeout(() => {
+    splash.classList.add('logo-in');
+  }, 300);
 
-    // Phase 2: if onboarding not yet shown this session, reveal it
+  // t=1700ms: logo slides up and exits top
+  setTimeout(() => {
+    splash.classList.add('logo-out');
+  }, 1700);
+
+  // t=2100ms: show onboarding sliding up from bottom, then hide splash
+  setTimeout(() => {
     if (!onboardingDone) {
-      setTimeout(() => {
-        onboarding.classList.remove('hidden');
-      }, 200);
+      onboarding.classList.remove('hidden');
+      void onboarding.offsetHeight; // force reflow so transition fires
+      onboarding.classList.add('slide-in');
     }
-  }, 1600);
+    setTimeout(() => {
+      splash.classList.add('done');
+    }, 200);
+  }, 2100);
 
-  // Phase 3: LET'S GO button dismisses onboarding
+  // LET'S GO: slide card back down, then hide overlay
   ctaBtn.addEventListener('click', () => {
-    onboarding.classList.add('fade-out');
-    onboarding.addEventListener('animationend', () => {
+    onboarding.classList.remove('slide-in');
+    onboarding.classList.add('slide-out');
+    onboarding.addEventListener('transitionend', () => {
       onboarding.style.display = 'none';
     }, { once: true });
     sessionStorage.setItem(ONBOARDING_KEY, '1');
