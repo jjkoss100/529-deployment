@@ -1035,14 +1035,15 @@ async function init() {
 
       // --- Effect 4: Map texture — roads, buildings, water tint ---
       try {
-        map.setPaintProperty('water', 'fill-color', '#08243e');
-        map.setPaintProperty('road-street', 'line-color', '#3d1f0a');
-        map.setPaintProperty('road-minor-low', 'line-color', '#3d1f0a');
-        map.setPaintProperty('road-minor-case', 'line-color', '#251206');
-        map.setPaintProperty('road-secondary-tertiary', 'line-color', '#5c2e0e');
-        map.setPaintProperty('road-primary', 'line-color', '#7a3a10');
-        map.setPaintProperty('building', 'fill-color', '#162030');
-        map.setPaintProperty('building', 'fill-opacity', 0.9);
+        map.setPaintProperty('water', 'fill-color', '#071d30');
+        map.setPaintProperty('road-street', 'line-color', '#c45a18');
+        map.setPaintProperty('road-minor-low', 'line-color', '#c45a18');
+        map.setPaintProperty('road-minor-case', 'line-color', '#7a3210');
+        map.setPaintProperty('road-secondary-tertiary', 'line-color', '#e06820');
+        map.setPaintProperty('road-primary', 'line-color', '#f57e28');
+        map.setPaintProperty('road-motorway', 'line-color', '#ff9040');
+        map.setPaintProperty('building', 'fill-color', '#0e1a28');
+        map.setPaintProperty('building', 'fill-opacity', 0.95);
         try { map.setPaintProperty('park', 'fill-color', '#0d2820'); } catch (_) {}
         try { map.setPaintProperty('national-park', 'fill-color', '#0d2820'); } catch (_) {}
         try { map.setPaintProperty('landuse', 'fill-color', '#0d1f35'); } catch (_) {}
