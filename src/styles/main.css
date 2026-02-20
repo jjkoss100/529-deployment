@@ -404,6 +404,7 @@ html, body {
   cursor: pointer;
   transition: color 0.15s, background 0.15s;
   text-transform: uppercase;
+  font-family: 'Zalando Sans Expanded', sans-serif;
 }
 
 .mode-toggle__btn--active {
