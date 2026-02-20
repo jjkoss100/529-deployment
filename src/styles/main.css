@@ -352,7 +352,7 @@ html, body {
   font-weight: 500;
   color: #EFEFEF;
   background: rgba(40, 41, 44, 0.6);
-  border: 0.5px solid #96FE5F;
+  border: 0.5px solid #EFEFEF;
   border-radius: 3px;
   padding: 10px 20px;
   letter-spacing: -0.04em;
@@ -385,7 +385,7 @@ html, body {
   z-index: 10;
   display: flex;
   background: rgba(40, 41, 44, 0.6);
-  border: 0.5px solid #96FE5F;
+  border: 0.5px solid #EFEFEF;
   border-radius: 3px;
   overflow: hidden;
   box-sizing: border-box;
@@ -397,14 +397,14 @@ html, body {
   background: transparent;
   border: none;
   color: rgba(239, 239, 239, 0.45);
-  padding: 8px 18px;
+  padding: 5px 11px;
   flex: 1;
   text-align: center;
   cursor: pointer;
   transition: color 0.15s, background 0.15s;
   text-transform: uppercase;
   font-family: 'Zalando Sans Expanded', sans-serif;
-  font-size: 15px;
+  font-size: 9px;
   font-weight: 400;
   letter-spacing: 0;
   white-space: nowrap;
