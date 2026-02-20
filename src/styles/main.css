@@ -577,32 +577,6 @@ html, body {
   display: block;
 }
 
-/* --- Shoutout glow ring — gold pulsing halo tracked behind Shoutout markers --- */
-.shoutout-glow {
-  position: fixed;
-  width: 52px;
-  height: 52px;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 1;
-  /* translate: center horizontally, shift up to align with pin circle body (~34px above tip) */
-  transform: translate(-50%, calc(-50% - 34px));
-  animation: shoutoutPulse 2.2s ease-in-out infinite;
-}
-
-@keyframes shoutoutPulse {
-  0%, 100% {
-    box-shadow:
-      0 0 0 3px rgba(255, 200, 60, 0.6),
-      0 0 12px 5px rgba(255, 190, 40, 0.35);
-  }
-  50% {
-    box-shadow:
-      0 0 0 5px rgba(255, 200, 60, 0.3),
-      0 0 26px 12px rgba(255, 190, 40, 0.15);
-  }
-}
-
 @keyframes spotlightPulse {
   0%, 100% {
     box-shadow:

@@ -826,6 +826,14 @@ function makeAlertSvg(svg) {
   );
 }
 
+// --- Add gold shoutout ring to the white circle in a marker SVG ---
+function makeShoutoutSvg(svg) {
+  return svg.replace(
+    /(<path\b[^/]*?fill="white"[^/]*?)(\/?>)/,
+    '$1 stroke="#C9962A" stroke-width="2.5"$2'
+  );
+}
+
 // --- Load a single marker image into Mapbox ---
 function loadSingleMarkerImage(map, id, svg) {
   return new Promise((resolve) => {
@@ -843,12 +851,13 @@ function loadSingleMarkerImage(map, id, svg) {
   });
 }
 
-// --- Load marker images into Mapbox (normal + alert variants) ---
+// --- Load marker images into Mapbox (normal + alert + shoutout variants) ---
 function loadMarkerImages(map) {
   const entries = Object.entries(VENUE_TYPE_SVGS);
   const toLoad = [
     ...entries.map(([venueType, svg]) => ({ id: `marker-${venueType}`, svg })),
     ...entries.map(([venueType, svg]) => ({ id: `marker-${venueType}-alert`, svg: makeAlertSvg(svg) })),
+    ...entries.map(([venueType, svg]) => ({ id: `marker-${venueType}-shoutout`, svg: makeShoutoutSvg(svg) })),
   ];
   return Promise.all(toLoad.map(({ id, svg }) => loadSingleMarkerImage(map, id, svg)));
 }
@@ -948,7 +957,9 @@ function buildGeoJSON(venues) {
           name: v.name,
           promotionType: v.promotionType,
           venueType: v.venueType,
-          icon: `marker-${v.venueType}${v.promotionType !== 'Shoutout' && isNearEnd(v.liveWindow) ? '-alert' : ''}`,
+          icon: v.promotionType === 'Shoutout'
+            ? `marker-${v.venueType}-shoutout`
+            : `marker-${v.venueType}${isNearEnd(v.liveWindow) ? '-alert' : ''}`,
           eventName: v.eventName,
           liveWindow: v.liveWindow,
           notes: v.notes,
@@ -962,6 +973,8 @@ function buildGeoJSON(venues) {
   return { type: 'FeatureCollection', features };
 }
 
+const SHOUTOUT_LAYER_ID = 'venue-markers-shoutout';
+
 // --- Add venue layer to map ---
 function addVenueLayer(map, geojson) {
   map.addSource(SOURCE_ID, {
@@ -969,10 +982,12 @@ function addVenueLayer(map, geojson) {
     data: geojson
   });
 
+  // Main layer — all non-Shoutout markers
   map.addLayer({
     id: LAYER_ID,
     type: 'symbol',
     source: SOURCE_ID,
+    filter: ['!=', ['get', 'promotionType'], 'Shoutout'],
     layout: {
       // Use the icon property, falling back to the base marker if the alert variant is missing
       'icon-image': [
@@ -989,6 +1004,42 @@ function addVenueLayer(map, geojson) {
       'icon-opacity': 1,
     }
   });
+
+  // Shoutout layer — separate so we can animate icon-size independently
+  map.addLayer({
+    id: SHOUTOUT_LAYER_ID,
+    type: 'symbol',
+    source: SOURCE_ID,
+    filter: ['==', ['get', 'promotionType'], 'Shoutout'],
+    layout: {
+      'icon-image': [
+        'coalesce',
+        ['image', ['get', 'icon']],
+        ['image', ['concat', 'marker-', ['get', 'venueType'], '-shoutout']]
+      ],
+      'icon-size': 0.675,
+      'icon-anchor': 'bottom',
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+    },
+    paint: {
+      'icon-opacity': 1,
+    }
+  });
+
+  // Pulse animation — gently scale Shoutout markers up and down
+  const BASE_SIZE = 0.675;
+  const PULSE_RANGE = 0.055; // ±8% of base size
+  const PULSE_SPEED = 0.0018; // radians per ms
+  let rafId = null;
+  function animateShoutout(ts) {
+    const size = BASE_SIZE + PULSE_RANGE * Math.sin(ts * PULSE_SPEED);
+    if (map.getLayer(SHOUTOUT_LAYER_ID)) {
+      map.setLayoutProperty(SHOUTOUT_LAYER_ID, 'icon-size', size);
+    }
+    rafId = requestAnimationFrame(animateShoutout);
+  }
+  rafId = requestAnimationFrame(animateShoutout);
 }
 
 // --- HTML venue name labels (uses Zalando Sans Expanded via CSS) ---
@@ -998,7 +1049,7 @@ function setupVenueLabels(map) {
   document.getElementById('map').appendChild(container);
 
   function updateLabels() {
-    const features = map.queryRenderedFeatures({ layers: [LAYER_ID] });
+    const features = map.queryRenderedFeatures({ layers: [LAYER_ID, SHOUTOUT_LAYER_ID] });
 
     // Deduplicate: one label per venue name (first marker wins for position)
     const seen = new Set();
@@ -1049,26 +1100,6 @@ function setupVenueLabels(map) {
   map.on('render', updateLabels);
 }
 
-// --- Shoutout glow rings (gold pulsing CSS divs tracked via map.on('render')) ---
-const _shoutoutGlows = new Map(); // key: venue name → { el, handler }
-
-function addShoutoutGlows(map, venues) {
-  const shoutouts = venues.filter(v => v.promotionType === 'Shoutout');
-  for (const v of shoutouts) {
-    const el = document.createElement('div');
-    el.className = 'shoutout-glow';
-    document.body.appendChild(el);
-
-    const handler = () => {
-      const pt = map.project([v.lng, v.lat]);
-      el.style.left = `${Math.round(pt.x)}px`;
-      el.style.top = `${Math.round(pt.y)}px`;
-    };
-    map.on('render', handler);
-    _shoutoutGlows.set(v.name, { el, handler });
-  }
-}
-
 // --- Popup interactions (hover on desktop, click on mobile) ---
 function setupPopups(map) {
   const popup = new mapboxgl.Popup({
@@ -1084,7 +1115,7 @@ function setupPopups(map) {
 
   if (isTouchDevice) {
     // Mobile: click to open, click elsewhere to close
-    map.on('click', LAYER_ID, (e) => {
+    const onMarkerClick = (e) => {
       const feature = e.features[0];
       popup
         .setLngLat(feature.geometry.coordinates)
@@ -1093,10 +1124,12 @@ function setupPopups(map) {
 
       const popupEl = popup.getElement();
       if (popupEl) popupEl.addEventListener('click', (ev) => ev.stopPropagation());
-    });
+    };
+    map.on('click', LAYER_ID, onMarkerClick);
+    map.on('click', SHOUTOUT_LAYER_ID, onMarkerClick);
 
     map.on('click', (e) => {
-      const features = map.queryRenderedFeatures(e.point, { layers: [LAYER_ID] });
+      const features = map.queryRenderedFeatures(e.point, { layers: [LAYER_ID, SHOUTOUT_LAYER_ID] });
       if (!features.length) popup.remove();
     });
   } else {
@@ -1115,7 +1148,7 @@ function setupPopups(map) {
       }, 350);
     };
 
-    map.on('mouseenter', LAYER_ID, (e) => {
+    const onMarkerEnter = (e) => {
       cancelClose();
       map.getCanvas().style.cursor = 'pointer';
       const feature = e.features[0];
@@ -1131,9 +1164,12 @@ function setupPopups(map) {
         el.addEventListener('mouseleave', scheduleClose);
         el.addEventListener('click', (ev) => ev.stopPropagation());
       }
-    });
+    };
+    map.on('mouseenter', LAYER_ID, onMarkerEnter);
+    map.on('mouseenter', SHOUTOUT_LAYER_ID, onMarkerEnter);
 
     map.on('mouseleave', LAYER_ID, scheduleClose);
+    map.on('mouseleave', SHOUTOUT_LAYER_ID, scheduleClose);
   }
 }
 
@@ -1209,7 +1245,6 @@ async function init() {
       const geojson = buildGeoJSON(venues);
       addVenueLayer(map, geojson);
       setupVenueLabels(map);
-      addShoutoutGlows(map, venues);
 
       // --- Effect 1: Fog & atmosphere ---
       map.setFog({
