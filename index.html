@@ -16,7 +16,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <!-- App styles -->
-  <link rel="stylesheet" href="src/styles/main.css?v=88">
+  <link rel="stylesheet" href="src/styles/main.css?v=89">
 </head>
 <body>
   <!-- Splash screen -->
@@ -53,15 +53,17 @@
   </div>
 
   <div id="map"></div>
-  <div id="logo-badge">
-    <div>5<span class="logo-badge__mid">2</span>9<span class="logo-badge__world">WORLD</span></div>
-    <div id="logo-badge__date"></div>
+  <div id="top-ui">
+    <div id="logo-badge">
+      <div>5<span class="logo-badge__mid">2</span>9<span class="logo-badge__world">WORLD</span></div>
+      <div id="logo-badge__date"></div>
+    </div>
+    <div id="filter-toggle">
+      <button class="filter-btn active" data-mode="top">TOP PICKS</button>
+      <button class="filter-btn" data-mode="active">HAPPENING NOW</button>
+      <button class="filter-btn" data-mode="all">EVERYTHING TODAY</button>
+    </div>
   </div>
-  <div id="filter-toggle">
-    <button class="filter-btn active" data-mode="top">TOP PICKS</button>
-    <button class="filter-btn" data-mode="active">HAPPENING NOW</button>
-    <button class="filter-btn" data-mode="all">EVERYTHING TODAY</button>
-  </div>
-  <script type="module" src="src/main.js?v=103"></script>
+  <script type="module" src="src/main.js?v=104"></script>
 </body>
 </html>
