@@ -236,8 +236,11 @@ html, body {
 }
 
 /* --- Hide Mapbox attribution + compass button --- */
-.mapboxgl-ctrl-bottom-right,
 .mapboxgl-ctrl-bottom-left {
+  display: none !important;
+}
+
+.mapboxgl-ctrl-attrib {
   display: none !important;
 }
 
