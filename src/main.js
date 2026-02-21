@@ -98,6 +98,33 @@ function isDealActiveNow(deal) {
   return false;
 }
 
+// --- Check if a deal is currently within its time window right now ---
+function isDealLiveRightNow(deal) {
+  if (!deal.liveWindow) return true;
+
+  const nowMin = getLAMinutes();
+  const ranges = deal.liveWindow.split(',');
+
+  for (const range of ranges) {
+    const parts = range.trim().split('-');
+    if (parts.length !== 2) continue;
+
+    const start = parseMinutes(parts[0].trim());
+    const end = parseMinutes(parts[1].trim());
+    if (start === null || end === null) continue;
+
+    const crossesMidnight = end <= start;
+
+    if (crossesMidnight) {
+      if (nowMin >= start || nowMin <= end) return true;
+    } else {
+      if (nowMin >= start && nowMin <= end) return true;
+    }
+  }
+
+  return false;
+}
+
 // --- Debug panel ---
 
 // --- Time formatting: 24h → 12h ---
@@ -888,6 +915,7 @@ function buildGeoJSON(venues) {
   const visible = venues.filter(v => {
     if (!isDealActiveNow(v)) return false;
     if (filterMode === 'top') return v.top;
+    if (filterMode === 'active') return isDealLiveRightNow(v);
     return true;
   });
   console.log(`[${filterMode.toUpperCase()}] Showing ${visible.length} of ${venues.length} deals`);
