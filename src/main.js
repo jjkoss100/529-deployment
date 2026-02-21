@@ -63,11 +63,10 @@ let fogTransitionTimer = null;
 let waterOpacityBase = 0.5;
 let waterOpacitySwing = 0.2;
 
-// --- Check if a deal should be shown today ---
-// The date column = the START date. A midnight-crossing deal (22:00-01:00) on 2/21
-// starts Saturday night and runs into early Sunday. It should NOT show in the early
-// morning hours of Saturday (that would be Friday night's tail).
-// Show if: upcoming (start hasn't passed) or currently active. Hide once ended.
+// --- Check if a deal should be shown ---
+// Midnight-crossing deals (e.g. 22:00-03:00) can represent last night's deal still
+// running OR tonight's upcoming deal — both live in the same date column.
+// Show if: currently active, or upcoming (hasn't ended yet). Hide once ended.
 // Deals with no liveWindow are always shown.
 function isDealActiveNow(deal) {
   if (!deal.liveWindow) return true;
@@ -86,9 +85,14 @@ function isDealActiveNow(deal) {
     const crossesMidnight = end <= start;
 
     if (crossesMidnight) {
-      // e.g. 22:00-01:00 — starts tonight, ends after midnight
-      // Only show once we've reached the start time today
-      if (nowMin >= start) return true;
+      // e.g. 22:00-03:00
+      // Early morning (now <= end): last night's deal still running → show
+      // Before start (end < now < start): deal ended this morning, tonight's hasn't started → show (upcoming)
+      // After start (now >= start): tonight's deal is live → show
+      // Effectively always show — it either hasn't ended yet or is upcoming tonight
+      if (nowMin <= end || nowMin >= start) return true;
+      // Between end and start: the early morning run ended, but tonight's is upcoming
+      return true;
     } else {
       // e.g. 15:00-18:00 — same-day deal
       // Show if we haven't passed the end time yet
@@ -117,8 +121,8 @@ function isDealLiveRightNow(deal) {
     const crossesMidnight = end <= start;
 
     if (crossesMidnight) {
-      // e.g. 22:00-01:00 — only active after start time today
-      if (nowMin >= start) return true;
+      // e.g. 22:00-03:00 — active if past start OR before end (early morning)
+      if (nowMin >= start || nowMin <= end) return true;
     } else {
       // e.g. 15:00-18:00 — active when within the window
       if (nowMin >= start && nowMin <= end) return true;
