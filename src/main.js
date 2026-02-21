@@ -52,9 +52,6 @@ function parseMinutes(timeStr) {
 // --- Filter mode state ---
 let filterMode = 'top'; // 'top' or 'all'
 
-// --- Onboarding: shared map+venue refs for tooltip positioning ---
-let _onboardingMap = null;
-let _onboardingVenues = null;
 let activePopup = null;
 
 // --- Weather state ---
@@ -1212,10 +1209,6 @@ async function init() {
         return;
       }
 
-      // Store refs for onboarding tooltip positioning
-      _onboardingMap = map;
-      _onboardingVenues = venues;
-
       const geojson = buildGeoJSON(venues);
       addVenueLayer(map, geojson);
       setupVenueLabels(map);
@@ -1333,17 +1326,9 @@ function runSplashAndOnboarding() {
   const onboarding = document.getElementById('onboarding-overlay');
   const ctaBtn = document.getElementById('onboarding-cta');
   const inner = document.getElementById('onboarding-inner');
-  const tooltipOverlay = document.getElementById('tooltip-overlay');
-  const steps = tooltipOverlay ? tooltipOverlay.querySelectorAll('.tooltip-step') : [];
 
   const ONBOARDING_KEY = '529-onboarding-done';
   const onboardingDone = localStorage.getItem(ONBOARDING_KEY);
-
-  function showStep(n) {
-    steps.forEach(s => s.classList.remove('active'));
-    const target = tooltipOverlay.querySelector(`.tooltip-step[data-step="${n}"]`);
-    if (target) target.classList.add('active');
-  }
 
   // t=50ms: elevator doors slide open
   setTimeout(() => {
@@ -1372,134 +1357,15 @@ function runSplashAndOnboarding() {
     }, 200);
   }, 2100);
 
-  // LET'S GO: slide card down, then show tooltip steps anchored to a real marker
-  // Use setTimeout instead of transitionend — transitionend is unreliable when the
-  // element starts at translateY(100vh) and slide-out returns it there (no movement = no event)
+  // ENTER: slide card down, then drop into map
   ctaBtn.addEventListener('click', () => {
     onboarding.classList.remove('slide-in');
     onboarding.classList.add('slide-out');
     setTimeout(() => {
       onboarding.style.display = 'none';
-      positionAndShowTooltips(tooltipOverlay, showStep);
+      localStorage.setItem(ONBOARDING_KEY, '1');
     }, 420); // slide-out transition is 0.4s
   });
-
-  // Wire tooltip nav buttons
-  const dismissOnboarding = () => {
-    removeOnboardingSpotlight();
-    tooltipOverlay.classList.add('hidden');
-    localStorage.setItem(ONBOARDING_KEY, '1');
-  };
-
-  if (tooltipOverlay) {
-    // Tap anywhere on the tooltip bubble to dismiss
-    tooltipOverlay.querySelector('.tooltip-step[data-step="1"] .tooltip-bubble').addEventListener('click', () => {
-      dismissOnboarding();
-    });
-  }
-}
-
-// --- Position and show tooltip overlay, anchored to the most isolated active marker ---
-function positionAndShowTooltips(tooltipOverlay, showStep, attempt = 0) {
-  if (!tooltipOverlay) return;
-
-  // If map or venues not ready yet, retry up to 10 times (~3s total) before giving up
-  if (!_onboardingMap || !_onboardingVenues || _onboardingVenues.length === 0) {
-    if (attempt < 10) {
-      setTimeout(() => positionAndShowTooltips(tooltipOverlay, showStep, attempt + 1), 300);
-    }
-    return;
-  }
-
-  // Collect currently visible venues (respects filter mode)
-  const active = _onboardingVenues.filter(v => {
-    if (!isDealActiveNow(v)) return false;
-    if (filterMode === 'top') return v.top;
-    return true;
-  });
-
-  // No active venues — skip tooltips entirely, mark onboarding done
-  if (active.length === 0) {
-    localStorage.setItem('529-onboarding-done', '1');
-    return;
-  }
-
-  // Pick the most isolated venue: largest minimum distance (in degrees) to all other active venues
-  // This ensures the tooltip points at a lone, easy-to-read marker
-  let best = active[0];
-  let bestMinDist = -1;
-
-  for (const v of active) {
-    let minDist = Infinity;
-    for (const other of active) {
-      if (other === v) continue;
-      const dx = v.lng - other.lng;
-      const dy = v.lat - other.lat;
-      const d = Math.sqrt(dx * dx + dy * dy);
-      if (d < minDist) minDist = d;
-    }
-    // Single venue has no neighbours — it wins outright
-    if (active.length === 1) minDist = Infinity;
-    if (minDist > bestMinDist) {
-      bestMinDist = minDist;
-      best = v;
-    }
-  }
-
-  const map = _onboardingMap;
-
-  // CSS div spotlight — tracks marker body center via map.on('render')
-  const spotEl = document.getElementById('onboarding-spotlight-el');
-
-  function updateSpotlight() {
-    if (!spotEl || !spotEl.classList.contains('active')) return;
-    const pt = map.project({ lng: best.lng, lat: best.lat });
-    // marker body center is ~22px above the pin tip (icon-anchor: bottom)
-    spotEl.style.left = pt.x + 'px';
-    spotEl.style.top  = (pt.y - 22) + 'px';
-  }
-
-  if (spotEl) {
-    spotEl.classList.add('active');
-    updateSpotlight();
-    map.on('render', updateSpotlight);
-    // Store the handler so we can remove it later
-    spotEl._renderHandler = updateSpotlight;
-  }
-
-  // Project the marker's lng/lat to screen pixels
-  // icon-anchor = 'bottom' so pin tip = point; marker body center is ~22px above tip
-  const point = map.project({ lng: best.lng, lat: best.lat });
-
-  // Position step 1 bubble: tail points down at the marker body center
-  const step1 = tooltipOverlay.querySelector('.tooltip-step[data-step="1"]');
-  const BUBBLE_W = 210;
-  const MARGIN = 12;
-  const pinX = point.x;
-  const pinY = point.y - 22; // marker body center
-
-  const left = Math.max(MARGIN, Math.min(pinX - BUBBLE_W / 2, window.innerWidth - BUBBLE_W - MARGIN));
-  // Bottom of the tooltip div sits 12px above the marker body center
-  const bottomFromViewport = window.innerHeight - pinY + 12;
-
-  step1.style.left = left + 'px';
-  step1.style.bottom = bottomFromViewport + 'px';
-  step1.style.top = 'auto';
-
-  // Show overlay and activate step 1
-  tooltipOverlay.classList.remove('hidden');
-  showStep(1);
-}
-
-// --- Remove the CSS spotlight ring when done with step 1 ---
-function removeOnboardingSpotlight() {
-  const spotEl = document.getElementById('onboarding-spotlight-el');
-  if (!spotEl) return;
-  spotEl.classList.remove('active');
-  if (_onboardingMap && spotEl._renderHandler) {
-    _onboardingMap.off('render', spotEl._renderHandler);
-    spotEl._renderHandler = null;
-  }
 }
 
 // --- Logo badge date (LA time) ---
