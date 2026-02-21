@@ -64,7 +64,10 @@ let waterOpacityBase = 0.5;
 let waterOpacitySwing = 0.2;
 
 // --- Check if a deal should be shown today ---
-// Show if: hasn't ended yet (upcoming or currently active). Hide once it ends.
+// The date column = the START date. A midnight-crossing deal (22:00-01:00) on 2/21
+// starts Saturday night and runs into early Sunday. It should NOT show in the early
+// morning hours of Saturday (that would be Friday night's tail).
+// Show if: upcoming (start hasn't passed) or currently active. Hide once ended.
 // Deals with no liveWindow are always shown.
 function isDealActiveNow(deal) {
   if (!deal.liveWindow) return true;
@@ -83,13 +86,11 @@ function isDealActiveNow(deal) {
     const crossesMidnight = end <= start;
 
     if (crossesMidnight) {
-      // e.g. 22:00-02:00
-      // Active or upcoming: now >= start OR now <= end
-      // Before start today: still upcoming, show it
-      if (nowMin >= start || nowMin <= end) return true;
-      if (nowMin < start) return true;
+      // e.g. 22:00-01:00 — starts tonight, ends after midnight
+      // Only show once we've reached the start time today
+      if (nowMin >= start) return true;
     } else {
-      // e.g. 15:00-18:00
+      // e.g. 15:00-18:00 — same-day deal
       // Show if we haven't passed the end time yet
       if (nowMin <= end) return true;
     }
@@ -116,8 +117,10 @@ function isDealLiveRightNow(deal) {
     const crossesMidnight = end <= start;
 
     if (crossesMidnight) {
-      if (nowMin >= start || nowMin <= end) return true;
+      // e.g. 22:00-01:00 — only active after start time today
+      if (nowMin >= start) return true;
     } else {
+      // e.g. 15:00-18:00 — active when within the window
       if (nowMin >= start && nowMin <= end) return true;
     }
   }
