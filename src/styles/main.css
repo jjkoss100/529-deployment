@@ -397,6 +397,41 @@ html, body {
   white-space: nowrap;
 }
 
+/* --- Filter toggle (TOP / ALL) --- */
+#filter-toggle {
+  position: fixed;
+  top: 78px;
+  left: 16px;
+  z-index: 10;
+  display: flex;
+  background: rgba(40, 41, 44, 0.6);
+  border: 0.5px solid #EFEFEF;
+  border-radius: 3px;
+  overflow: hidden;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.filter-btn {
+  font-family: 'Zalando Sans Expanded', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: rgba(239, 239, 239, 0.45);
+  background: transparent;
+  border: none;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+.filter-btn.active {
+  color: #EFEFEF;
+  background: rgba(239, 239, 239, 0.1);
+}
+
 /* --- Venue name labels (HTML overlay, Zalando Sans Expanded) --- */
 #venue-labels {
   position: absolute;

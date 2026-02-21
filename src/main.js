@@ -49,6 +49,9 @@ function parseMinutes(timeStr) {
   return h * 60 + (m || 0);
 }
 
+// --- Filter mode state ---
+let filterMode = 'top'; // 'top' or 'all'
+
 // --- Onboarding: shared map+venue refs for tooltip positioning ---
 let _onboardingMap = null;
 let _onboardingVenues = null;
@@ -868,6 +871,7 @@ async function fetchAndParseCSV(url) {
       venueType,
       link: (row['Link'] || '').trim(),
       notes: (row['Notes'] || '').trim(),
+      top: ['yes','y','true','1','✓','✔'].includes((row['Top'] || '').trim().toLowerCase()),
       liveWindow: (row[timeColumnName] || '').trim(),
     });
   }
@@ -877,8 +881,12 @@ async function fetchAndParseCSV(url) {
 
 // --- Build GeoJSON from venues ---
 function buildGeoJSON(venues) {
-  const visible = venues.filter(isDealActiveNow);
-  console.log(`Showing ${visible.length} of ${venues.length} deals`);
+  const visible = venues.filter(v => {
+    if (!isDealActiveNow(v)) return false;
+    if (filterMode === 'top') return v.top;
+    return true;
+  });
+  console.log(`[${filterMode.toUpperCase()}] Showing ${visible.length} of ${venues.length} deals`);
 
   // Group by coordinates to offset any markers sharing the same location
   const byCoord = new Map();
@@ -1202,6 +1210,24 @@ async function init() {
 
       setupPopups(map);
 
+      // --- Filter toggle (TOP / ALL) ---
+      const filterToggle = document.getElementById('filter-toggle');
+      if (filterToggle) {
+        filterToggle.addEventListener('click', (e) => {
+          const btn = e.target.closest('.filter-btn');
+          if (!btn || btn.dataset.mode === filterMode) return;
+
+          filterMode = btn.dataset.mode;
+          filterToggle.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          if (activePopup) activePopup.remove();
+
+          const updated = buildGeoJSON(venues);
+          map.getSource(SOURCE_ID).setData(updated);
+        });
+      }
+
       // Fit map to venue bounds
       const bounds = new mapboxgl.LngLatBounds();
       for (const v of venues) {
@@ -1337,8 +1363,12 @@ function positionAndShowTooltips(tooltipOverlay, showStep, attempt = 0) {
     return;
   }
 
-  // Collect all currently active venues
-  const active = _onboardingVenues.filter(v => isDealActiveNow(v));
+  // Collect currently visible venues (respects filter mode)
+  const active = _onboardingVenues.filter(v => {
+    if (!isDealActiveNow(v)) return false;
+    if (filterMode === 'top') return v.top;
+    return true;
+  });
 
   // No active venues — skip tooltips entirely, mark onboarding done
   if (active.length === 0) {
