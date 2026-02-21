@@ -1182,6 +1182,16 @@ function initMap() {
 
   map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
+  // Fix for mobile/in-app browsers (Instagram) where viewport changes after load
+  window.addEventListener('resize', () => map.resize());
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => map.resize());
+  }
+  // Delayed resizes to catch toolbar animations settling
+  setTimeout(() => map.resize(), 500);
+  setTimeout(() => map.resize(), 1500);
+  setTimeout(() => map.resize(), 3000);
+
   return map;
 }
 
