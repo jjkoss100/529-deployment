@@ -753,6 +753,7 @@ function buildPopupHTML(props) {
     'Happy Hour': 'see drinks',
     'Distinct Menu': 'see menu',
     'Limited': 'see details',
+    'Pop-up': 'see details',
     'Shoutout': 'see details',
   };
   const hasLink = !!link;
