@@ -60,12 +60,39 @@ let fogTransitionTimer = null;
 let waterOpacityBase = 0.5;
 let waterOpacitySwing = 0.2;
 
-// --- Check if a deal is active today ---
-// Show if: deal has a liveWindow (scheduled today), or has no liveWindow (always-on).
-// Midnight-crossing deals (e.g. 22:00-02:00) stay visible until their end time passes.
+// --- Check if a deal should be shown today ---
+// Show if: hasn't ended yet (upcoming or currently active). Hide once it ends.
+// Deals with no liveWindow are always shown.
 function isDealActiveNow(deal) {
   if (!deal.liveWindow) return true;
-  return true; // all deals with a liveWindow are shown for the full day
+
+  const nowMin = getLAMinutes();
+  const ranges = deal.liveWindow.split(',');
+
+  for (const range of ranges) {
+    const parts = range.trim().split('-');
+    if (parts.length !== 2) continue;
+
+    const start = parseMinutes(parts[0].trim());
+    const end = parseMinutes(parts[1].trim());
+    if (start === null || end === null) continue;
+
+    const crossesMidnight = end <= start;
+
+    if (crossesMidnight) {
+      // e.g. 22:00-02:00
+      // Active or upcoming: now >= start OR now <= end
+      // Before start today: still upcoming, show it
+      if (nowMin >= start || nowMin <= end) return true;
+      if (nowMin < start) return true;
+    } else {
+      // e.g. 15:00-18:00
+      // Show if we haven't passed the end time yet
+      if (nowMin <= end) return true;
+    }
+  }
+
+  return false;
 }
 
 // --- Debug panel ---
