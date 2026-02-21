@@ -370,17 +370,16 @@ function transitionFog(map, targetFog) {
 function createParticleSystem() {
   const canvas = document.createElement('canvas');
   canvas.id = 'weather-canvas';
-  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:2;';
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100dvh;pointer-events:none;z-index:2;';
   document.body.appendChild(canvas);
 
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
-  let w = window.innerWidth;
-  let h = window.innerHeight;
+  const vp = () => ({ w: window.visualViewport?.width || window.innerWidth, h: window.visualViewport?.height || window.innerHeight });
+  let { w, h } = vp();
 
   function resize() {
-    w = window.innerWidth;
-    h = window.innerHeight;
+    ({ w, h } = vp());
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     ctx.scale(dpr, dpr);
@@ -560,17 +559,16 @@ function applyTimeOfDayColors(map, isDay) {
 function createGridOverlay() {
   const canvas = document.createElement('canvas');
   canvas.id = 'grid-canvas';
-  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:3;';
+  canvas.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100dvh;pointer-events:none;z-index:3;';
   document.body.appendChild(canvas);
 
   const ctx = canvas.getContext('2d');
   const dpr = window.devicePixelRatio || 1;
-  let w = window.innerWidth;
-  let h = window.innerHeight;
+  const vp = () => ({ w: window.visualViewport?.width || window.innerWidth, h: window.visualViewport?.height || window.innerHeight });
+  let { w, h } = vp();
 
   function resize() {
-    w = window.innerWidth;
-    h = window.innerHeight;
+    ({ w, h } = vp());
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     ctx.scale(dpr, dpr);
