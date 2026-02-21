@@ -1514,7 +1514,26 @@ function removeOnboardingSpotlight() {
   }
 }
 
+// --- Logo badge date (LA time) ---
+function updateBadgeDate() {
+  const el = document.getElementById('logo-badge__date');
+  if (!el) return;
+  const now = new Date();
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+  const parts = fmt.formatToParts(now);
+  const get = t => parts.find(p => p.type === t)?.value || '';
+  el.textContent = `${get('month')} ${get('day')}, ${get('year')} | ${get('weekday')}`;
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  updateBadgeDate();
+  setInterval(updateBadgeDate, 60000);
   runSplashAndOnboarding();
   init();
 });
