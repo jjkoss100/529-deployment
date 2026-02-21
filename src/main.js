@@ -838,10 +838,14 @@ async function fetchAndParseCSV(url) {
     transformHeader: h => h.trim()
   });
 
-  // Last column holds today's time windows — header changes daily (e.g. "2/16", "2/17")
+  // Find today's time-window column — header is a date like "2/20" (changes daily)
   const headers = parsed.meta.fields || [];
-  const timeColumnName = headers.length > 0 ? headers[headers.length - 1] : '';
-  console.log(`Time column detected: "${timeColumnName}" (last column)`);
+  const datePattern = /^\d{1,2}\/\d{1,2}$/;
+  let timeColumnName = '';
+  for (let i = headers.length - 1; i >= 0; i--) {
+    if (datePattern.test(headers[i])) { timeColumnName = headers[i]; break; }
+  }
+  console.log(`Time column detected: "${timeColumnName}"`);
 
   const venues = [];
   const rows = parsed.data || [];
