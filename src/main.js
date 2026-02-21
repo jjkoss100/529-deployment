@@ -1281,7 +1281,7 @@ async function init() {
       for (const v of venues) {
         bounds.extend([v.lng, v.lat]);
       }
-      map.fitBounds(bounds, { padding: 60, maxZoom: 15 });
+      map.fitBounds(bounds, { padding: 80, maxZoom: 13.5 });
 
       // Auto-refresh: re-filter venues as time passes
       setInterval(() => {
