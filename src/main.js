@@ -1438,7 +1438,7 @@ function updateBadgeDate() {
   });
   const parts = fmt.formatToParts(now);
   const get = t => parts.find(p => p.type === t)?.value || '';
-  el.textContent = `${get('month')} ${get('day')}, ${get('year')} | ${get('weekday')}`;
+  el.textContent = `${get('weekday')} | ${get('month')} ${get('day')}, ${get('year')}`;
 }
 
 document.addEventListener('DOMContentLoaded', () => {
