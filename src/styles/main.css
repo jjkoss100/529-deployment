@@ -60,7 +60,7 @@
   letter-spacing: -0.04em;
   color: #eeeeee;
   text-transform: uppercase;
-  transform: translateY(100vh);
+  transform: translateY(100dvh);
   opacity: 0;
   transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1),
               opacity 0.3s ease;
@@ -103,7 +103,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  transform: translateY(100vh);
+  transform: translateY(100dvh);
   transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -112,7 +112,7 @@
 }
 
 #onboarding-overlay.slide-out #onboarding-inner {
-  transform: translateY(100vh);
+  transform: translateY(100dvh);
   transition: transform 0.4s cubic-bezier(0.4, 0, 0.6, 1);
 }
 
@@ -212,6 +212,7 @@ html, body {
 #map {
   width: 100vw;
   height: 100vh;
+  height: 100dvh;
   position: relative;
 }
 
