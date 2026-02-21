@@ -235,6 +235,12 @@ html, body {
   100% { opacity: 1; }
 }
 
+/* --- Zoom button positioning --- */
+.mapboxgl-ctrl-bottom-right {
+  bottom: 10px !important;
+  right: 10px !important;
+}
+
 /* --- Hide Mapbox attribution + compass button --- */
 .mapboxgl-ctrl-bottom-left {
   display: none !important;

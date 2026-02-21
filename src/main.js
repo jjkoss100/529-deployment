@@ -1177,7 +1177,7 @@ function initMap() {
     style: MAP_STYLE,
     center: MAP_CENTER,
     zoom: MAP_ZOOM,
-    minZoom: 12,
+    minZoom: 10,
     maxZoom: 18,
   });
 
@@ -1281,7 +1281,7 @@ async function init() {
       for (const v of venues) {
         bounds.extend([v.lng, v.lat]);
       }
-      map.fitBounds(bounds, { padding: 80, maxZoom: 13.5 });
+      map.fitBounds(bounds, { padding: 80, maxZoom: 12.5 });
 
       // Auto-refresh: re-filter venues as time passes
       setInterval(() => {
