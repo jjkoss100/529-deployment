@@ -361,7 +361,12 @@ html, body {
   z-index: 10;
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 6px;
+  pointer-events: none;
+}
+#top-ui > * {
+  pointer-events: auto;
 }
 
 /* --- Logo badge --- */
