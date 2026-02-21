@@ -1135,7 +1135,7 @@ function initMap() {
     maxZoom: 18,
   });
 
-  map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+  map.addControl(new mapboxgl.NavigationControl(), 'bottom-right');
 
   return map;
 }
