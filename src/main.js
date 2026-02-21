@@ -8,7 +8,6 @@ const SOURCE_ID = 'venues';
 const LAYER_ID = 'venue-markers';
 const LNG_OFFSET = 0.00022;
 const GLOW_LAYER_ID = 'venue-glow';
-const PRESHOW_HOURS = 5;
 const REFRESH_INTERVAL = 60000; // re-filter every 60s
 
 // --- Weather Configuration ---
@@ -50,9 +49,6 @@ function parseMinutes(timeStr) {
   return h * 60 + (m || 0);
 }
 
-// --- Toggle state (persisted within session, resets to NOW on new visit) ---
-let currentMode = sessionStorage.getItem('529-mode') || 'now';
-
 // --- Onboarding: shared map+venue refs for tooltip positioning ---
 let _onboardingMap = null;
 let _onboardingVenues = null;
@@ -64,85 +60,12 @@ let fogTransitionTimer = null;
 let waterOpacityBase = 0.5;
 let waterOpacitySwing = 0.2;
 
-// --- Check if a deal is currently active (NOW mode) ---
-// Active = current LA time falls within the live window (start ≤ now ≤ end).
-// Deals with no liveWindow are always shown in NOW mode.
+// --- Check if a deal is active today ---
+// Show if: deal has a liveWindow (scheduled today), or has no liveWindow (always-on).
+// Midnight-crossing deals (e.g. 22:00-02:00) stay visible until their end time passes.
 function isDealActiveNow(deal) {
   if (!deal.liveWindow) return true;
-
-  const nowMin = getLAMinutes();
-  const ranges = deal.liveWindow.split(',');
-
-  for (const range of ranges) {
-    const parts = range.trim().split('-');
-    if (parts.length !== 2) continue;
-
-    const start = parseMinutes(parts[0].trim());
-    const end = parseMinutes(parts[1].trim());
-    if (start === null || end === null) continue;
-
-    const crossesMidnight = end <= start;
-
-    if (crossesMidnight) {
-      // e.g. 22:00-02:00 — active if now >= start OR now <= end
-      if (nowMin >= start || nowMin <= end) return true;
-    } else {
-      // e.g. 15:00-18:00 — active if start <= now <= end
-      if (nowMin >= start && nowMin <= end) return true;
-    }
-  }
-
-  return false;
-}
-
-// --- Check if a deal is coming soon (SOON mode) ---
-// Coming soon = starts within the next 5 hours AND is NOT currently active.
-// Deals with no liveWindow are never shown in SOON mode.
-function isDealComingSoon(deal) {
-  if (!deal.liveWindow) return false;
-  if (isDealActiveNow(deal)) return false;
-
-  const nowMin = getLAMinutes();
-  const ranges = deal.liveWindow.split(',');
-
-  for (const range of ranges) {
-    const parts = range.trim().split('-');
-    if (parts.length !== 2) continue;
-
-    const start = parseMinutes(parts[0].trim());
-    if (start === null) continue;
-
-    // Minutes until start (handles midnight wrap)
-    let minsUntilStart = start - nowMin;
-    if (minsUntilStart < 0) minsUntilStart += 1440; // wrap to next day
-
-    if (minsUntilStart <= PRESHOW_HOURS * 60) return true;
-  }
-
-  return false;
-}
-
-// --- Check if a deal's start time is still ahead of now (hasn't started yet) ---
-function isDealStillAhead(deal) {
-  if (!deal.liveWindow) return false;
-
-  const nowMin = getLAMinutes();
-  const ranges = deal.liveWindow.split(',');
-
-  for (const range of ranges) {
-    const parts = range.trim().split('-');
-    if (parts.length !== 2) continue;
-
-    const start = parseMinutes(parts[0].trim());
-    if (start === null) continue;
-
-    // Deal is still ahead if start > now (same day)
-    // or if start is small (early morning tomorrow, e.g. 01:00) and now is evening
-    if (start > nowMin) return true;
-    if (start < 6 * 60 && nowMin > 12 * 60) return true; // early morning = tomorrow
-  }
-
-  return false;
+  return true; // all deals with a liveWindow are shown for the full day
 }
 
 // --- Debug panel ---
@@ -925,11 +848,10 @@ async function fetchAndParseCSV(url) {
   return venues;
 }
 
-// --- Build GeoJSON from venues (filtered by current mode) ---
+// --- Build GeoJSON from venues ---
 function buildGeoJSON(venues) {
-  const filterFn = currentMode === 'now' ? isDealActiveNow : isDealComingSoon;
-  const visible = venues.filter(filterFn);
-  console.log(`[${currentMode.toUpperCase()}] Showing ${visible.length} of ${venues.length} deals`);
+  const visible = venues.filter(isDealActiveNow);
+  console.log(`Showing ${visible.length} of ${venues.length} deals`);
 
   // Group by coordinates to offset any markers sharing the same location
   const byCoord = new Map();
@@ -1173,37 +1095,6 @@ function setupPopups(map) {
   }
 }
 
-// --- Toggle setup ---
-function setupToggle(map, venues) {
-  const btns = document.querySelectorAll('.mode-toggle__btn');
-
-  // Restore saved toggle state on load
-  btns.forEach(b => {
-    b.classList.toggle('mode-toggle__btn--active', b.dataset.mode === currentMode);
-  });
-
-  btns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const mode = btn.dataset.mode;
-      if (mode === currentMode) return;
-
-      currentMode = mode;
-      sessionStorage.setItem('529-mode', mode);
-
-      // Update active class
-      btns.forEach(b => b.classList.remove('mode-toggle__btn--active'));
-      btn.classList.add('mode-toggle__btn--active');
-
-      // Close any open popup
-      if (activePopup) activePopup.remove();
-
-      // Re-filter and update map
-      const updated = buildGeoJSON(venues);
-      map.getSource(SOURCE_ID).setData(updated);
-    });
-  });
-}
-
 // --- Initialize Mapbox map ---
 function initMap() {
   mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -1283,7 +1174,6 @@ async function init() {
       createGridOverlay();
 
       setupPopups(map);
-      setupToggle(map, venues);
 
       // Fit map to venue bounds
       const bounds = new mapboxgl.LngLatBounds();
@@ -1401,15 +1291,8 @@ function runSplashAndOnboarding() {
   };
 
   if (tooltipOverlay) {
-    tooltipOverlay.querySelector('.tooltip-next').addEventListener('click', () => {
-      removeOnboardingSpotlight();
-      showStep(2);
-    });
-    tooltipOverlay.querySelector('.tooltip-prev').addEventListener('click', () => showStep(1));
-
-    // Step 2 bubble: any click that isn't the back arrow dismisses
-    tooltipOverlay.querySelector('.tooltip-step[data-step="2"] .tooltip-bubble').addEventListener('click', (e) => {
-      if (e.target.closest('.tooltip-prev')) return; // let back arrow handle itself
+    // Tap anywhere on the tooltip bubble to dismiss
+    tooltipOverlay.querySelector('.tooltip-step[data-step="1"] .tooltip-bubble').addEventListener('click', () => {
       dismissOnboarding();
     });
   }

@@ -16,7 +16,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <!-- App styles -->
-  <link rel="stylesheet" href="src/styles/main.css?v=79">
+  <link rel="stylesheet" href="src/styles/main.css?v=80">
 </head>
 <body>
   <!-- Splash screen -->
@@ -46,21 +46,8 @@
     <div id="onboarding-spotlight-el"></div>
 
     <div class="tooltip-step active" data-step="1">
-      <div class="tooltip-bubble tooltip-bubble--down">
+      <div class="tooltip-bubble tooltip-bubble--down tooltip-bubble--tappable">
         <p>See the specifics of a deal by clicking on the marker</p>
-        <div class="tooltip-nav">
-          <span class="tooltip-counter">1/2</span>
-          <button class="tooltip-btn tooltip-next">→</button>
-        </div>
-      </div>
-    </div>
-    <div class="tooltip-step" data-step="2">
-      <div class="tooltip-bubble tooltip-bubble--left tooltip-bubble--tappable">
-        <p>Filter for deals happening now or in the future</p>
-        <div class="tooltip-nav">
-          <button class="tooltip-btn tooltip-prev">←</button>
-          <span class="tooltip-counter">2/2</span>
-        </div>
       </div>
     </div>
   </div>
@@ -70,10 +57,6 @@
     <div>5<span class="logo-badge__mid">2</span>9<span class="logo-badge__world">WORLD</span></div>
     <div id="logo-badge__date"></div>
   </div>
-  <div id="mode-toggle" class="mode-toggle">
-    <button class="mode-toggle__btn mode-toggle__btn--active" data-mode="now">NOW</button>
-    <button class="mode-toggle__btn" data-mode="soon">SOON</button>
-  </div>
-  <script type="module" src="src/main.js?v=90"></script>
+  <script type="module" src="src/main.js?v=91"></script>
 </body>
 </html>
