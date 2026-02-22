@@ -83,13 +83,10 @@ function isDealActiveNow(deal) {
 
     if (crossesMidnight) {
       // e.g. 22:00-03:00
-      // Early morning (now <= end): last night's deal still running → show
-      // Before start (end < now < start): deal ended this morning, tonight's hasn't started → show (upcoming)
-      // After start (now >= start): tonight's deal is live → show
-      // Effectively always show — it either hasn't ended yet or is upcoming tonight
+      // Show if currently within the active window (past start OR before end)
       if (nowMin <= end || nowMin >= start) return true;
-      // Between end and start: the early morning run ended, but tonight's is upcoming
-      return true;
+      // Between end and start: deal has ended, hide it
+      return false;
     } else {
       // e.g. 15:00-18:00 — same-day deal
       // Show if we haven't passed the end time yet
