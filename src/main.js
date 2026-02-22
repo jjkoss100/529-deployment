@@ -83,12 +83,7 @@ function isDealActiveNow(deal) {
 
     if (crossesMidnight) {
       // e.g. 22:00-03:00 or 17:00-00:30
-      // Active right now (past start tonight, or before end from last night)
-      if (nowMin <= end || nowMin >= start) return true;
-      // Between end and start:
-      //   Early morning (before 5 AM) = deal just ended → hide
-      //   Daytime/afternoon = deal is upcoming tonight → show
-      if (nowMin < 300) return false;
+      // Midnight-crossing deals always show: either still active, or upcoming tonight
       return true;
     } else {
       // e.g. 15:00-18:00 — same-day deal
