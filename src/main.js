@@ -919,6 +919,10 @@ function buildGeoJSON(venues) {
     if (!isDealActiveNow(v)) return false;
     if (filterMode === 'top') return v.top;
     if (filterMode === 'active') return isDealLiveRightNow(v);
+    if (filterMode === 'happyhour') {
+      const pt = (v.promotionType || '').toLowerCase();
+      return pt === 'happy hour' || pt === 'distinct menu';
+    }
     return true;
   });
   console.log(`[${filterMode.toUpperCase()}] Showing ${visible.length} of ${venues.length} deals`);
