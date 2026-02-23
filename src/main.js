@@ -909,7 +909,7 @@ async function fetchAndParseCSV(url) {
       venueType,
       link: (row['Link'] || '').trim(),
       notes: (row['Notes'] || '').trim(),
-      top: ['yes','y','true','1','✓','✔'].includes((row['Top'] || '').trim().toLowerCase()),
+      top: ['yes','y','true','1','✓','✔','top'].includes((row['Top'] || '').trim().toLowerCase()),
       liveWindow: (row[timeColumnName] || '').trim(),
     });
   }
