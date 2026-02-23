@@ -723,7 +723,7 @@ function buildPopupHTML(props) {
   // Override time display for Limited types (actual times only control card visibility)
   if (promoType === 'Limited') {
     time = 'limited-time only';
-  } else if (promoType === 'Limited MO') {
+  } else if (promoType === 'Limited Mo') {
     const currentMonth = new Date().toLocaleDateString('en-US', { month: 'long', timeZone: 'America/Los_Angeles' });
     time = `ends in ${currentMonth}`;
   }
@@ -753,7 +753,7 @@ function buildPopupHTML(props) {
     'Happy Hour': 'see drinks',
     'Distinct Menu': 'see menu',
     'Limited': 'see details',
-    'Limited MO': 'see details',
+    'Limited Mo': 'see details',
     'Pop-up': 'see details',
     'Shoutout': 'see details',
   };
@@ -959,7 +959,7 @@ function buildGeoJSON(venues) {
           venueType: v.venueType,
           icon: v.promotionType === 'Shoutout'
             ? `marker-${v.venueType}-shoutout`
-            : `marker-${v.venueType}${isNearEnd(v.liveWindow) && v.promotionType !== 'Limited' && v.promotionType !== 'Limited MO' ? '-alert' : ''}`,
+            : `marker-${v.venueType}${isNearEnd(v.liveWindow) && v.promotionType !== 'Limited' && v.promotionType !== 'Limited Mo' ? '-alert' : ''}`,
           eventName: v.eventName,
           liveWindow: v.liveWindow,
           notes: v.notes,
