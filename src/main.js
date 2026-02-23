@@ -1376,7 +1376,7 @@ function runSplashAndOnboarding() {
   });
 }
 
-// --- Logo badge date (LA time) ---
+// --- Logo badge date + time (LA time) ---
 function updateBadgeDate() {
   const el = document.getElementById('logo-badge__date');
   if (!el) return;
@@ -1388,9 +1388,15 @@ function updateBadgeDate() {
     month: 'long',
     day: 'numeric',
   });
+  const timeFmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Los_Angeles',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
   const parts = fmt.formatToParts(now);
   const get = t => parts.find(p => p.type === t)?.value || '';
-  el.textContent = `${get('weekday')} | ${get('month')} ${get('day')}, ${get('year')}`;
+  const timeStr = timeFmt.format(now);
+  el.textContent = `${get('weekday')} | ${get('month')} ${get('day')}, ${get('year')} | ${timeStr}`;
 }
 
 document.addEventListener('DOMContentLoaded', () => {

@@ -157,6 +157,7 @@
   width: 100%;
   height: auto;
   display: block;
+  filter: grayscale(1) contrast(3);
 }
 
 #onboarding-cta {
