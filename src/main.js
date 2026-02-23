@@ -715,10 +715,18 @@ function buildPopupHTML(props) {
   const eventName = props.eventName || '';
   const notes = props.notes || '';
   const dealActive = isDealActiveNow({ liveWindow: props.liveWindow });
-  const time = formatLiveWindow(props.liveWindow, dealActive);
+  let time = formatLiveWindow(props.liveWindow, dealActive);
   const link = props.link || '';
   const instagram = props.instagram || '';
   const promoType = props.promotionType || '';
+
+  // Override time display for Limited types (actual times only control card visibility)
+  if (promoType === 'Limited') {
+    time = 'limited-time only';
+  } else if (promoType === 'Limited MO') {
+    const currentMonth = new Date().toLocaleDateString('en-US', { month: 'long', timeZone: 'America/Los_Angeles' });
+    time = `ends in ${currentMonth}`;
+  }
 
   // Time color: red if Happy Hour/Distinct Menu near end, otherwise muted gray
   const useRed = (promoType === 'Happy Hour' || promoType === 'Distinct Menu' || promoType === 'Special') && isNearEnd(props.liveWindow);
@@ -745,11 +753,12 @@ function buildPopupHTML(props) {
     'Happy Hour': 'see drinks',
     'Distinct Menu': 'see menu',
     'Limited': 'see details',
+    'Limited MO': 'see details',
     'Pop-up': 'see details',
     'Shoutout': 'see details',
   };
   const hasLink = !!link;
-  const hasTime = !!time && promoType !== 'Limited' && promoType !== 'Shoutout';
+  const hasTime = !!time && promoType !== 'Shoutout';
   if (hasLink || hasTime) {
     html += `<div class="venue-popup__footer">`;
     if (hasTime) {
@@ -950,7 +959,7 @@ function buildGeoJSON(venues) {
           venueType: v.venueType,
           icon: v.promotionType === 'Shoutout'
             ? `marker-${v.venueType}-shoutout`
-            : `marker-${v.venueType}${isNearEnd(v.liveWindow) && v.promotionType !== 'Limited' ? '-alert' : ''}`,
+            : `marker-${v.venueType}${isNearEnd(v.liveWindow) && v.promotionType !== 'Limited' && v.promotionType !== 'Limited MO' ? '-alert' : ''}`,
           eventName: v.eventName,
           liveWindow: v.liveWindow,
           notes: v.notes,
