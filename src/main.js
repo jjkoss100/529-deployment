@@ -63,19 +63,17 @@ function getFullWeekday(date) {
   return date.toLocaleDateString('en-US', { weekday: 'long' });
 }
 
-// Returns { weekKeys, weekendKeys, todayKey } for buildGeoJSON filtering
-// "This Week" = today through Friday (Mon–Fri), "This Weekend" = coming Sat+Sun
+// Returns { allKeys, todayKey } for buildGeoJSON filtering
+// "This Week" = today through coming Sunday (weekdays + weekend)
 function getWeekDateKeys() {
   const today = getLADateObj();
   today.setHours(0, 0, 0, 0);
-  const dow = today.getDay(); // 0=Sun, 1=Mon … 6=Sat
   const todayKey = dateToColumnKey(today);
 
-  const weekKeys = [];    // remaining Mon–Fri
-  const weekendKeys = []; // coming Sat+Sun
+  const allKeys = []; // today through coming Sunday
 
-  // Scan from today through the next 13 days to safely capture the coming
-  // Friday (weekKeys) and Sat+Sun (weekendKeys)
+  // Scan forward from today, collecting every day until we've passed
+  // the coming Sunday (captures remaining weekdays + Sat + Sun)
   let foundWeekend = 0;
   for (let i = 0; i < 14; i++) {
     const d = new Date(today);
@@ -83,20 +81,14 @@ function getWeekDateKeys() {
     const dayOfWeek = d.getDay();
     const key = dateToColumnKey(d);
 
-    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-      // Weekday — only add if we haven't started collecting weekend yet
-      if (foundWeekend === 0) weekKeys.push({ key, date: new Date(d) });
-    } else {
-      // Weekend day
-      if (foundWeekend < 2) {
-        weekendKeys.push({ key, date: new Date(d) });
-        foundWeekend++;
-      }
-      if (foundWeekend >= 2 && weekKeys.length > 0) break; // got everything
-    }
+    allKeys.push({ key, date: new Date(d) });
+
+    // Stop after we've captured both Sat and Sun
+    if (dayOfWeek === 0 || dayOfWeek === 6) foundWeekend++;
+    if (foundWeekend >= 2) break;
   }
 
-  return { weekKeys, weekendKeys, todayKey };
+  return { allKeys, todayKey };
 }
 
 // --- Filter mode state ---
@@ -978,27 +970,13 @@ async function fetchAndParseCSV(url) {
 
 // --- Build GeoJSON from venues ---
 function buildGeoJSON(venues) {
-  const { weekKeys, weekendKeys, todayKey } = getWeekDateKeys();
+  const { allKeys, todayKey } = getWeekDateKeys();
 
   const visible = venues.filter(v => {
-    // --- THIS WEEK: Pop-ups with windows remaining Mon–Fri ---
+    // --- THIS WEEK ONLY: Pop-ups with windows today through Sunday ---
     if (filterMode === 'thisweek') {
       if (v.promotionType !== 'Pop-up') return false;
-      for (const { key } of weekKeys) {
-        const w = v.dateWindows?.[key];
-        if (!w) continue;
-        if (key === todayKey) {
-          if (isDealActiveNow({ liveWindow: w })) return true;
-        } else {
-          return true;
-        }
-      }
-      return false;
-    }
-    // --- THIS WEEKEND: Pop-ups with windows Sat+Sun ---
-    if (filterMode === 'thisweekend') {
-      if (v.promotionType !== 'Pop-up') return false;
-      for (const { key } of weekendKeys) {
+      for (const { key } of allKeys) {
         const w = v.dateWindows?.[key];
         if (!w) continue;
         if (key === todayKey) {
@@ -1036,10 +1014,9 @@ function buildGeoJSON(venues) {
 
       // Build popupTimeDisplay for week/weekend modes
       let popupTimeDisplay = '';
-      if (filterMode === 'thisweek' || filterMode === 'thisweekend') {
-        const dateKeys = filterMode === 'thisweek' ? weekKeys : weekendKeys;
+      if (filterMode === 'thisweek') {
         const parts = [];
-        for (const { key, date } of dateKeys) {
+        for (const { key, date } of allKeys) {
           const w = v.dateWindows?.[key];
           if (!w) continue;
           if (key === todayKey) {
