@@ -1009,7 +1009,8 @@ function buildGeoJSON(venues) {
       }
       return false;
     }
-    // --- All other modes: existing logic ---
+    // --- All other modes: existing logic (exclude pop-ups) ---
+    if (v.promotionType === 'Pop-up') return false;
     if (!isDealActiveNow(v)) return false;
     if (filterMode === 'top') return v.top;
     if (filterMode === 'active') return isDealLiveRightNow(v);
