@@ -255,6 +255,23 @@ function isNearEnd(liveWindow) {
   return false;
 }
 
+// --- Check if deal starts within 60 min (for LATER TODAY "coming soon" ring) ---
+function isNearStart(liveWindow) {
+  if (!liveWindow) return false;
+  const nowMin = getLAMinutes();
+  const ranges = liveWindow.split(',');
+  for (const range of ranges) {
+    const parts = range.trim().split('-');
+    if (parts.length !== 2) continue;
+    const start = parseMinutes(parts[0].trim());
+    if (start === null) continue;
+    let minsUntil = start - nowMin;
+    if (minsUntil < 0) minsUntil += 1440;
+    if (minsUntil > 0 && minsUntil <= 60) return true;
+  }
+  return false;
+}
+
 // --- Weather: Utility functions ---
 function lerp(a, b, t) { return a + (b - a) * t; }
 
@@ -857,6 +874,14 @@ function makeAlertSvg(svg) {
   );
 }
 
+// --- Add green "coming soon" ring to the white circle in a marker SVG ---
+function makeSoonSvg(svg) {
+  return svg.replace(
+    /(<path\b[^/]*?fill="white"[^/]*?)(\/?>)/,
+    '$1 stroke="#22c55e" stroke-width="2"$2'
+  );
+}
+
 // --- Add gold shoutout ring to the white circle in a marker SVG ---
 function makeShoutoutSvg(svg) {
   return svg.replace(
@@ -888,6 +913,7 @@ function loadMarkerImages(map) {
   const toLoad = [
     ...entries.map(([venueType, svg]) => ({ id: `marker-${venueType}`, svg })),
     ...entries.map(([venueType, svg]) => ({ id: `marker-${venueType}-alert`, svg: makeAlertSvg(svg) })),
+    ...entries.map(([venueType, svg]) => ({ id: `marker-${venueType}-soon`, svg: makeSoonSvg(svg) })),
     ...entries.map(([venueType, svg]) => ({ id: `marker-${venueType}-shoutout`, svg: makeShoutoutSvg(svg) })),
   ];
   return Promise.all(toLoad.map(({ id, svg }) => loadSingleMarkerImage(map, id, svg)));
@@ -1092,7 +1118,11 @@ function buildGeoJSON(venues) {
           shouldPulse,
           icon: v.promotionType === 'Shoutout'
             ? `marker-${v.venueType}-shoutout`
-            : `marker-${v.venueType}${isNearEnd(v.liveWindow) && v.promotionType !== 'Limited' && v.promotionType !== 'Limited Mo' ? '-alert' : ''}`,
+            : `marker-${v.venueType}${
+                isNearEnd(v.liveWindow) && v.promotionType !== 'Limited' && v.promotionType !== 'Limited Mo'
+                  ? '-alert'
+                  : (filterMode === 'all' && isNearStart(v.liveWindow) ? '-soon' : '')
+              }`,
           eventName: v.eventName,
           liveWindow: v.liveWindow,
           notes: v.notes,
@@ -1494,6 +1524,11 @@ async function init() {
               img.src = makeSvgData(svg);
             }
           });
+          return;
+        }
+        const soonId = `marker-${venueType}-soon`;
+        if (missingId === soonId) {
+          loadSingleMarkerImage(map, soonId, makeSoonSvg(svg));
           return;
         }
         if (missingId === normalId) {
