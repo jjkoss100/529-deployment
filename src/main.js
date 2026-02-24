@@ -920,15 +920,19 @@ function loadMarkerImages(map) {
 }
 
 // --- Load taco tuesday glow images (5 angle variants, canvas-rendered) ---
+// Uses concentric translucent rings instead of ctx.filter (unsupported on mobile Safari)
 function loadGlowImages(map) {
   const GLOW_ANGLES = [0, 35, 70, 110, 145];
   const W = 128, H = 160;
-  // Glow center: marker circle is 34 viewBox units above bottom.
-  // Marker image is 83px tall → circle center is at 83 - (34/55)*83 ≈ 83-51 = 32px from top.
-  // Scale that to glow image: 32/83 * H wouldn't align — we need same distance from BOTTOM.
-  // Distance from bottom in marker: (34/55)*83 ≈ 51px. In glow: (51/83)*H ≈ 98px from bottom.
+  // Glow center must align with marker's inner circle when both use icon-anchor:'bottom'.
+  // Marker circle center is 51px from bottom in the 83px-tall marker image.
+  // Same 51px from bottom in the glow image: cy = 160 - 51 = 109.
   const cx = W / 2;
-  const cy = H - Math.round((51 / 83) * H); // ≈ 62 from top, 98 from bottom
+  const cy = H - 51;
+
+  const RINGS = 18;
+  const R_MAX = 42;  // outermost ring radius (faintest)
+  const R_MIN = 4;   // innermost ring radius (strongest)
 
   GLOW_ANGLES.forEach((angle, i) => {
     const id = `glow-${i}`;
@@ -939,28 +943,32 @@ function loadGlowImages(map) {
     canvas.height = H;
     const ctx = canvas.getContext('2d');
 
-    // Apply blur to all subsequent draws
-    ctx.filter = 'blur(14px)';
-
     // Rotate around glow center for per-marker angle variation
     ctx.save();
     ctx.translate(cx, cy);
     ctx.rotate(angle * Math.PI / 180);
     ctx.translate(-cx, -cy);
 
-    // Tricolor linear gradient (green → white → red)
-    const grad = ctx.createLinearGradient(cx - 28, cy, cx + 28, cy);
-    grad.addColorStop(0,    'rgba(0, 104, 71, 0.85)');
-    grad.addColorStop(0.30, 'rgba(0, 104, 71, 0.70)');
-    grad.addColorStop(0.42, 'rgba(210, 210, 210, 0.55)');
-    grad.addColorStop(0.58, 'rgba(210, 210, 210, 0.55)');
-    grad.addColorStop(0.70, 'rgba(206, 17, 38, 0.70)');
-    grad.addColorStop(1,    'rgba(206, 17, 38, 0.85)');
+    // Build soft glow from concentric translucent rings (outer→inner)
+    for (let n = 0; n < RINGS; n++) {
+      const t = n / (RINGS - 1);               // 0 = outermost, 1 = innermost
+      const r = R_MAX * (1 - t) + R_MIN * t;   // radius shrinks inward
+      const a = 0.012 + 0.048 * t;             // alpha ramps up toward center
 
-    ctx.fillStyle = grad;
-    ctx.beginPath();
-    ctx.arc(cx, cy, 22, 0, Math.PI * 2);
-    ctx.fill();
+      const grad = ctx.createLinearGradient(cx - r, cy, cx + r, cy);
+      grad.addColorStop(0,    `rgba(0,104,71,${a})`);
+      grad.addColorStop(0.30, `rgba(0,104,71,${a})`);
+      grad.addColorStop(0.42, `rgba(210,210,210,${a * 0.7})`);
+      grad.addColorStop(0.58, `rgba(210,210,210,${a * 0.7})`);
+      grad.addColorStop(0.70, `rgba(206,17,38,${a})`);
+      grad.addColorStop(1,    `rgba(206,17,38,${a})`);
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
     ctx.restore();
 
     // Hand off raw pixel data to Mapbox
