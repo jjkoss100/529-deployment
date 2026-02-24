@@ -1323,7 +1323,8 @@ async function init() {
         fetchAndParseCSV(CSV_URL),
         fetchAndParseCSV(POPUP_CSV_URL).then(v => v.filter(x => x.promotionType === 'Pop-up')),
       ]);
-      const venues = [...dailyVenues, ...popupVenues];
+      // Exclude pop-ups from daily sheet to avoid duplicates with pop-up sheet
+      const venues = [...dailyVenues.filter(v => v.promotionType !== 'Pop-up'), ...popupVenues];
       console.log(`Loaded ${dailyVenues.length} daily + ${popupVenues.length} pop-up = ${venues.length} venues`);
 
       if (venues.length === 0) {
