@@ -1002,7 +1002,7 @@ function buildGeoJSON(venues) {
     }
     // --- All other modes ---
     if (v.promotionType === 'Pop-up') {
-      if (filterMode === 'active') return isDealLiveRightNow(v);
+      if (filterMode === 'active') return v.liveWindow && isDealLiveRightNow(v);
       return false; // still excluded from LATER TODAY
     }
     if (!isDealActiveNow(v)) return false;
