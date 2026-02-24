@@ -463,6 +463,22 @@ html, body {
 }
 .filter-btn[data-mode="tacotuesday"] {
   order: 4;
+  position: relative;
+  padding-bottom: 9px;
+  overflow: hidden;
+}
+.filter-btn[data-mode="tacotuesday"]::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #006847 0%, #006847 33%, #EFEFEF 33%, #EFEFEF 66%, #CE1126 66%, #CE1126 100%);
+  opacity: 0.6;
+}
+.filter-btn[data-mode="tacotuesday"].active::after {
+  opacity: 1;
 }
 .filter-btn.hidden {
   display: none;
