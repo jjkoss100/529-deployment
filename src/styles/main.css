@@ -464,7 +464,7 @@ html, body {
 .filter-btn[data-mode="tacotuesday"] {
   order: 4;
   position: relative;
-  padding-bottom: 9px;
+  padding-bottom: 8px;
   overflow: hidden;
 }
 .filter-btn[data-mode="tacotuesday"]::after {
