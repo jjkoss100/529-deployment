@@ -63,29 +63,35 @@ function getFullWeekday(date) {
 }
 
 // Returns { weekKeys, weekendKeys, todayKey } for buildGeoJSON filtering
+// "This Week" = today through Friday (Mon–Fri), "This Weekend" = coming Sat+Sun
 function getWeekDateKeys() {
   const today = getLADateObj();
   today.setHours(0, 0, 0, 0);
   const dow = today.getDay(); // 0=Sun, 1=Mon … 6=Sat
   const todayKey = dateToColumnKey(today);
 
-  // Find Monday of this week (if today is Sun treat as previous week's Mon)
-  const monday = new Date(today);
-  monday.setDate(today.getDate() - ((dow === 0 ? 7 : dow) - 1));
+  const weekKeys = [];    // remaining Mon–Fri
+  const weekendKeys = []; // coming Sat+Sun
 
-  const weekKeys = [];    // Mon–Fri from today onward
-  const weekendKeys = []; // Sat+Sun from today onward
-
-  for (let i = 0; i < 7; i++) {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    if (d < today) continue; // skip past days
-    const key = dateToColumnKey(d);
+  // Scan from today through the next 13 days to safely capture the coming
+  // Friday (weekKeys) and Sat+Sun (weekendKeys)
+  let foundWeekend = 0;
+  for (let i = 0; i < 14; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
     const dayOfWeek = d.getDay();
+    const key = dateToColumnKey(d);
+
     if (dayOfWeek >= 1 && dayOfWeek <= 5) {
-      weekKeys.push({ key, date: new Date(d) });
+      // Weekday — only add if we haven't started collecting weekend yet
+      if (foundWeekend === 0) weekKeys.push({ key, date: new Date(d) });
     } else {
-      weekendKeys.push({ key, date: new Date(d) });
+      // Weekend day
+      if (foundWeekend < 2) {
+        weekendKeys.push({ key, date: new Date(d) });
+        foundWeekend++;
+      }
+      if (foundWeekend >= 2 && weekKeys.length > 0) break; // got everything
     }
   }
 
