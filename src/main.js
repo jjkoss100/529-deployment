@@ -919,43 +919,55 @@ function loadMarkerImages(map) {
   return Promise.all(toLoad.map(({ id, svg }) => loadSingleMarkerImage(map, id, svg)));
 }
 
-// --- Load taco tuesday glow images (5 angle variants) ---
+// --- Load taco tuesday glow images (5 angle variants, canvas-rendered) ---
 function loadGlowImages(map) {
   const GLOW_ANGLES = [0, 35, 70, 110, 145];
-  const promises = GLOW_ANGLES.map((angle, i) => {
+  const W = 128, H = 160;
+  // Glow center: marker circle is 34 viewBox units above bottom.
+  // Marker image is 83px tall → circle center is at 83 - (34/55)*83 ≈ 83-51 = 32px from top.
+  // Scale that to glow image: 32/83 * H wouldn't align — we need same distance from BOTTOM.
+  // Distance from bottom in marker: (34/55)*83 ≈ 51px. In glow: (51/83)*H ≈ 98px from bottom.
+  const cx = W / 2;
+  const cy = H - Math.round((51 / 83) * H); // ≈ 62 from top, 98 from bottom
+
+  GLOW_ANGLES.forEach((angle, i) => {
     const id = `glow-${i}`;
-    if (map.hasImage(id)) return Promise.resolve(true);
-    // ViewBox 80x96 gives plenty of room for blur spread
-    // Circle at (40, 62): 96-34=62 aligns with marker circle (34px above bottom)
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 96" width="80" height="96">`
-      + `<defs>`
-      + `<linearGradient id="tg${i}" gradientTransform="rotate(${angle}, 40, 62)" gradientUnits="userSpaceOnUse" x1="20" y1="62" x2="60" y2="62">`
-      + `<stop offset="0%" stop-color="#006847" stop-opacity="0.8"/>`
-      + `<stop offset="30%" stop-color="#006847" stop-opacity="0.7"/>`
-      + `<stop offset="42%" stop-color="#EFEFEF" stop-opacity="0.6"/>`
-      + `<stop offset="58%" stop-color="#EFEFEF" stop-opacity="0.6"/>`
-      + `<stop offset="70%" stop-color="#CE1126" stop-opacity="0.7"/>`
-      + `<stop offset="100%" stop-color="#CE1126" stop-opacity="0.8"/>`
-      + `</linearGradient>`
-      + `<filter id="blur${i}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="8"/></filter>`
-      + `</defs>`
-      + `<circle cx="40" cy="62" r="18" fill="url(#tg${i})" filter="url(#blur${i})"/>`
-      + `</svg>`;
-    return new Promise((resolve) => {
-      // 80/42 * 63 = 120, 96/55 * 83 ≈ 145
-      const img = new Image(120, 145);
-      img.onload = () => {
-        if (!map.hasImage(id)) map.addImage(id, img, { pixelRatio: 2 });
-        resolve(true);
-      };
-      img.onerror = () => {
-        console.warn(`Failed to load glow image "${id}"`);
-        resolve(false);
-      };
-      img.src = makeSvgData(svg);
-    });
+    if (map.hasImage(id)) return;
+
+    const canvas = document.createElement('canvas');
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+
+    // Apply blur to all subsequent draws
+    ctx.filter = 'blur(14px)';
+
+    // Rotate around glow center for per-marker angle variation
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle * Math.PI / 180);
+    ctx.translate(-cx, -cy);
+
+    // Tricolor linear gradient (green → white → red)
+    const grad = ctx.createLinearGradient(cx - 28, cy, cx + 28, cy);
+    grad.addColorStop(0,    'rgba(0, 104, 71, 0.85)');
+    grad.addColorStop(0.30, 'rgba(0, 104, 71, 0.70)');
+    grad.addColorStop(0.42, 'rgba(210, 210, 210, 0.55)');
+    grad.addColorStop(0.58, 'rgba(210, 210, 210, 0.55)');
+    grad.addColorStop(0.70, 'rgba(206, 17, 38, 0.70)');
+    grad.addColorStop(1,    'rgba(206, 17, 38, 0.85)');
+
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 22, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Hand off raw pixel data to Mapbox
+    const imageData = ctx.getImageData(0, 0, W, H);
+    map.addImage(id, { width: W, height: H, data: new Uint8Array(imageData.data.buffer) }, { pixelRatio: 2 });
   });
-  return Promise.all(promises);
+  return Promise.resolve();
 }
 
 // --- Fetch and parse CSV ---
