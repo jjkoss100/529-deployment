@@ -1,5 +1,6 @@
 // --- Configuration ---
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQpj4lehM7ElDgkUxZHkQ_ZrZhGX4HwIkK-pBuA-siErJ0YG0ahpfYYJqSqoAq5-Fpj8tL6j0DyK-by/pub?gid=0&single=true&output=csv';
+const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQpj4lehM7ElDgkUxZHkQ_ZrZhGX4HwIkK-pBuA-siErJ0YG0ahpfYYJqSqoAq5-Fpj8tL6j0DyK-by/pub?gid=6430153&single=true&output=csv';
+const POPUP_CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQpj4lehM7ElDgkUxZHkQ_ZrZhGX4HwIkK-pBuA-siErJ0YG0ahpfYYJqSqoAq5-Fpj8tL6j0DyK-by/pub?gid=0&single=true&output=csv';
 const MAPBOX_TOKEN = 'pk.eyJ1Ijoiamprb3NzMTAiLCJhIjoiY21sZnl3NnN3MDZoNTNlb2s1MnczMWVwbSJ9.HDXt8N0fEOpSvSGhKp6jRg';
 const MAP_CENTER = [-118.469, 33.989];
 const MAP_ZOOM = 14;
@@ -1320,8 +1321,13 @@ async function init() {
     map.on('load', async () => {
       await loadMarkerImages(map);
 
-      const venues = await fetchAndParseCSV(CSV_URL);
-      console.log(`Loaded ${venues.length} venues`);
+      // Fetch daily deals + pop-up sheet in parallel
+      const [dailyVenues, popupVenues] = await Promise.all([
+        fetchAndParseCSV(CSV_URL),
+        fetchAndParseCSV(POPUP_CSV_URL).then(v => v.filter(x => x.promotionType === 'Pop-up')),
+      ]);
+      const venues = [...dailyVenues, ...popupVenues];
+      console.log(`Loaded ${dailyVenues.length} daily + ${popupVenues.length} pop-up = ${venues.length} venues`);
 
       if (venues.length === 0) {
         console.warn('No venues loaded from CSV');
