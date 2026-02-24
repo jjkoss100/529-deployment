@@ -890,6 +890,20 @@ function makeShoutoutSvg(svg) {
   );
 }
 
+// --- Add tricolor (Mexican flag) gradient ring to a marker SVG ---
+function makeTacoSvg(svg) {
+  const gradDef = '<defs><linearGradient id="tg" x1="0" y1="0" x2="1" y2="0">'
+    + '<stop offset="0%" stop-color="#006847"/><stop offset="30%" stop-color="#006847"/>'
+    + '<stop offset="36%" stop-color="#EFEFEF"/><stop offset="64%" stop-color="#EFEFEF"/>'
+    + '<stop offset="70%" stop-color="#CE1126"/><stop offset="100%" stop-color="#CE1126"/>'
+    + '</linearGradient></defs>';
+  svg = svg.replace(/(<svg[^>]*>)/, `$1${gradDef}`);
+  return svg.replace(
+    /(<path\b[^/]*?fill="white"[^/]*?)(\/?>)/,
+    '$1 stroke="url(#tg)" stroke-width="2.5"$2'
+  );
+}
+
 // --- Load a single marker image into Mapbox ---
 function loadSingleMarkerImage(map, id, svg) {
   return new Promise((resolve) => {
@@ -915,6 +929,7 @@ function loadMarkerImages(map) {
     ...entries.map(([venueType, svg]) => ({ id: `marker-${venueType}-alert`, svg: makeAlertSvg(svg) })),
     ...entries.map(([venueType, svg]) => ({ id: `marker-${venueType}-soon`, svg: makeSoonSvg(svg) })),
     ...entries.map(([venueType, svg]) => ({ id: `marker-${venueType}-shoutout`, svg: makeShoutoutSvg(svg) })),
+    ...entries.map(([venueType, svg]) => ({ id: `marker-${venueType}-taco`, svg: makeTacoSvg(svg) })),
   ];
   return Promise.all(toLoad.map(({ id, svg }) => loadSingleMarkerImage(map, id, svg)));
 }
@@ -1105,6 +1120,9 @@ function buildGeoJSON(venues) {
         (filterMode === 'thisweek' && !!v.dateWindows?.[todayKey])
       );
 
+      // Taco Tuesday markers get tricolor ring + gentle pulse
+      const isTacoMarker = filterMode === 'tacotuesday';
+
       features.push({
         type: 'Feature',
         geometry: {
@@ -1116,13 +1134,16 @@ function buildGeoJSON(venues) {
           promotionType: v.promotionType,
           venueType: v.venueType,
           shouldPulse,
-          icon: v.promotionType === 'Shoutout'
-            ? `marker-${v.venueType}-shoutout`
-            : `marker-${v.venueType}${
-                isNearEnd(v.liveWindow) && v.promotionType !== 'Limited' && v.promotionType !== 'Limited Mo'
-                  ? '-alert'
-                  : (filterMode === 'all' && isNearStart(v.liveWindow) ? '-soon' : '')
-              }`,
+          isTacoMarker,
+          icon: isTacoMarker
+            ? `marker-${v.venueType}-taco`
+            : v.promotionType === 'Shoutout'
+              ? `marker-${v.venueType}-shoutout`
+              : `marker-${v.venueType}${
+                  isNearEnd(v.liveWindow) && v.promotionType !== 'Limited' && v.promotionType !== 'Limited Mo'
+                    ? '-alert'
+                    : (filterMode === 'all' && isNearStart(v.liveWindow) ? '-soon' : '')
+                }`,
           eventName: v.eventName,
           liveWindow: v.liveWindow,
           notes: v.notes,
@@ -1139,6 +1160,7 @@ function buildGeoJSON(venues) {
 
 const SHOUTOUT_LAYER_ID = 'venue-markers-shoutout';
 const POPUP_LAYER_ID = 'venue-markers-popup';
+const TACO_LAYER_ID = 'venue-markers-taco';
 
 // --- Add venue layer to map ---
 function addVenueLayer(map, geojson) {
@@ -1152,7 +1174,7 @@ function addVenueLayer(map, geojson) {
     id: LAYER_ID,
     type: 'symbol',
     source: SOURCE_ID,
-    filter: ['all', ['!=', ['get', 'promotionType'], 'Shoutout'], ['!=', ['get', 'shouldPulse'], true]],
+    filter: ['all', ['!=', ['get', 'promotionType'], 'Shoutout'], ['!=', ['get', 'shouldPulse'], true], ['!=', ['get', 'isTacoMarker'], true]],
     layout: {
       // Use the icon property, falling back to the base marker if the alert variant is missing
       'icon-image': [
@@ -1217,6 +1239,29 @@ function addVenueLayer(map, geojson) {
     }
   });
 
+  // Taco Tuesday layer — tricolor ring markers with gentle pulse
+  map.addLayer({
+    id: TACO_LAYER_ID,
+    type: 'symbol',
+    source: SOURCE_ID,
+    filter: ['==', ['get', 'isTacoMarker'], true],
+    layout: {
+      'icon-image': [
+        'coalesce',
+        ['image', ['get', 'icon']],
+        ['image', ['concat', 'marker-', ['get', 'venueType'], '-taco']]
+      ],
+      'icon-size': 0.675,
+      'icon-anchor': 'bottom',
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+    },
+    paint: {
+      'icon-opacity': 1,
+      'icon-opacity-transition': { duration: 0 },
+    }
+  });
+
   // Pulse animation — gently scale Shoutout markers up and down
   const BASE_SIZE = 0.675;
   const PULSE_RANGE = 0.055; // ±8% of base size
@@ -1232,6 +1277,11 @@ function addVenueLayer(map, geojson) {
     if (map.getLayer(POPUP_LAYER_ID)) {
       map.setLayoutProperty(POPUP_LAYER_ID, 'icon-size', popupSize);
     }
+    // Gentle pulse for taco tuesday markers
+    const tacoSize = BASE_SIZE + PULSE_RANGE * 0.7 * Math.sin(ts * PULSE_SPEED * 1.1);
+    if (map.getLayer(TACO_LAYER_ID)) {
+      map.setLayoutProperty(TACO_LAYER_ID, 'icon-size', tacoSize);
+    }
     rafId = requestAnimationFrame(animateShoutout);
   }
   rafId = requestAnimationFrame(animateShoutout);
@@ -1244,7 +1294,7 @@ function setupVenueLabels(map) {
   document.getElementById('map').appendChild(container);
 
   function updateLabels() {
-    const features = map.queryRenderedFeatures({ layers: [LAYER_ID, SHOUTOUT_LAYER_ID, POPUP_LAYER_ID] });
+    const features = map.queryRenderedFeatures({ layers: [LAYER_ID, SHOUTOUT_LAYER_ID, POPUP_LAYER_ID, TACO_LAYER_ID] });
 
     // Deduplicate: one label per venue name (first marker wins for position)
     const seen = new Set();
@@ -1323,9 +1373,10 @@ function setupPopups(map) {
     map.on('click', LAYER_ID, onMarkerClick);
     map.on('click', SHOUTOUT_LAYER_ID, onMarkerClick);
     map.on('click', POPUP_LAYER_ID, onMarkerClick);
+    map.on('click', TACO_LAYER_ID, onMarkerClick);
 
     map.on('click', (e) => {
-      const features = map.queryRenderedFeatures(e.point, { layers: [LAYER_ID, SHOUTOUT_LAYER_ID, POPUP_LAYER_ID] });
+      const features = map.queryRenderedFeatures(e.point, { layers: [LAYER_ID, SHOUTOUT_LAYER_ID, POPUP_LAYER_ID, TACO_LAYER_ID] });
       if (!features.length) popup.remove();
     });
   } else {
@@ -1364,10 +1415,12 @@ function setupPopups(map) {
     map.on('mouseenter', LAYER_ID, onMarkerEnter);
     map.on('mouseenter', SHOUTOUT_LAYER_ID, onMarkerEnter);
     map.on('mouseenter', POPUP_LAYER_ID, onMarkerEnter);
+    map.on('mouseenter', TACO_LAYER_ID, onMarkerEnter);
 
     map.on('mouseleave', LAYER_ID, scheduleClose);
     map.on('mouseleave', SHOUTOUT_LAYER_ID, scheduleClose);
     map.on('mouseleave', POPUP_LAYER_ID, scheduleClose);
+    map.on('mouseleave', TACO_LAYER_ID, scheduleClose);
   }
 }
 
