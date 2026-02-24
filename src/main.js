@@ -920,36 +920,64 @@ function loadMarkerImages(map) {
 }
 
 // --- Load taco tuesday glow images (5 angle variants, canvas-rendered) ---
+// Simulates blur via concentric translucent rings (mobile Safari has no ctx.filter)
 function loadGlowImages(map) {
   const GLOW_ANGLES = [0, 35, 70, 110, 145];
-  const SIZE = 64;
+  const W = 128, H = 160;
+  // Glow center: marker circle is 51px from bottom in the 83px marker image.
+  // Same 51px from bottom here so both align with icon-anchor:'bottom'.
+  const cx = W / 2;
+  const cy = H - 51;
+
+  const RINGS = 20;
+  const R_MAX = 44;
+  const R_MIN = 4;
+
   const promises = GLOW_ANGLES.map((angle, i) => {
     const id = `glow-${i}`;
     if (map.hasImage(id)) return Promise.resolve();
 
     const canvas = document.createElement('canvas');
-    canvas.width = SIZE;
-    canvas.height = SIZE;
+    canvas.width = W;
+    canvas.height = H;
     const ctx = canvas.getContext('2d');
 
-    // DEBUG: bright solid red circle — if this doesn't show, pipeline is broken
-    ctx.fillStyle = 'rgba(255, 0, 0, 0.8)';
-    ctx.beginPath();
-    ctx.arc(SIZE / 2, SIZE / 2, 28, 0, Math.PI * 2);
-    ctx.fill();
+    // Rotate around glow center for per-marker angle variation
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(angle * Math.PI / 180);
+    ctx.translate(-cx, -cy);
 
-    // Load as Image via toDataURL (most reliable Mapbox path)
+    // Build soft glow from concentric translucent rings (outer→inner)
+    for (let n = 0; n < RINGS; n++) {
+      const t = n / (RINGS - 1);
+      const r = R_MAX * (1 - t) + R_MIN * t;
+      const a = 0.035 + 0.09 * t;
+
+      const grad = ctx.createLinearGradient(cx - r, cy, cx + r, cy);
+      grad.addColorStop(0,    `rgba(0,104,71,${a})`);
+      grad.addColorStop(0.28, `rgba(0,104,71,${a})`);
+      grad.addColorStop(0.40, `rgba(220,220,220,${a * 0.65})`);
+      grad.addColorStop(0.60, `rgba(220,220,220,${a * 0.65})`);
+      grad.addColorStop(0.72, `rgba(206,17,38,${a})`);
+      grad.addColorStop(1,    `rgba(206,17,38,${a})`);
+
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.restore();
+
+    // Load via toDataURL → Image (proven reliable on all browsers)
     return new Promise((resolve) => {
       const img = new Image();
       img.onload = () => {
         if (!map.hasImage(id)) map.addImage(id, img, { pixelRatio: 2 });
-        console.log(`Glow image loaded: ${id}`);
         resolve();
       };
-      img.onerror = () => {
-        console.warn(`Glow image FAILED: ${id}`);
-        resolve();
-      };
+      img.onerror = () => resolve();
       img.src = canvas.toDataURL();
     });
   });
@@ -1174,11 +1202,6 @@ function buildGeoJSON(venues) {
         }
       });
     }
-  }
-
-  const tacoFeatures = features.filter(f => f.properties.isTacoMarker);
-  if (tacoFeatures.length > 0) {
-    console.log(`buildGeoJSON: ${tacoFeatures.length} taco features, glowIcons:`, tacoFeatures.map(f => f.properties.glowIcon));
   }
 
   return { type: 'FeatureCollection', features };
