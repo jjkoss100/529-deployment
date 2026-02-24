@@ -969,16 +969,15 @@ async function fetchAndParseCSV(url) {
   return venues;
 }
 
-// --- "More coming" banner for LATER TODAY cap ---
+// --- "On deck" badge inside LATER TODAY button ---
 function updateMoreComingBanner() {
-  const banner = document.getElementById('more-coming-banner');
-  const countEl = document.getElementById('more-coming-count');
-  if (!banner || !countEl) return;
+  const badge = document.getElementById('later-today-badge');
+  if (!badge) return;
   if (filterMode === 'all' && laterTodayHidden > 0) {
-    countEl.textContent = laterTodayHidden;
-    banner.classList.remove('hidden');
+    badge.textContent = `+${laterTodayHidden} more on deck`;
+    badge.classList.remove('hidden');
   } else {
-    banner.classList.add('hidden');
+    badge.classList.add('hidden');
   }
 }
 

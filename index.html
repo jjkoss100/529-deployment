@@ -16,7 +16,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <!-- App styles -->
-  <link rel="stylesheet" href="src/styles/main.css?v=94">
+  <link rel="stylesheet" href="src/styles/main.css?v=95">
 </head>
 <body>
   <!-- Splash screen -->
@@ -48,11 +48,10 @@
     </div>
     <div id="filter-toggle">
       <button class="filter-btn active" data-mode="active">ACTIVE NOW</button>
-      <button class="filter-btn" data-mode="all">LATER TODAY</button>
+      <button class="filter-btn" data-mode="all">LATER TODAY<span id="later-today-badge" class="filter-badge hidden"></span></button>
       <button class="filter-btn" data-mode="thisweek">THIS WEEK ONLY</button>
     </div>
-    <div id="more-coming-banner" class="hidden">+<span id="more-coming-count"></span> more on deck</div>
   </div>
-  <script type="module" src="src/main.js?v=126"></script>
+  <script type="module" src="src/main.js?v=127"></script>
 </body>
 </html>
