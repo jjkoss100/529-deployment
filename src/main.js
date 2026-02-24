@@ -993,9 +993,6 @@ function buildGeoJSON(venues) {
       if (!isDealActiveNow(v)) return false;
       return true;
     }
-    // Exclude Taco Tuesday specials from all other filters
-    if (v.promotionType === 'Special - TT') return false;
-
     // --- THIS WEEK ONLY: Pop-ups with windows today through Sunday ---
     if (filterMode === 'thisweek') {
       if (v.promotionType !== 'Pop-up') return false;
