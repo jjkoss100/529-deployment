@@ -49,6 +49,49 @@ function parseMinutes(timeStr) {
   return h * 60 + (m || 0);
 }
 
+// --- LA date utilities ---
+function getLADateObj() {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'America/Los_Angeles' }));
+}
+
+function dateToColumnKey(date) {
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+function getFullWeekday(date) {
+  return date.toLocaleDateString('en-US', { weekday: 'long' });
+}
+
+// Returns { weekKeys, weekendKeys, todayKey } for buildGeoJSON filtering
+function getWeekDateKeys() {
+  const today = getLADateObj();
+  today.setHours(0, 0, 0, 0);
+  const dow = today.getDay(); // 0=Sun, 1=Mon … 6=Sat
+  const todayKey = dateToColumnKey(today);
+
+  // Find Monday of this week (if today is Sun treat as previous week's Mon)
+  const monday = new Date(today);
+  monday.setDate(today.getDate() - ((dow === 0 ? 7 : dow) - 1));
+
+  const weekKeys = [];    // Mon–Fri from today onward
+  const weekendKeys = []; // Sat+Sun from today onward
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    if (d < today) continue; // skip past days
+    const key = dateToColumnKey(d);
+    const dayOfWeek = d.getDay();
+    if (dayOfWeek >= 1 && dayOfWeek <= 5) {
+      weekKeys.push({ key, date: new Date(d) });
+    } else {
+      weekendKeys.push({ key, date: new Date(d) });
+    }
+  }
+
+  return { weekKeys, weekendKeys, todayKey };
+}
+
 // --- Filter mode state ---
 let filterMode = 'top'; // 'top' or 'all'
 
@@ -715,7 +758,7 @@ function buildPopupHTML(props) {
   const eventName = props.eventName || '';
   const notes = props.notes || '';
   const dealActive = isDealActiveNow({ liveWindow: props.liveWindow });
-  let time = formatLiveWindow(props.liveWindow, dealActive);
+  let time = props.popupTimeDisplay || formatLiveWindow(props.liveWindow, dealActive);
   const link = props.link || '';
   const instagram = props.instagram || '';
   const promoType = props.promotionType || '';
@@ -872,14 +915,15 @@ async function fetchAndParseCSV(url) {
     transformHeader: h => h.trim()
   });
 
-  // Find today's time-window column — header is a date like "2/20" (changes daily)
+  // Collect ALL date columns and determine today's column
   const headers = parsed.meta.fields || [];
   const datePattern = /^\d{1,2}\/\d{1,2}$/;
-  let timeColumnName = '';
-  for (let i = headers.length - 1; i >= 0; i--) {
-    if (datePattern.test(headers[i])) { timeColumnName = headers[i]; break; }
-  }
-  console.log(`Time column detected: "${timeColumnName}"`);
+  const dateColumns = headers.filter(h => datePattern.test(h));
+  const todayCol = dateToColumnKey(getLADateObj());
+  const timeColumnName = dateColumns.includes(todayCol)
+    ? todayCol
+    : (dateColumns.length > 0 ? dateColumns[dateColumns.length - 1] : '');
+  console.log(`Date columns: [${dateColumns.join(', ')}] | Today: "${todayCol}" | Active: "${timeColumnName}"`);
 
   const venues = [];
   const rows = parsed.data || [];
@@ -899,6 +943,13 @@ async function fetchAndParseCSV(url) {
       continue;
     }
 
+    // Build dateWindows: all date columns → time values (non-empty only)
+    const dateWindows = {};
+    for (const col of dateColumns) {
+      const val = (row[col] || '').trim();
+      if (val) dateWindows[col] = val;
+    }
+
     venues.push({
       name,
       lng,
@@ -911,6 +962,7 @@ async function fetchAndParseCSV(url) {
       notes: (row['Notes'] || '').trim(),
       top: ['yes','y','true','1','✓','✔','top'].includes((row['Top'] || '').trim().toLowerCase()),
       liveWindow: (row[timeColumnName] || '').trim(),
+      dateWindows,
     });
   }
 
@@ -919,7 +971,38 @@ async function fetchAndParseCSV(url) {
 
 // --- Build GeoJSON from venues ---
 function buildGeoJSON(venues) {
+  const { weekKeys, weekendKeys, todayKey } = getWeekDateKeys();
+
   const visible = venues.filter(v => {
+    // --- THIS WEEK: Pop-ups with windows remaining Mon–Fri ---
+    if (filterMode === 'thisweek') {
+      if (v.promotionType !== 'Pop-up') return false;
+      for (const { key } of weekKeys) {
+        const w = v.dateWindows?.[key];
+        if (!w) continue;
+        if (key === todayKey) {
+          if (isDealActiveNow({ liveWindow: w })) return true;
+        } else {
+          return true;
+        }
+      }
+      return false;
+    }
+    // --- THIS WEEKEND: Pop-ups with windows Sat+Sun ---
+    if (filterMode === 'thisweekend') {
+      if (v.promotionType !== 'Pop-up') return false;
+      for (const { key } of weekendKeys) {
+        const w = v.dateWindows?.[key];
+        if (!w) continue;
+        if (key === todayKey) {
+          if (isDealActiveNow({ liveWindow: w })) return true;
+        } else {
+          return true;
+        }
+      }
+      return false;
+    }
+    // --- All other modes: existing logic ---
     if (!isDealActiveNow(v)) return false;
     if (filterMode === 'top') return v.top;
     if (filterMode === 'active') return isDealLiveRightNow(v);
@@ -947,6 +1030,27 @@ function buildGeoJSON(venues) {
         ? (i - (group.length - 1) / 2) * LNG_OFFSET
         : 0;
 
+      // Build popupTimeDisplay for week/weekend modes
+      let popupTimeDisplay = '';
+      if (filterMode === 'thisweek' || filterMode === 'thisweekend') {
+        const dateKeys = filterMode === 'thisweek' ? weekKeys : weekendKeys;
+        const parts = [];
+        for (const { key, date } of dateKeys) {
+          const w = v.dateWindows?.[key];
+          if (!w) continue;
+          if (key === todayKey) {
+            const active = isDealLiveRightNow({ liveWindow: w });
+            const formatted = formatLiveWindow(w, active);
+            if (formatted) parts.push(formatted);
+          } else {
+            const dayName = getFullWeekday(date);
+            const formatted = formatLiveWindow(w, false);
+            if (formatted) parts.push(`${dayName} ${formatted}`);
+          }
+        }
+        popupTimeDisplay = parts.join(' · ');
+      }
+
       features.push({
         type: 'Feature',
         geometry: {
@@ -965,6 +1069,7 @@ function buildGeoJSON(venues) {
           notes: v.notes,
           link: v.link,
           instagram: v.instagram,
+          popupTimeDisplay,
         }
       });
     }
