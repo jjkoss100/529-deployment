@@ -953,7 +953,7 @@ function loadGlowImages(map) {
     for (let n = 0; n < RINGS; n++) {
       const t = n / (RINGS - 1);               // 0 = outermost, 1 = innermost
       const r = R_MAX * (1 - t) + R_MIN * t;   // radius shrinks inward
-      const a = 0.012 + 0.048 * t;             // alpha ramps up toward center
+      const a = 0.04 + 0.12 * t;              // alpha ramps up toward center
 
       const grad = ctx.createLinearGradient(cx - r, cy, cx + r, cy);
       grad.addColorStop(0,    `rgba(0,104,71,${a})`);
@@ -974,6 +974,7 @@ function loadGlowImages(map) {
     // Hand off raw pixel data to Mapbox
     const imageData = ctx.getImageData(0, 0, W, H);
     map.addImage(id, { width: W, height: H, data: new Uint8Array(imageData.data.buffer) }, { pixelRatio: 2 });
+    console.log(`Loaded glow image: ${id}, non-zero pixels:`, imageData.data.some(v => v > 0));
   });
   return Promise.resolve();
 }
@@ -1179,7 +1180,7 @@ function buildGeoJSON(venues) {
           venueType: v.venueType,
           shouldPulse,
           isTacoMarker,
-          tacoGlowIndex: isTacoMarker ? (features.length % 5) : -1,
+          glowIcon: isTacoMarker ? `glow-${features.length % 5}` : '',
           icon: v.promotionType === 'Shoutout'
             ? `marker-${v.venueType}-shoutout`
             : `marker-${v.venueType}${
@@ -1219,7 +1220,7 @@ function addVenueLayer(map, geojson) {
     source: SOURCE_ID,
     filter: ['==', ['get', 'isTacoMarker'], true],
     layout: {
-      'icon-image': ['concat', 'glow-', ['to-string', ['get', 'tacoGlowIndex']]],
+      'icon-image': ['get', 'glowIcon'],
       'icon-size': 0.675,
       'icon-anchor': 'bottom',
       'icon-allow-overlap': true,
