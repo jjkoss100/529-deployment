@@ -100,7 +100,7 @@ function getWeekDateKeys() {
 }
 
 // --- Filter mode state ---
-let filterMode = 'top'; // 'top' or 'all'
+let filterMode = 'active';
 
 let activePopup = null;
 
