@@ -93,6 +93,7 @@ function getWeekDateKeys() {
 
 // --- Filter mode state ---
 let filterMode = 'active';
+let laterTodayHidden = 0;
 
 let activePopup = null;
 
@@ -968,11 +969,24 @@ async function fetchAndParseCSV(url) {
   return venues;
 }
 
+// --- "More coming" banner for LATER TODAY cap ---
+function updateMoreComingBanner() {
+  const banner = document.getElementById('more-coming-banner');
+  const countEl = document.getElementById('more-coming-count');
+  if (!banner || !countEl) return;
+  if (filterMode === 'all' && laterTodayHidden > 0) {
+    countEl.textContent = laterTodayHidden;
+    banner.classList.remove('hidden');
+  } else {
+    banner.classList.add('hidden');
+  }
+}
+
 // --- Build GeoJSON from venues ---
 function buildGeoJSON(venues) {
   const { allKeys, todayKey } = getWeekDateKeys();
 
-  const visible = venues.filter(v => {
+  let visible = venues.filter(v => {
     // --- THIS WEEK ONLY: Pop-ups with windows today through Sunday ---
     if (filterMode === 'thisweek') {
       if (v.promotionType !== 'Pop-up') return false;
@@ -994,6 +1008,22 @@ function buildGeoJSON(venues) {
     if (filterMode === 'all') return !isDealLiveRightNow(v); // TODAY: upcoming only
     return true;
   });
+
+  // Cap LATER TODAY to 15 markers, sorted by earliest start time
+  if (filterMode === 'all') {
+    visible.sort((a, b) => {
+      const aStart = parseMinutes((a.liveWindow || '').split(',')[0].split('-')[0]) ?? 1440;
+      const bStart = parseMinutes((b.liveWindow || '').split(',')[0].split('-')[0]) ?? 1440;
+      return aStart - bStart;
+    });
+    const total = visible.length;
+    if (total > 15) visible = visible.slice(0, 15);
+    laterTodayHidden = Math.max(0, total - 15);
+  } else {
+    laterTodayHidden = 0;
+  }
+  updateMoreComingBanner();
+
   console.log(`[${filterMode.toUpperCase()}] Showing ${visible.length} of ${venues.length} deals`);
 
   // Group by coordinates to offset any markers sharing the same location

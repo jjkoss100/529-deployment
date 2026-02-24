@@ -451,6 +451,25 @@ html, body {
   border-color: #EFEFEF;
 }
 
+/* --- "More coming" banner --- */
+#more-coming-banner {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 400;
+  color: rgba(239, 239, 239, 0.65);
+  background: rgba(40, 41, 44, 0.6);
+  border: 0.5px solid rgba(239, 239, 239, 0.3);
+  border-radius: 3px;
+  padding: 6px 12px;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  line-height: 1;
+}
+
+#more-coming-banner.hidden {
+  display: none;
+}
+
 /* --- Venue name labels (HTML overlay, Zalando Sans Expanded) --- */
 #venue-labels {
   position: absolute;
