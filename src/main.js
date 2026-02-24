@@ -793,6 +793,7 @@ function buildPopupHTML(props) {
   // Footer row: time left, link right
   const linkLabels = {
     'Special': 'see special',
+    'Special - TT': 'see special',
     'Happy Hour': 'see drinks',
     'Distinct Menu': 'see menu',
     'Limited': 'see details',
@@ -986,6 +987,15 @@ function buildGeoJSON(venues) {
   const { allKeys, todayKey } = getWeekDateKeys();
 
   let visible = venues.filter(v => {
+    // --- TACO TUESDAY: Special - TT only ---
+    if (filterMode === 'tacotuesday') {
+      if (v.promotionType !== 'Special - TT') return false;
+      if (!isDealActiveNow(v)) return false;
+      return true;
+    }
+    // Exclude Taco Tuesday specials from all other filters
+    if (v.promotionType === 'Special - TT') return false;
+
     // --- THIS WEEK ONLY: Pop-ups with windows today through Sunday ---
     if (filterMode === 'thisweek') {
       if (v.promotionType !== 'Pop-up') return false;
@@ -1425,6 +1435,12 @@ async function init() {
       createGridOverlay();
 
       setupPopups(map);
+
+      // --- Show TACO TUESDAY button on Tuesdays ---
+      const tacoBtn = document.getElementById('taco-tuesday-btn');
+      if (tacoBtn && getLADateObj().getDay() === 2) {
+        tacoBtn.classList.remove('hidden');
+      }
 
       // --- Filter toggle (TOP / ALL) ---
       const filterToggle = document.getElementById('filter-toggle');

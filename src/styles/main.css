@@ -456,9 +456,15 @@ html, body {
   border-color: #EFEFEF;
 }
 
-/* Force THIS WEEK ONLY onto its own row on mobile */
+/* Force THIS WEEK ONLY + TACO TUESDAY onto second row on mobile */
 .filter-btn[data-mode="thisweek"] {
   order: 3;
+}
+.filter-btn[data-mode="tacotuesday"] {
+  order: 4;
+}
+.filter-btn.hidden {
+  display: none;
 }
 #filter-toggle::before {
   content: '';
