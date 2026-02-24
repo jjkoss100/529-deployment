@@ -456,6 +456,11 @@ html, body {
   border-color: #EFEFEF;
 }
 
+/* Force THIS WEEK ONLY onto its own row on mobile */
+.filter-btn[data-mode="thisweek"] {
+  flex-basis: 100%;
+}
+
 /* --- Badge subtitle inside filter button --- */
 .filter-badge {
   display: block;
