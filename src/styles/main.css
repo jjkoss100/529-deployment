@@ -424,7 +424,8 @@ html, body {
 #filter-toggle {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  column-gap: 6px;
+  row-gap: 3px;
 }
 
 .filter-btn {
