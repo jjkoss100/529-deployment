@@ -993,15 +993,18 @@ function buildGeoJSON(venues) {
         const w = v.dateWindows?.[key];
         if (!w) continue;
         if (key === todayKey) {
-          if (isDealActiveNow({ liveWindow: w })) return true;
+          if (isDealActiveNow({ liveWindow: w }) && !isDealLiveRightNow({ liveWindow: w })) return true;
         } else {
           return true;
         }
       }
       return false;
     }
-    // --- All other modes: existing logic (exclude pop-ups) ---
-    if (v.promotionType === 'Pop-up') return false;
+    // --- All other modes ---
+    if (v.promotionType === 'Pop-up') {
+      if (filterMode === 'active') return isDealLiveRightNow(v);
+      return false; // still excluded from LATER TODAY
+    }
     if (!isDealActiveNow(v)) return false;
     if (filterMode === 'active') return isDealLiveRightNow(v);
     if (filterMode === 'all') return !isDealLiveRightNow(v); // TODAY: upcoming only
@@ -1061,6 +1064,14 @@ function buildGeoJSON(venues) {
         popupTimeDisplay = parts.join(' · ');
       }
 
+      // Determine if this marker should pulse
+      // - ACTIVE NOW: all pop-ups (they're live right now)
+      // - THIS WEEK ONLY: pop-ups with a window for today
+      const shouldPulse = v.promotionType === 'Pop-up' && (
+        filterMode === 'active' ||
+        (filterMode === 'thisweek' && !!v.dateWindows?.[todayKey])
+      );
+
       features.push({
         type: 'Feature',
         geometry: {
@@ -1071,6 +1082,7 @@ function buildGeoJSON(venues) {
           name: v.name,
           promotionType: v.promotionType,
           venueType: v.venueType,
+          shouldPulse,
           icon: v.promotionType === 'Shoutout'
             ? `marker-${v.venueType}-shoutout`
             : `marker-${v.venueType}${isNearEnd(v.liveWindow) && v.promotionType !== 'Limited' && v.promotionType !== 'Limited Mo' ? '-alert' : ''}`,
@@ -1089,6 +1101,7 @@ function buildGeoJSON(venues) {
 }
 
 const SHOUTOUT_LAYER_ID = 'venue-markers-shoutout';
+const POPUP_LAYER_ID = 'venue-markers-popup';
 
 // --- Add venue layer to map ---
 function addVenueLayer(map, geojson) {
@@ -1097,12 +1110,12 @@ function addVenueLayer(map, geojson) {
     data: geojson
   });
 
-  // Main layer — all non-Shoutout markers
+  // Main layer — non-Shoutout, non-pulsing markers
   map.addLayer({
     id: LAYER_ID,
     type: 'symbol',
     source: SOURCE_ID,
-    filter: ['!=', ['get', 'promotionType'], 'Shoutout'],
+    filter: ['all', ['!=', ['get', 'promotionType'], 'Shoutout'], ['!=', ['get', 'shouldPulse'], true]],
     layout: {
       // Use the icon property, falling back to the base marker if the alert variant is missing
       'icon-image': [
@@ -1144,6 +1157,29 @@ function addVenueLayer(map, geojson) {
     }
   });
 
+  // Pop-up layer — pulsing pop-ups (live in ACTIVE NOW, today's in THIS WEEK)
+  map.addLayer({
+    id: POPUP_LAYER_ID,
+    type: 'symbol',
+    source: SOURCE_ID,
+    filter: ['==', ['get', 'shouldPulse'], true],
+    layout: {
+      'icon-image': [
+        'coalesce',
+        ['image', ['get', 'icon']],
+        ['image', ['concat', 'marker-', ['get', 'venueType']]]
+      ],
+      'icon-size': 0.675,
+      'icon-anchor': 'bottom',
+      'icon-allow-overlap': true,
+      'icon-ignore-placement': true,
+    },
+    paint: {
+      'icon-opacity': 1,
+      'icon-opacity-transition': { duration: 0 },
+    }
+  });
+
   // Pulse animation — gently scale Shoutout markers up and down
   const BASE_SIZE = 0.675;
   const PULSE_RANGE = 0.055; // ±8% of base size
@@ -1153,6 +1189,11 @@ function addVenueLayer(map, geojson) {
     const size = BASE_SIZE + PULSE_RANGE * Math.sin(ts * PULSE_SPEED);
     if (map.getLayer(SHOUTOUT_LAYER_ID)) {
       map.setLayoutProperty(SHOUTOUT_LAYER_ID, 'icon-size', size);
+    }
+    // Pulse live pop-ups slightly faster for more urgency
+    const popupSize = BASE_SIZE + PULSE_RANGE * Math.sin(ts * PULSE_SPEED * 1.4);
+    if (map.getLayer(POPUP_LAYER_ID)) {
+      map.setLayoutProperty(POPUP_LAYER_ID, 'icon-size', popupSize);
     }
     rafId = requestAnimationFrame(animateShoutout);
   }
@@ -1166,7 +1207,7 @@ function setupVenueLabels(map) {
   document.getElementById('map').appendChild(container);
 
   function updateLabels() {
-    const features = map.queryRenderedFeatures({ layers: [LAYER_ID, SHOUTOUT_LAYER_ID] });
+    const features = map.queryRenderedFeatures({ layers: [LAYER_ID, SHOUTOUT_LAYER_ID, POPUP_LAYER_ID] });
 
     // Deduplicate: one label per venue name (first marker wins for position)
     const seen = new Set();
@@ -1244,9 +1285,10 @@ function setupPopups(map) {
     };
     map.on('click', LAYER_ID, onMarkerClick);
     map.on('click', SHOUTOUT_LAYER_ID, onMarkerClick);
+    map.on('click', POPUP_LAYER_ID, onMarkerClick);
 
     map.on('click', (e) => {
-      const features = map.queryRenderedFeatures(e.point, { layers: [LAYER_ID, SHOUTOUT_LAYER_ID] });
+      const features = map.queryRenderedFeatures(e.point, { layers: [LAYER_ID, SHOUTOUT_LAYER_ID, POPUP_LAYER_ID] });
       if (!features.length) popup.remove();
     });
   } else {
@@ -1284,9 +1326,11 @@ function setupPopups(map) {
     };
     map.on('mouseenter', LAYER_ID, onMarkerEnter);
     map.on('mouseenter', SHOUTOUT_LAYER_ID, onMarkerEnter);
+    map.on('mouseenter', POPUP_LAYER_ID, onMarkerEnter);
 
     map.on('mouseleave', LAYER_ID, scheduleClose);
     map.on('mouseleave', SHOUTOUT_LAYER_ID, scheduleClose);
+    map.on('mouseleave', POPUP_LAYER_ID, scheduleClose);
   }
 }
 
