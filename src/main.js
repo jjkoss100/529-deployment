@@ -1012,12 +1012,8 @@ function buildGeoJSON(venues) {
     // --- All other modes: existing logic (exclude pop-ups) ---
     if (v.promotionType === 'Pop-up') return false;
     if (!isDealActiveNow(v)) return false;
-    if (filterMode === 'top') return v.top;
     if (filterMode === 'active') return isDealLiveRightNow(v);
-    if (filterMode === 'happyhour') {
-      const pt = (v.promotionType || '').toLowerCase();
-      return pt === 'happy hour' || pt === 'distinct menu';
-    }
+    if (filterMode === 'all') return !isDealLiveRightNow(v); // TODAY: upcoming only
     return true;
   });
   console.log(`[${filterMode.toUpperCase()}] Showing ${visible.length} of ${venues.length} deals`);
