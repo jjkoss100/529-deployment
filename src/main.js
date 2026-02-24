@@ -925,22 +925,25 @@ function loadGlowImages(map) {
   const promises = GLOW_ANGLES.map((angle, i) => {
     const id = `glow-${i}`;
     if (map.hasImage(id)) return Promise.resolve(true);
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 56 70" width="56" height="70">`
+    // ViewBox 80x96 gives plenty of room for blur spread
+    // Circle at (40, 62): 96-34=62 aligns with marker circle (34px above bottom)
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 96" width="80" height="96">`
       + `<defs>`
-      + `<linearGradient id="tg${i}" gradientTransform="rotate(${angle}, 28, 36)" gradientUnits="userSpaceOnUse" x1="14" y1="36" x2="42" y2="36">`
-      + `<stop offset="0%" stop-color="#006847" stop-opacity="0.55"/>`
-      + `<stop offset="33%" stop-color="#006847" stop-opacity="0.55"/>`
-      + `<stop offset="40%" stop-color="#EFEFEF" stop-opacity="0.45"/>`
-      + `<stop offset="60%" stop-color="#EFEFEF" stop-opacity="0.45"/>`
-      + `<stop offset="67%" stop-color="#CE1126" stop-opacity="0.55"/>`
-      + `<stop offset="100%" stop-color="#CE1126" stop-opacity="0.55"/>`
+      + `<linearGradient id="tg${i}" gradientTransform="rotate(${angle}, 40, 62)" gradientUnits="userSpaceOnUse" x1="20" y1="62" x2="60" y2="62">`
+      + `<stop offset="0%" stop-color="#006847" stop-opacity="0.8"/>`
+      + `<stop offset="30%" stop-color="#006847" stop-opacity="0.7"/>`
+      + `<stop offset="42%" stop-color="#EFEFEF" stop-opacity="0.6"/>`
+      + `<stop offset="58%" stop-color="#EFEFEF" stop-opacity="0.6"/>`
+      + `<stop offset="70%" stop-color="#CE1126" stop-opacity="0.7"/>`
+      + `<stop offset="100%" stop-color="#CE1126" stop-opacity="0.8"/>`
       + `</linearGradient>`
-      + `<filter id="blur${i}"><feGaussianBlur stdDeviation="5"/></filter>`
+      + `<filter id="blur${i}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="8"/></filter>`
       + `</defs>`
-      + `<circle cx="28" cy="36" r="16" fill="url(#tg${i})" filter="url(#blur${i})"/>`
+      + `<circle cx="40" cy="62" r="18" fill="url(#tg${i})" filter="url(#blur${i})"/>`
       + `</svg>`;
     return new Promise((resolve) => {
-      const img = new Image(84, 106);
+      // 80/42 * 63 = 120, 96/55 * 83 ≈ 145
+      const img = new Image(120, 145);
       img.onload = () => {
         if (!map.hasImage(id)) map.addImage(id, img, { pixelRatio: 2 });
         resolve(true);
