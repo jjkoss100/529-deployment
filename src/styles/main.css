@@ -433,15 +433,15 @@ html, body {
   align-items: center;
   justify-content: center;
   font-family: 'Zalando Sans Expanded', sans-serif;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: rgba(239, 239, 239, 0.45);
   background: rgba(40, 41, 44, 0.6);
   border: 0.5px solid rgba(239, 239, 239, 0.3);
   border-radius: 3px;
-  padding: 6px 12px;
-  min-height: 36px;
+  padding: 5px 11px;
+  min-height: 32px;
   cursor: pointer;
   transition: color 0.2s, background 0.2s, border-color 0.2s;
   text-transform: uppercase;
@@ -460,7 +460,7 @@ html, body {
 .filter-badge {
   display: block;
   font-family: 'DM Mono', monospace;
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 400;
   letter-spacing: 0.02em;
   color: rgba(239, 239, 239, 0.45);
