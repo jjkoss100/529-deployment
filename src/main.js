@@ -1088,6 +1088,7 @@ function addVenueLayer(map, geojson) {
     },
     paint: {
       'icon-opacity': 1,
+      'icon-opacity-transition': { duration: 0 },
     }
   });
 
@@ -1110,6 +1111,7 @@ function addVenueLayer(map, geojson) {
     },
     paint: {
       'icon-opacity': 1,
+      'icon-opacity-transition': { duration: 0 },
     }
   });
 
