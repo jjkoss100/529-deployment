@@ -184,6 +184,67 @@
   outline: none;
 }
 
+/* --- Info overlay (logo badge tap) --- */
+#info-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.35);
+}
+
+#info-overlay.hidden { display: none; }
+
+#info-inner {
+  width: 100%;
+  max-width: 360px;
+  transform: translateY(100dvh);
+  transition: transform 0.65s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#info-overlay.slide-in #info-inner {
+  transform: translateY(0);
+}
+
+#info-overlay.slide-out #info-inner {
+  transform: translateY(100dvh);
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.6, 1);
+}
+
+#info-card {
+  background: #f2f2f2;
+  border-radius: 20px;
+  padding: 36px 28px 32px;
+  width: 100%;
+  text-align: center;
+}
+
+#info-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  font-weight: 400;
+  color: #333333;
+  margin-bottom: 20px;
+}
+
+#info-text a {
+  color: #333333;
+  text-decoration: underline;
+}
+
+#info-disclaimer {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 400;
+  color: #888888;
+  line-height: 1.5;
+}
+
 /* --- CSS Variables --- */
 :root {
   --bg-primary: #0a0a14;
@@ -388,7 +449,8 @@ html, body {
   padding: 7px 14px;
   letter-spacing: -0.04em;
   text-transform: uppercase;
-  pointer-events: none;
+  pointer-events: auto;
+  cursor: pointer;
   text-shadow: none;
   box-sizing: border-box;
   text-align: center;

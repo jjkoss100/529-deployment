@@ -1712,9 +1712,35 @@ function updateBadgeDate() {
   el.textContent = `${get('weekday')} | ${get('month')} ${get('day')}, ${get('year')} | ${timeStr}`;
 }
 
+// --- Info overlay (logo badge tap) ---
+function setupInfoOverlay() {
+  const logoBadge = document.getElementById('logo-badge');
+  const infoOverlay = document.getElementById('info-overlay');
+  if (!logoBadge || !infoOverlay) return;
+
+  logoBadge.addEventListener('click', () => {
+    infoOverlay.classList.remove('hidden');
+    requestAnimationFrame(() => {
+      infoOverlay.classList.add('slide-in');
+    });
+  });
+
+  infoOverlay.addEventListener('click', (e) => {
+    if (e.target === infoOverlay) {
+      infoOverlay.classList.remove('slide-in');
+      infoOverlay.classList.add('slide-out');
+      setTimeout(() => {
+        infoOverlay.classList.remove('slide-out');
+        infoOverlay.classList.add('hidden');
+      }, 420);
+    }
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   updateBadgeDate();
   setInterval(updateBadgeDate, 60000);
+  setupInfoOverlay();
   runSplashAndOnboarding();
   init();
 });
