@@ -788,9 +788,10 @@ function buildPopupHTML(props) {
     time = `ends in ${currentMonth}`;
   }
 
-  // Time color: red if Happy Hour/Distinct Menu near end, otherwise muted gray
+  // Time color: red if near end (≤45 min), green if near start in LATER TODAY (≤60 min)
   const useRed = (promoType === 'Happy Hour' || promoType === 'Distinct Menu' || promoType === 'Special') && isNearEnd(props.liveWindow);
-  const timeColor = useRed ? '#FF6E7F' : '#333';
+  const useGreen = filterMode === 'all' && isNearStart(props.liveWindow);
+  const timeColor = useRed ? '#FF6E7F' : useGreen ? '#22c55e' : '#333';
 
   let html = `<div class="venue-popup">`;
 
