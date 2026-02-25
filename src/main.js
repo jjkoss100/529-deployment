@@ -789,7 +789,7 @@ function buildPopupHTML(props) {
   }
 
   // Time color: red if near end (≤45 min), green if near start in LATER TODAY (≤60 min)
-  const useRed = (promoType === 'Happy Hour' || promoType === 'Distinct Menu' || promoType === 'Special') && isNearEnd(props.liveWindow);
+  const useRed = (promoType === 'Happy Hour' || promoType === 'Distinct Menu' || promoType === 'Special' || promoType === 'Special - TT' || promoType === 'Pop-up') && isNearEnd(props.liveWindow);
   const useGreen = filterMode === 'all' && isNearStart(props.liveWindow);
   const timeColor = useRed ? '#FF6E7F' : useGreen ? '#22c55e' : '#333';
 
