@@ -851,9 +851,9 @@ function buildListCardHTML(venue) {
   const eventName = venue.eventName || '';
   const notes = venue.notes || '';
   const dealActive = isDealLiveRightNow(venue);
-  let time = formatLiveWindow(venue.liveWindow, dealActive);
-  // Fallback for pop-ups with dateWindows (e.g. "thisweek" / UPCOMING POP-UPS mode)
-  if (!time && venue.dateWindows) {
+  let time = '';
+  // For pop-ups with dateWindows, build full day+time schedule (matches map popup logic)
+  if (venue.promotionType === 'Pop-up' && venue.dateWindows && Object.keys(venue.dateWindows).length > 0) {
     const { allKeys, todayKey } = getWeekDateKeys();
     const parts = [];
     for (const { key, date } of allKeys) {
@@ -869,6 +869,10 @@ function buildListCardHTML(venue) {
       }
     }
     time = parts.join(' · ');
+  }
+  // Fallback for non-pop-ups or pop-ups without dateWindows
+  if (!time) {
+    time = formatLiveWindow(venue.liveWindow, dealActive);
   }
   const link = venue.link || '';
   const instagram = venue.instagram || '';
@@ -963,11 +967,36 @@ function getFilteredVenues(venues) {
     if (filterMode === 'all') return !isDealLiveRightNow(v);
     return true;
   });
-  list.sort((a, b) => {
-    const aStart = parseMinutes((a.liveWindow || '').split(',')[0].split('-')[0]) ?? 1440;
-    const bStart = parseMinutes((b.liveWindow || '').split(',')[0].split('-')[0]) ?? 1440;
-    return aStart - bStart;
-  });
+  // Sort: thisweek pop-ups by earliest date then start time; others by start time
+  if (filterMode === 'thisweek') {
+    const { allKeys } = getWeekDateKeys();
+    list.sort((a, b) => {
+      let aIdx = allKeys.length, aStart = 1440;
+      let bIdx = allKeys.length, bStart = 1440;
+      for (let i = 0; i < allKeys.length; i++) {
+        if (a.dateWindows?.[allKeys[i].key]) {
+          aIdx = i;
+          aStart = parseMinutes((a.dateWindows[allKeys[i].key] || '').split(',')[0].split('-')[0]) ?? 1440;
+          break;
+        }
+      }
+      for (let i = 0; i < allKeys.length; i++) {
+        if (b.dateWindows?.[allKeys[i].key]) {
+          bIdx = i;
+          bStart = parseMinutes((b.dateWindows[allKeys[i].key] || '').split(',')[0].split('-')[0]) ?? 1440;
+          break;
+        }
+      }
+      if (aIdx !== bIdx) return aIdx - bIdx;
+      return aStart - bStart;
+    });
+  } else {
+    list.sort((a, b) => {
+      const aStart = parseMinutes((a.liveWindow || '').split(',')[0].split('-')[0]) ?? 1440;
+      const bStart = parseMinutes((b.liveWindow || '').split(',')[0].split('-')[0]) ?? 1440;
+      return aStart - bStart;
+    });
+  }
   return list;
 }
 
