@@ -574,27 +574,28 @@ html, body {
   right: 16px;
   z-index: 10;
   font-family: 'Zalando Sans Expanded', sans-serif;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: #EFEFEF;
-  background: rgba(40, 41, 44, 0.6);
-  border: 0.5px solid rgba(239, 239, 239, 0.3);
-  border-radius: 3px;
-  padding: 5px 11px;
-  min-height: 32px;
+  background: none;
+  border: none;
+  padding: 0;
   cursor: pointer;
   text-transform: uppercase;
   line-height: 1;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  transition: color 0.2s, background 0.2s, border-color 0.2s;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6), 0 0 8px rgba(0, 0, 0, 0.3);
+  transition: color 0.3s, text-shadow 0.3s;
+}
+
+.list-toggle-btn:hover {
+  color: #ffffff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.6), 0 0 12px rgba(255, 255, 255, 0.35), 0 0 20px rgba(255, 255, 255, 0.15);
 }
 
 .list-toggle-btn:disabled {
   color: rgba(239, 239, 239, 0.2);
-  border-color: rgba(239, 239, 239, 0.1);
-  background: rgba(40, 41, 44, 0.3);
+  text-shadow: none;
   cursor: default;
   pointer-events: none;
 }
