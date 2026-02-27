@@ -570,7 +570,7 @@ html, body {
 /* --- LIST / MAP Toggle Button --- */
 .list-toggle-btn {
   position: fixed;
-  top: 42px;
+  top: 48px;
   right: 32px;
   z-index: 10;
   font-family: 'Zalando Sans Expanded', sans-serif;
@@ -662,7 +662,7 @@ html, body {
 /* MAP button inside list header keeps fixed positioning to match LIST button coords */
 #list-header .list-toggle-btn {
   position: fixed;
-  top: 42px;
+  top: 48px;
   right: 32px;
 }
 
