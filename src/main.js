@@ -845,6 +845,158 @@ function buildPopupHTML(props) {
   return html;
 }
 
+// --- List Card HTML builder (for list view panels) ---
+function buildListCardHTML(venue) {
+  const name = venue.name || '';
+  const eventName = venue.eventName || '';
+  const notes = venue.notes || '';
+  const dealActive = isDealLiveRightNow(venue);
+  let time = formatLiveWindow(venue.liveWindow, dealActive);
+  const link = venue.link || '';
+  const instagram = venue.instagram || '';
+  const promoType = venue.promotionType || '';
+  const venueType = venue.venueType || '';
+
+  if (promoType === 'Limited') {
+    time = 'limited-time only';
+  } else if (promoType === 'Limited Mo') {
+    const currentMonth = new Date().toLocaleDateString('en-US', { month: 'long', timeZone: 'America/Los_Angeles' });
+    time = `ends in ${currentMonth}`;
+  }
+
+  const useRed = (promoType === 'Happy Hour' || promoType === 'Distinct Menu' || promoType === 'Special' || promoType === 'Special - TT' || promoType === 'Pop-up') && isNearEnd(venue.liveWindow);
+  const useGreen = isNearStart(venue.liveWindow);
+  const timeColor = useRed ? '#FF6E7F' : useGreen ? '#22c55e' : '#333';
+
+  const iconSvg = VENUE_TYPE_SVGS[venueType] || '';
+
+  let html = `<div class="list-card">`;
+
+  if (iconSvg) {
+    html += `<div class="list-card__icon">${iconSvg}</div>`;
+  }
+
+  if (instagram) {
+    html += `<a class="list-card__name list-card__name--link" href="${instagram}" target="_blank" rel="noopener noreferrer">@${name}</a>`;
+  } else {
+    html += `<div class="list-card__name">${name}</div>`;
+  }
+
+  if (eventName) html += `<div class="list-card__event">${eventName}</div>`;
+  if (notes) html += `<div class="list-card__notes">${notes}</div>`;
+
+  const linkLabels = {
+    'Special': 'see special',
+    'Special - TT': 'see special',
+    'Happy Hour': 'see drinks',
+    'Distinct Menu': 'see menu',
+    'Limited': 'see details',
+    'Limited Mo': 'see details',
+    'Pop-up': 'see details',
+    'Shoutout': 'see details',
+  };
+  const hasLink = !!link;
+  const hasTime = !!time && promoType !== 'Shoutout';
+  if (hasLink || hasTime) {
+    html += `<div class="list-card__footer">`;
+    if (hasTime) {
+      html += `<span class="list-card__time" style="color:${timeColor}">${time}</span>`;
+    } else {
+      html += `<span></span>`;
+    }
+    if (hasLink) {
+      const label = linkLabels[promoType] || 'see details';
+      html += `<a class="list-card__link" href="${link}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+    }
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  return html;
+}
+
+// --- Build list view from all venues ---
+function buildListView(venues) {
+  const container = document.getElementById('list-content');
+  if (!container) return;
+
+  const listVenues = venues.filter(v => {
+    if (v.promotionType === 'Shoutout') return false;
+    if (v.promotionType === 'Pop-up') {
+      return v.liveWindow && isDealActiveNow(v);
+    }
+    if (!v.liveWindow) return true;
+    return isDealActiveNow(v);
+  });
+
+  listVenues.sort((a, b) => {
+    const aStart = parseMinutes((a.liveWindow || '').split(',')[0].split('-')[0]) ?? 1440;
+    const bStart = parseMinutes((b.liveWindow || '').split(',')[0].split('-')[0]) ?? 1440;
+    return aStart - bStart;
+  });
+
+  if (listVenues.length === 0) {
+    container.innerHTML = '<div class="list-content__empty">no deals or pop-ups right now</div>';
+    return;
+  }
+
+  container.innerHTML = listVenues.map(v => buildListCardHTML(v)).join('');
+}
+
+// --- List/Map toggle logic ---
+function setupListToggle(venues, map) {
+  const listBtn = document.getElementById('list-toggle-btn');
+  const mapBtn = document.getElementById('map-toggle-btn');
+  const listView = document.getElementById('list-view');
+  const mapEl = document.getElementById('map');
+  const topUI = document.getElementById('top-ui');
+
+  if (!listBtn || !mapBtn || !listView) return;
+
+  function getListVenueCount() {
+    return venues.filter(v => {
+      if (v.promotionType === 'Shoutout') return false;
+      if (v.promotionType === 'Pop-up') return v.liveWindow && isDealActiveNow(v);
+      if (!v.liveWindow) return true;
+      return isDealActiveNow(v);
+    }).length;
+  }
+
+  function updateListButtonState() {
+    listBtn.disabled = getListVenueCount() === 0;
+  }
+
+  updateListButtonState();
+  setInterval(updateListButtonState, REFRESH_INTERVAL);
+
+  listBtn.addEventListener('click', () => {
+    if (listBtn.disabled) return;
+    if (activePopup) activePopup.remove();
+    buildListView(venues);
+    listView.scrollTop = 0;
+    listView.classList.remove('hidden');
+    mapEl.style.display = 'none';
+    topUI.style.display = 'none';
+    listBtn.style.display = 'none';
+    const weatherCanvas = document.getElementById('weather-canvas');
+    const gridCanvas = document.getElementById('grid-canvas');
+    if (weatherCanvas) weatherCanvas.style.display = 'none';
+    if (gridCanvas) gridCanvas.style.display = 'none';
+  });
+
+  mapBtn.addEventListener('click', () => {
+    listView.classList.add('hidden');
+    mapEl.style.display = '';
+    topUI.style.display = '';
+    listBtn.style.display = '';
+    const weatherCanvas = document.getElementById('weather-canvas');
+    const gridCanvas = document.getElementById('grid-canvas');
+    if (weatherCanvas) weatherCanvas.style.display = '';
+    if (gridCanvas) gridCanvas.style.display = '';
+    map.resize();
+  });
+}
+
 // --- SVG Marker Icons (keyed by Venue Type) ---
 const VENUE_TYPE_SVGS = {
   'Restaurant': `<svg width="42" height="55" viewBox="0 0 42 55" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M21 0C32.598 0 42 9.40202 42 21C42 22.4157 41.8599 23.7986 41.5929 25.1358C39.7394 39.1032 21.1103 55 21.1103 55C21.1103 55 5.25689 41.4717 1.34456 28.4096C0.475506 26.1054 0 23.6083 0 21C0 9.40202 9.40202 0 21 0Z" fill="#D9D9D9"/><path d="M38 21C38 11.6112 30.3888 4 21 4C11.6112 4 4 11.6112 4 21C4 30.3888 11.6112 38 21 38C30.3888 38 38 30.3888 38 21Z" fill="white"/><mask id="mask0_63_672" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="8" y="8" width="27" height="27"><rect x="8" y="8" width="27" height="27" fill="#D9D9D9"/></mask><g mask="url(#mask0_63_672)"><path d="M21.5 34.2125L17.7312 30.5H12.5V25.2687L8.78748 21.5L12.5 17.7312V12.5H17.7312L21.5 8.78748L25.2687 12.5H30.5V17.7312L34.2125 21.5L30.5 25.2687V30.5H25.2687L21.5 34.2125ZM21.5 31.0625L23.75 28.8125V24.65C23.2625 24.3687 22.8594 23.8953 22.5406 23.2297C22.2219 22.564 22.0625 21.8 22.0625 20.9375C22.0625 19.85 22.3062 18.9219 22.7937 18.1531C23.2812 17.3844 23.8812 17 24.5937 17C25.2875 17 25.8828 17.3844 26.3797 18.1531C26.8765 18.9219 27.125 19.85 27.125 20.9375C27.125 21.8187 26.9656 22.5922 26.6469 23.2578C26.3281 23.9234 25.925 24.3875 25.4375 24.65V28.25H28.25V24.3125L31.0625 21.5L28.25 18.6875V14.75H24.3125L21.5 11.9375L18.6875 14.75H14.75V18.6875L11.9375 21.5L14.75 24.3125V28.25H17.5625V23.75C17.075 23.6375 16.6719 23.3797 16.3531 22.9765C16.0344 22.5734 15.875 22.1094 15.875 21.5844V17H17V21.2469H17.8437V17H18.9687V21.2469H19.8125V17H20.9375V21.5844C20.9375 22.1094 20.7781 22.5734 20.4594 22.9765C20.1406 23.3797 19.7375 23.6375 19.25 23.75V28.8125L21.5 31.0625Z" fill="#1C1B1F"/></g></svg>`,
@@ -1555,6 +1707,7 @@ async function init() {
       createGridOverlay();
 
       setupPopups(map);
+      setupListToggle(venues, map);
 
       // --- Show TACO TUESDAY button on Tuesdays ---
       const tacoBtn = document.getElementById('taco-tuesday-btn');
