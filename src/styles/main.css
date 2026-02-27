@@ -570,8 +570,8 @@ html, body {
 /* --- LIST / MAP Toggle Button --- */
 .list-toggle-btn {
   position: fixed;
-  top: 16px;
-  right: 16px;
+  top: 42px;
+  right: 32px;
   z-index: 10;
   font-family: 'Zalando Sans Expanded', sans-serif;
   font-size: 12px;
@@ -663,8 +663,8 @@ html, body {
 /* MAP button inside list header keeps fixed positioning to match LIST button coords */
 #list-header .list-toggle-btn {
   position: fixed;
-  top: 16px;
-  right: 16px;
+  top: 42px;
+  right: 32px;
 }
 
 /* --- List Filters (horizontal scroll row) --- */
