@@ -667,6 +667,25 @@ html, body {
   right: 16px;
 }
 
+/* --- List Filters (horizontal scroll row) --- */
+#list-filters {
+  display: flex;
+  gap: 6px;
+  padding: 10px 16px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: rgba(10, 10, 20, 0.95);
+  flex-shrink: 0;
+  scrollbar-width: none;
+}
+#list-filters::-webkit-scrollbar {
+  display: none;
+}
+#list-filters .filter-btn {
+  flex-shrink: 0;
+  order: unset;
+}
+
 /* --- List Content Grid --- */
 #list-content {
   flex: 1;

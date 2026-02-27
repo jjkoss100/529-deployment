@@ -916,24 +916,48 @@ function buildListCardHTML(venue) {
 }
 
 // --- Build list view from all venues ---
-function buildListView(venues) {
-  const container = document.getElementById('list-content');
-  if (!container) return;
-
-  const listVenues = venues.filter(v => {
+function getFilteredVenues(venues) {
+  const { allKeys, todayKey } = getWeekDateKeys();
+  let list = venues.filter(v => {
     if (v.promotionType === 'Shoutout') return false;
-    if (v.promotionType === 'Pop-up') {
-      return v.liveWindow && isDealActiveNow(v);
+    if (filterMode === 'tacotuesday') {
+      return v.promotionType === 'Special - TT' && isDealActiveNow(v);
     }
-    if (!v.liveWindow) return true;
-    return isDealActiveNow(v);
+    if (filterMode === 'thisweek') {
+      if (v.promotionType !== 'Pop-up') return false;
+      for (const { key } of allKeys) {
+        const w = v.dateWindows?.[key];
+        if (!w) continue;
+        if (key === todayKey) {
+          if (isDealActiveNow({ liveWindow: w }) && !isDealLiveRightNow({ liveWindow: w })) return true;
+        } else {
+          return true;
+        }
+      }
+      return false;
+    }
+    if (v.promotionType === 'Pop-up') {
+      if (filterMode === 'active') return v.liveWindow && isDealLiveRightNow(v);
+      return false;
+    }
+    if (!isDealActiveNow(v)) return false;
+    if (filterMode === 'active') return isDealLiveRightNow(v);
+    if (filterMode === 'all') return !isDealLiveRightNow(v);
+    return true;
   });
-
-  listVenues.sort((a, b) => {
+  list.sort((a, b) => {
     const aStart = parseMinutes((a.liveWindow || '').split(',')[0].split('-')[0]) ?? 1440;
     const bStart = parseMinutes((b.liveWindow || '').split(',')[0].split('-')[0]) ?? 1440;
     return aStart - bStart;
   });
+  return list;
+}
+
+function buildListView(venues) {
+  const container = document.getElementById('list-content');
+  if (!container) return;
+
+  const listVenues = getFilteredVenues(venues);
 
   if (listVenues.length === 0) {
     container.innerHTML = '<div class="list-content__empty">no deals or pop-ups right now</div>';
@@ -941,6 +965,12 @@ function buildListView(venues) {
   }
 
   container.innerHTML = listVenues.map(v => buildListCardHTML(v)).join('');
+}
+
+function syncFilterButtons(mode) {
+  document.querySelectorAll('#filter-toggle .filter-btn, #list-filters .filter-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
+  });
 }
 
 // --- List/Map toggle logic ---
@@ -972,6 +1002,7 @@ function setupListToggle(venues, map) {
   listBtn.addEventListener('click', () => {
     if (listBtn.disabled) return;
     if (activePopup) activePopup.remove();
+    syncFilterButtons(filterMode);
     buildListView(venues);
     listView.scrollTop = 0;
     listView.classList.remove('hidden');
@@ -1710,28 +1741,35 @@ async function init() {
       setupListToggle(venues, map);
 
       // --- Show TACO TUESDAY button on Tuesdays ---
-      const tacoBtn = document.getElementById('taco-tuesday-btn');
-      if (tacoBtn && getLADateObj().getDay() === 2) {
-        tacoBtn.classList.remove('hidden');
+      const isTuesday = getLADateObj().getDay() === 2;
+      if (isTuesday) {
+        document.querySelectorAll('#taco-tuesday-btn, #list-taco-tuesday-btn').forEach(b => b.classList.remove('hidden'));
       }
 
-      // --- Filter toggle (TOP / ALL) ---
+      // --- Shared filter handler for both map and list views ---
+      function handleFilterClick(e) {
+        const btn = e.target.closest('.filter-btn');
+        if (!btn || btn.dataset.mode === filterMode) return;
+
+        filterMode = btn.dataset.mode;
+        syncFilterButtons(filterMode);
+
+        if (activePopup) activePopup.remove();
+
+        const updated = buildGeoJSON(venues);
+        map.getSource(SOURCE_ID).setData(updated);
+
+        // Rebuild list view if it's currently visible
+        const listView = document.getElementById('list-view');
+        if (listView && !listView.classList.contains('hidden')) {
+          buildListView(venues);
+        }
+      }
+
       const filterToggle = document.getElementById('filter-toggle');
-      if (filterToggle) {
-        filterToggle.addEventListener('click', (e) => {
-          const btn = e.target.closest('.filter-btn');
-          if (!btn || btn.dataset.mode === filterMode) return;
-
-          filterMode = btn.dataset.mode;
-          filterToggle.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-          btn.classList.add('active');
-
-          if (activePopup) activePopup.remove();
-
-          const updated = buildGeoJSON(venues);
-          map.getSource(SOURCE_ID).setData(updated);
-        });
-      }
+      if (filterToggle) filterToggle.addEventListener('click', handleFilterClick);
+      const listFilters = document.getElementById('list-filters');
+      if (listFilters) listFilters.addEventListener('click', handleFilterClick);
 
       // Fit map to venue bounds
       const bounds = new mapboxgl.LngLatBounds();
