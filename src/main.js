@@ -1870,15 +1870,19 @@ function updateBadgeDate() {
 // --- Info overlay (logo badge tap) ---
 function setupInfoOverlay() {
   const logoBadge = document.getElementById('logo-badge');
+  const listHeaderLogo = document.getElementById('list-header-logo');
   const infoOverlay = document.getElementById('info-overlay');
-  if (!logoBadge || !infoOverlay) return;
+  if (!infoOverlay) return;
 
-  logoBadge.addEventListener('click', () => {
+  function openOverlay() {
     infoOverlay.classList.remove('hidden');
     requestAnimationFrame(() => {
       infoOverlay.classList.add('slide-in');
     });
-  });
+  }
+
+  if (logoBadge) logoBadge.addEventListener('click', openOverlay);
+  if (listHeaderLogo) listHeaderLogo.addEventListener('click', openOverlay);
 
   infoOverlay.addEventListener('click', (e) => {
     if (e.target === infoOverlay) {
