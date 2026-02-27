@@ -852,6 +852,24 @@ function buildListCardHTML(venue) {
   const notes = venue.notes || '';
   const dealActive = isDealLiveRightNow(venue);
   let time = formatLiveWindow(venue.liveWindow, dealActive);
+  // Fallback for pop-ups with dateWindows (e.g. "thisweek" / UPCOMING POP-UPS mode)
+  if (!time && venue.dateWindows) {
+    const { allKeys, todayKey } = getWeekDateKeys();
+    const parts = [];
+    for (const { key, date } of allKeys) {
+      const w = venue.dateWindows[key];
+      if (!w) continue;
+      if (key === todayKey) {
+        const formatted = formatLiveWindow(w, isDealLiveRightNow({ liveWindow: w }));
+        if (formatted) parts.push(formatted);
+      } else {
+        const dayName = getFullWeekday(date);
+        const formatted = formatLiveWindow(w, false);
+        if (formatted) parts.push(`${dayName} ${formatted}`);
+      }
+    }
+    time = parts.join(' · ');
+  }
   const link = venue.link || '';
   const instagram = venue.instagram || '';
   const promoType = venue.promotionType || '';
