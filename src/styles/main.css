@@ -622,7 +622,7 @@ html, body {
   top: 0;
   z-index: 5;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   padding: 16px;
   background: rgba(10, 10, 20, 0.95);
@@ -641,9 +641,21 @@ html, body {
   white-space: nowrap;
 }
 
+#list-header-date {
+  font-family: 'DM Mono', monospace;
+  font-size: clamp(6px, 1.8vw, 9px);
+  font-weight: 400;
+  letter-spacing: 0.04em;
+  color: #EFEFEF;
+  opacity: 0.7;
+  margin-top: 2px;
+  text-transform: uppercase;
+}
+
 /* MAP button inside list header uses static positioning */
 #list-header .list-toggle-btn {
   position: static;
+  margin-top: 4px;
 }
 
 /* --- List Content Grid --- */

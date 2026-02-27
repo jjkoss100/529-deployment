@@ -1844,8 +1844,6 @@ function runSplashAndOnboarding() {
 
 // --- Logo badge date + time (LA time) ---
 function updateBadgeDate() {
-  const el = document.getElementById('logo-badge__date');
-  if (!el) return;
   const now = new Date();
   const fmt = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/Los_Angeles',
@@ -1862,7 +1860,11 @@ function updateBadgeDate() {
   const parts = fmt.formatToParts(now);
   const get = t => parts.find(p => p.type === t)?.value || '';
   const timeStr = timeFmt.format(now);
-  el.textContent = `${get('weekday')} | ${get('month')} ${get('day')}, ${get('year')} | ${timeStr}`;
+  const dateStr = `${get('weekday')} | ${get('month')} ${get('day')}, ${get('year')} | ${timeStr}`;
+  const el = document.getElementById('logo-badge__date');
+  if (el) el.textContent = dateStr;
+  const listEl = document.getElementById('list-header-date');
+  if (listEl) listEl.textContent = dateStr;
 }
 
 // --- Info overlay (logo badge tap) ---
