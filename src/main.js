@@ -1275,6 +1275,12 @@ async function fetchAndParseCSV(url) {
       if (val) dateWindows[col] = val;
     }
 
+    const liveWindow = (row[timeColumnName] || '').trim();
+
+    // Skip venues with no deal today and no future date windows
+    // (keeps pop-ups with upcoming dates for THIS WEEK view)
+    if (!liveWindow && Object.keys(dateWindows).length === 0) continue;
+
     venues.push({
       name,
       lng,
@@ -1286,7 +1292,7 @@ async function fetchAndParseCSV(url) {
       link: (row['Link'] || '').trim(),
       notes: (row['Notes'] || '').trim(),
       top: ['yes','y','true','1','✓','✔','top'].includes((row['Top'] || '').trim().toLowerCase()),
-      liveWindow: (row[timeColumnName] || '').trim(),
+      liveWindow,
       dateWindows,
     });
   }
