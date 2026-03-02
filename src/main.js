@@ -107,9 +107,9 @@ let waterOpacitySwing = 0.2;
 // Midnight-crossing deals (e.g. 22:00-03:00) can represent last night's deal still
 // running OR tonight's upcoming deal — both live in the same date column.
 // Show if: currently active, or upcoming (hasn't ended yet). Hide once ended.
-// Deals with no liveWindow are always shown.
+// Deals with no liveWindow today are not active (no deal scheduled).
 function isDealActiveNow(deal) {
-  if (!deal.liveWindow) return true;
+  if (!deal.liveWindow) return false;
 
   const nowMin = getLAMinutes();
   const ranges = deal.liveWindow.split(',');
@@ -140,7 +140,7 @@ function isDealActiveNow(deal) {
 
 // --- Check if a deal is currently within its time window right now ---
 function isDealLiveRightNow(deal) {
-  if (!deal.liveWindow) return true;
+  if (!deal.liveWindow) return false;
 
   const nowMin = getLAMinutes();
   const ranges = deal.liveWindow.split(',');
