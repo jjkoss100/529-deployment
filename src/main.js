@@ -942,6 +942,11 @@ function getFilteredVenues(venues) {
   const { allKeys, todayKey } = getWeekDateKeys();
   let list = venues.filter(v => {
     if (v.promotionType === 'Shoutout') return false;
+    if (filterMode === 'ourpicks') {
+      if (!v.pick) return false;
+      if (!isDealActiveNow(v)) return false;
+      return true;
+    }
     if (filterMode === 'tacotuesday') {
       return v.promotionType === 'Special - TT' && isDealActiveNow(v);
     }
@@ -1245,10 +1250,35 @@ async function fetchAndParseCSV(url) {
   const datePattern = /^\d{1,2}\/\d{1,2}$/;
   const dateColumns = headers.filter(h => datePattern.test(h));
   const todayCol = dateToColumnKey(getLADateObj());
+  const yesterdayDate = new Date(getLADateObj().getTime() - 86400000);
+  const yesterdayCol = dateToColumnKey(yesterdayDate);
+  const hasYesterday = dateColumns.includes(yesterdayCol);
   const timeColumnName = dateColumns.includes(todayCol)
     ? todayCol
     : (dateColumns.length > 0 ? dateColumns[dateColumns.length - 1] : '');
-  console.log(`Date columns: [${dateColumns.join(', ')}] | Today: "${todayCol}" | Active: "${timeColumnName}"`);
+  console.log(`Date columns: [${dateColumns.join(', ')}] | Today: "${todayCol}" | Yesterday: "${yesterdayCol}" (${hasYesterday ? 'found' : 'n/a'}) | Active: "${timeColumnName}"`);
+
+  // Helper: strip leading * from a time value, return { clean, isPick }
+  function stripPick(val) {
+    if (val.startsWith('*')) return { clean: val.slice(1).trim(), isPick: true };
+    return { clean: val, isPick: false };
+  }
+
+  // Helper: extract midnight-crossing ranges from a time string
+  function getMidnightCrossovers(timeStr) {
+    if (!timeStr) return [];
+    const crossovers = [];
+    for (const range of timeStr.split(',')) {
+      const parts = range.trim().split('-');
+      if (parts.length !== 2) continue;
+      const start = parseMinutes(parts[0].trim());
+      const end = parseMinutes(parts[1].trim());
+      if (start !== null && end !== null && end <= start) {
+        crossovers.push(range.trim());
+      }
+    }
+    return crossovers;
+  }
 
   const venues = [];
   const rows = parsed.data || [];
@@ -1268,17 +1298,31 @@ async function fetchAndParseCSV(url) {
       continue;
     }
 
-    // Build dateWindows: all date columns → time values (non-empty only)
+    // Build dateWindows: all date columns → time values (strip * prefix)
     const dateWindows = {};
     for (const col of dateColumns) {
       const val = (row[col] || '').trim();
-      if (val) dateWindows[col] = val;
+      if (val) dateWindows[col] = stripPick(val).clean;
     }
 
-    const liveWindow = (row[timeColumnName] || '').trim();
+    // Today's live window — detect * pick prefix
+    const todayRaw = (row[timeColumnName] || '').trim();
+    const { clean: todayClean, isPick: pick } = stripPick(todayRaw);
+    let liveWindow = todayClean;
 
-    // Skip venues with no deal today and no future date windows
-    // (keeps pop-ups with upcoming dates for THIS WEEK view)
+    // Midnight crossover: carry over yesterday's midnight-crossing deals
+    if (hasYesterday) {
+      const yesterdayRaw = (row[yesterdayCol] || '').trim();
+      const yesterdayClean = stripPick(yesterdayRaw).clean;
+      const crossovers = getMidnightCrossovers(yesterdayClean);
+      if (crossovers.length > 0) {
+        liveWindow = liveWindow
+          ? crossovers.join(',') + ',' + liveWindow
+          : crossovers.join(',');
+      }
+    }
+
+    // Skip venues with no deal today (incl. crossover) and no future date windows
     if (!liveWindow && Object.keys(dateWindows).length === 0) continue;
 
     venues.push({
@@ -1292,6 +1336,7 @@ async function fetchAndParseCSV(url) {
       link: (row['Link'] || '').trim(),
       notes: (row['Notes'] || '').trim(),
       top: ['yes','y','true','1','✓','✔','top'].includes((row['Top'] || '').trim().toLowerCase()),
+      pick,
       liveWindow,
       dateWindows,
     });
@@ -1320,6 +1365,12 @@ function buildGeoJSON(venues) {
     // --- TACO TUESDAY: Special - TT only ---
     if (filterMode === 'tacotuesday') {
       if (v.promotionType !== 'Special - TT') return false;
+      if (!isDealActiveNow(v)) return false;
+      return true;
+    }
+    // --- OUR PICKS: editor picks that are active today ---
+    if (filterMode === 'ourpicks') {
+      if (!v.pick) return false;
       if (!isDealActiveNow(v)) return false;
       return true;
     }
