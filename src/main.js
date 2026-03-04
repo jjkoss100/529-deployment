@@ -92,7 +92,7 @@ function getWeekDateKeys() {
 }
 
 // --- Filter mode state ---
-let filterMode = 'active';
+let filterMode = 'ourpicks';
 let laterTodayHidden = 0;
 
 let activePopup = null;
