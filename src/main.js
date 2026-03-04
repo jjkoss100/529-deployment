@@ -218,6 +218,10 @@ function formatLiveWindow(liveWindow, active) {
   }).join(', ');
 }
 
+// --- Pop-up type helper (covers "Pop-up" and "Pop-up - Free") ---
+function isPopUp(type) { return type === 'Pop-up' || type === 'Pop-up - Free'; }
+function isFreePopUp(type) { return type === 'Pop-up - Free'; }
+
 // --- Marker color map ---
 const PROMO_COLORS = {
   'Special':       '#3b82f6',
@@ -225,6 +229,7 @@ const PROMO_COLORS = {
   'Distinct Menu': '#f97316',
   'Limited':       '#a855f7',
   'Pop-up':        '#ef4444',
+  'Pop-up - Free': '#ef4444',
 };
 
 // --- Check if deal is within 45 min of ending ---
@@ -789,11 +794,15 @@ function buildPopupHTML(props) {
   }
 
   // Time color: red if near end (≤45 min), green if near start in LATER TODAY (≤60 min)
-  const useRed = (promoType === 'Happy Hour' || promoType === 'Distinct Menu' || promoType === 'Special' || promoType === 'Special - TT' || promoType === 'Pop-up') && isNearEnd(props.liveWindow);
+  const useRed = (promoType === 'Happy Hour' || promoType === 'Distinct Menu' || promoType === 'Special' || promoType === 'Special - TT' || isPopUp(promoType)) && isNearEnd(props.liveWindow);
   const useGreen = filterMode === 'all' && isNearStart(props.liveWindow);
   const timeColor = useRed ? '#FF6E7F' : useGreen ? '#22c55e' : '#333';
 
   let html = `<div class="venue-popup">`;
+
+  if (isFreePopUp(promoType)) {
+    html += `<span class="free-badge">FREE</span>`;
+  }
 
   // Venue name (row 1)
   if (instagram) {
@@ -817,6 +826,7 @@ function buildPopupHTML(props) {
     'Limited': 'see details',
     'Limited Mo': 'see details',
     'Pop-up': 'see details',
+    'Pop-up - Free': 'see details',
     'Shoutout': 'see details',
   };
   const hasLink = !!link;
@@ -853,7 +863,7 @@ function buildListCardHTML(venue) {
   const dealActive = isDealLiveRightNow(venue);
   let time = '';
   // For pop-ups with dateWindows, build full day+time schedule (matches map popup logic)
-  if (venue.promotionType === 'Pop-up' && venue.dateWindows && Object.keys(venue.dateWindows).length > 0) {
+  if (isPopUp(venue.promotionType) && venue.dateWindows && Object.keys(venue.dateWindows).length > 0) {
     const { allKeys, todayKey } = getWeekDateKeys();
     const parts = [];
     for (const { key, date } of allKeys) {
@@ -886,13 +896,17 @@ function buildListCardHTML(venue) {
     time = `ends in ${currentMonth}`;
   }
 
-  const useRed = (promoType === 'Happy Hour' || promoType === 'Distinct Menu' || promoType === 'Special' || promoType === 'Special - TT' || promoType === 'Pop-up') && isNearEnd(venue.liveWindow);
+  const useRed = (promoType === 'Happy Hour' || promoType === 'Distinct Menu' || promoType === 'Special' || promoType === 'Special - TT' || isPopUp(promoType)) && isNearEnd(venue.liveWindow);
   const useGreen = isNearStart(venue.liveWindow);
   const timeColor = useRed ? '#FF6E7F' : useGreen ? '#22c55e' : '#333';
 
   const iconSvg = VENUE_TYPE_SVGS[venueType] || '';
 
   let html = `<div class="list-card">`;
+
+  if (isFreePopUp(promoType)) {
+    html += `<span class="free-badge">FREE</span>`;
+  }
 
   if (iconSvg) {
     html += `<div class="list-card__icon">${iconSvg}</div>`;
@@ -915,6 +929,7 @@ function buildListCardHTML(venue) {
     'Limited': 'see details',
     'Limited Mo': 'see details',
     'Pop-up': 'see details',
+    'Pop-up - Free': 'see details',
     'Shoutout': 'see details',
   };
   const hasLink = !!link;
@@ -951,7 +966,7 @@ function getFilteredVenues(venues) {
       return v.promotionType === 'Special - TT' && isDealActiveNow(v);
     }
     if (filterMode === 'thisweek') {
-      if (v.promotionType !== 'Pop-up') return false;
+      if (!isPopUp(v.promotionType)) return false;
       for (const { key } of allKeys) {
         const w = v.dateWindows?.[key];
         if (!w) continue;
@@ -963,7 +978,7 @@ function getFilteredVenues(venues) {
       }
       return false;
     }
-    if (v.promotionType === 'Pop-up') {
+    if (isPopUp(v.promotionType)) {
       if (filterMode === 'active') return v.liveWindow && isDealLiveRightNow(v);
       return false;
     }
@@ -1038,7 +1053,7 @@ function setupListToggle(venues, map) {
   function getListVenueCount() {
     return venues.filter(v => {
       if (v.promotionType === 'Shoutout') return false;
-      if (v.promotionType === 'Pop-up') return v.liveWindow && isDealActiveNow(v);
+      if (isPopUp(v.promotionType)) return v.liveWindow && isDealActiveNow(v);
       if (!v.liveWindow) return true;
       return isDealActiveNow(v);
     }).length;
@@ -1382,7 +1397,7 @@ function buildGeoJSON(venues) {
     }
     // --- THIS WEEK ONLY: Pop-ups with windows today through Sunday ---
     if (filterMode === 'thisweek') {
-      if (v.promotionType !== 'Pop-up') return false;
+      if (!isPopUp(v.promotionType)) return false;
       for (const { key } of allKeys) {
         const w = v.dateWindows?.[key];
         if (!w) continue;
@@ -1395,7 +1410,7 @@ function buildGeoJSON(venues) {
       return false;
     }
     // --- All other modes ---
-    if (v.promotionType === 'Pop-up') {
+    if (isPopUp(v.promotionType)) {
       if (filterMode === 'active') return v.liveWindow && isDealLiveRightNow(v);
       return false; // still excluded from LATER TODAY
     }
@@ -1461,7 +1476,7 @@ function buildGeoJSON(venues) {
       // Determine if this marker should pulse
       // - ACTIVE NOW: all pop-ups (they're live right now)
       // - THIS WEEK ONLY: pop-ups with a window for today
-      const shouldPulse = v.promotionType === 'Pop-up' && (
+      const shouldPulse = isPopUp(v.promotionType) && (
         filterMode === 'active' ||
         (filterMode === 'thisweek' && !!v.dateWindows?.[todayKey])
       );
@@ -1797,10 +1812,10 @@ async function init() {
       // Fetch daily deals + pop-up sheet in parallel
       const [dailyVenues, popupVenues] = await Promise.all([
         fetchAndParseCSV(CSV_URL),
-        fetchAndParseCSV(POPUP_CSV_URL).then(v => v.filter(x => x.promotionType === 'Pop-up')),
+        fetchAndParseCSV(POPUP_CSV_URL).then(v => v.filter(x => isPopUp(x.promotionType))),
       ]);
       // Exclude pop-ups from daily sheet to avoid duplicates with pop-up sheet
-      const venues = [...dailyVenues.filter(v => v.promotionType !== 'Pop-up'), ...popupVenues];
+      const venues = [...dailyVenues.filter(v => !isPopUp(v.promotionType)), ...popupVenues];
       console.log(`Loaded ${dailyVenues.length} daily + ${popupVenues.length} pop-up = ${venues.length} venues`);
 
       if (venues.length === 0) {

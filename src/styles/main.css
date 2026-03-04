@@ -357,6 +357,7 @@ html, body {
 }
 
 .venue-popup {
+  position: relative;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -734,6 +735,24 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+/* --- Free Pop-up Badge --- */
+.free-badge {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  background: #22c55e;
+  color: #0D0D16;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  line-height: 1.4;
+  z-index: 1;
 }
 
 .list-card__icon {
