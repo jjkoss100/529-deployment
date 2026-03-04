@@ -689,7 +689,7 @@ html, body {
 /* --- List Content Grid --- */
 #list-content {
   flex: 1;
-  padding: 12px;
+  padding: 18px 12px 12px;
   display: grid;
   gap: 12px;
   align-content: start;
@@ -740,8 +740,8 @@ html, body {
 /* --- Free Pop-up Badge --- */
 .free-badge {
   position: absolute;
-  top: 8px;
-  right: 10px;
+  top: -7px;
+  right: -6px;
   background: #22c55e;
   color: #0D0D16;
   font-family: 'DM Mono', monospace;
@@ -764,12 +764,17 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.5;
 }
 
 .list-card__icon svg {
   width: 100%;
   height: 100%;
+}
+
+/* Hide map-pin teardrop and white circle, show only the black icon */
+.list-card__icon svg > path:first-child,
+.list-card__icon svg > path:nth-child(2) {
+  display: none;
 }
 
 .list-card__name {
