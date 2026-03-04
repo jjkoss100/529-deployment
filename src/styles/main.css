@@ -772,8 +772,8 @@ html, body {
 }
 
 /* Hide map-pin teardrop and white circle, show only the black icon */
-.list-card__icon svg > path:first-child,
-.list-card__icon svg > path:nth-child(2) {
+.list-card__icon > svg > path:first-child,
+.list-card__icon > svg > path:nth-child(2) {
   display: none;
 }
 
