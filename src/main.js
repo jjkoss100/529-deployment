@@ -1317,9 +1317,14 @@ async function fetchAndParseCSV(url) {
       const yesterdayClean = stripPick(yesterdayRaw).clean;
       const crossovers = getMidnightCrossovers(yesterdayClean);
       if (crossovers.length > 0) {
-        liveWindow = liveWindow
-          ? crossovers.join(',') + ',' + liveWindow
-          : crossovers.join(',');
+        // Only add crossovers not already in today's window
+        const todayRanges = liveWindow ? liveWindow.split(',').map(r => r.trim()) : [];
+        const unique = crossovers.filter(c => !todayRanges.includes(c));
+        if (unique.length > 0) {
+          liveWindow = liveWindow
+            ? unique.join(',') + ',' + liveWindow
+            : unique.join(',');
+        }
       }
     }
 
