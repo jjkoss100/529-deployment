@@ -92,7 +92,7 @@ function getWeekDateKeys() {
 }
 
 // --- Filter mode state ---
-let filterMode = 'ourpicks';
+let filterMode = 'active';
 let laterTodayHidden = 0;
 
 let activePopup = null;
@@ -799,10 +799,6 @@ function buildPopupHTML(props) {
   const timeColor = useRed ? '#FF6E7F' : useGreen ? '#22c55e' : '#333';
 
   let html = `<div class="venue-popup">`;
-
-  if (isFreePopUp(promoType)) {
-    html += `<span class="free-badge">FREE</span>`;
-  }
 
   // Venue name (row 1)
   if (instagram) {
@@ -1865,6 +1861,15 @@ async function init() {
 
       setupPopups(map);
       setupListToggle(venues, map);
+
+      // --- Show OUR PICKS button only if picks exist ---
+      const hasPicks = venues.some(v => v.pick);
+      if (hasPicks) {
+        document.querySelectorAll('#our-picks-btn, #list-our-picks-btn').forEach(b => b.classList.remove('hidden'));
+        filterMode = 'ourpicks';
+        syncFilterButtons(filterMode);
+        map.getSource(SOURCE_ID).setData(buildGeoJSON(venues));
+      }
 
       // --- Show TACO TUESDAY button on Tuesdays ---
       const isTuesday = getLADateObj().getDay() === 2;
