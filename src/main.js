@@ -91,9 +91,32 @@ function getWeekDateKeys() {
   return { allKeys, todayKey };
 }
 
+// --- Backfill from tomorrow to guarantee minimum markers ---
+function backfillFromTomorrow(todayVenues, allVenues, filterFn, minCount = 8) {
+  if (todayVenues.length >= minCount) return todayVenues;
+
+  const todaySet = new Set(todayVenues.map(v => `${v.name}|${v.promotionType}`));
+  const tomorrow = new Date(getLADateObj());
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowKey = dateToColumnKey(tomorrow);
+
+  const extras = [];
+  for (const v of allVenues) {
+    const uid = `${v.name}|${v.promotionType}`;
+    if (todaySet.has(uid)) continue;
+    const tomorrowWindow = v.dateWindows?.[tomorrowKey];
+    if (!tomorrowWindow) continue;
+    const tomorrowFlags = v.dateFlags?.[tomorrowKey];
+    if (!filterFn(v, tomorrowFlags)) continue;
+    extras.push({ ...v, isTomorrow: true, liveWindow: tomorrowWindow });
+    if (todayVenues.length + extras.length >= minCount) break;
+  }
+
+  return [...todayVenues, ...extras];
+}
+
 // --- Filter mode state ---
-let filterMode = 'active';
-let laterTodayHidden = 0;
+let filterMode = 'top';
 
 let activePopup = null;
 
@@ -260,7 +283,7 @@ function isNearEnd(liveWindow) {
   return false;
 }
 
-// --- Check if deal starts within 60 min (for LATER TODAY "coming soon" ring) ---
+// --- Check if deal starts within 15 min (for ON NOW "starting soon" ring) ---
 function isNearStart(liveWindow) {
   if (!liveWindow) return false;
   const nowMin = getLAMinutes();
@@ -272,7 +295,7 @@ function isNearStart(liveWindow) {
     if (start === null) continue;
     let minsUntil = start - nowMin;
     if (minsUntil < 0) minsUntil += 1440;
-    if (minsUntil > 0 && minsUntil <= 60) return true;
+    if (minsUntil > 0 && minsUntil <= 15) return true;
   }
   return false;
 }
@@ -781,6 +804,7 @@ function buildPopupHTML(props) {
   const notes = props.notes || '';
   const dealActive = isDealActiveNow({ liveWindow: props.liveWindow });
   let time = props.popupTimeDisplay || formatLiveWindow(props.liveWindow, dealActive);
+  if (props.isTomorrow) time = `TOMORROW ${time}`;
   const link = props.link || '';
   const instagram = props.instagram || '';
   const promoType = props.promotionType || '';
@@ -795,7 +819,7 @@ function buildPopupHTML(props) {
 
   // Time color: red if near end (≤45 min), green if near start in LATER TODAY (≤60 min)
   const useRed = (promoType === 'Happy Hour' || promoType === 'Distinct Menu' || promoType === 'Special' || promoType === 'Special - TT' || isPopUp(promoType)) && isNearEnd(props.liveWindow);
-  const useGreen = filterMode === 'all' && isNearStart(props.liveWindow);
+  const useGreen = filterMode === 'onnow' && isNearStart(props.liveWindow);
   const timeColor = useRed ? '#FF6E7F' : useGreen ? '#22c55e' : '#333';
 
   let html = `<div class="venue-popup">`;
@@ -880,6 +904,7 @@ function buildListCardHTML(venue) {
   if (!time) {
     time = formatLiveWindow(venue.liveWindow, dealActive);
   }
+  if (venue.isTomorrow) time = `TOMORROW ${time}`;
   const link = venue.link || '';
   const instagram = venue.instagram || '';
   const promoType = venue.promotionType || '';
@@ -951,41 +976,47 @@ function buildListCardHTML(venue) {
 // --- Build list view from all venues ---
 function getFilteredVenues(venues) {
   const { allKeys, todayKey } = getWeekDateKeys();
-  let list = venues.filter(v => {
-    if (v.promotionType === 'Shoutout') return false;
-    if (filterMode === 'ourpicks') {
-      if (!v.pick) return false;
-      if (!isDealActiveNow(v)) return false;
-      return true;
-    }
-    if (filterMode === 'tacotuesday') {
-      return v.promotionType === 'Special - TT' && isDealActiveNow(v);
-    }
-    if (filterMode === 'thisweek') {
-      if (!isPopUp(v.promotionType)) return false;
-      for (const { key } of allKeys) {
-        const w = v.dateWindows?.[key];
-        if (!w) continue;
-        if (key === todayKey) {
-          if (isDealActiveNow({ liveWindow: w }) && !isDealLiveRightNow({ liveWindow: w })) return true;
-        } else {
-          return true;
+  let list;
+
+  if (filterMode === 'tacotuesday') {
+    list = venues.filter(v => v.promotionType === 'Special - TT' && isDealActiveNow(v));
+
+  } else if (filterMode === 'top') {
+    const todayTop = venues.filter(v => v.promotionType !== 'Shoutout' && v.top && isDealActiveNow(v));
+    list = backfillFromTomorrow(todayTop, venues, (v, flags) => flags?.isTop, 8);
+
+  } else if (filterMode === 'ourpicks') {
+    const todayPicks = venues.filter(v => {
+      if (v.promotionType === 'Shoutout') return false;
+      if (v.pick && isDealActiveNow(v)) return true;
+      if (isPopUp(v.promotionType)) {
+        for (const { key } of allKeys) {
+          const w = v.dateWindows?.[key];
+          if (!w) continue;
+          if (key === todayKey) {
+            if (isDealActiveNow({ liveWindow: w })) return true;
+          } else {
+            return true;
+          }
         }
       }
       return false;
-    }
-    if (isPopUp(v.promotionType)) {
-      if (filterMode === 'active') return v.liveWindow && isDealLiveRightNow(v);
-      return false;
-    }
-    if (!isDealActiveNow(v)) return false;
-    if (filterMode === 'active') return isDealLiveRightNow(v);
-    if (filterMode === 'all') return !isDealLiveRightNow(v);
-    return true;
-  });
-  // Sort: thisweek pop-ups by earliest date then start time; others by start time
-  if (filterMode === 'thisweek') {
-    const { allKeys } = getWeekDateKeys();
+    });
+    list = backfillFromTomorrow(todayPicks, venues, (v, flags) => flags?.isPick || isPopUp(v.promotionType), 8);
+
+  } else if (filterMode === 'onnow') {
+    list = venues.filter(v => {
+      if (v.promotionType === 'Shoutout') return false;
+      if (!v.liveWindow) return false;
+      return isDealLiveRightNow(v) || isNearStart(v.liveWindow);
+    });
+
+  } else {
+    list = [];
+  }
+
+  // Sort: Our Picks pop-ups by earliest date then start time; others by start time
+  if (filterMode === 'ourpicks') {
     list.sort((a, b) => {
       let aIdx = allKeys.length, aStart = 1440;
       let bIdx = allKeys.length, bStart = 1440;
@@ -1270,10 +1301,15 @@ async function fetchAndParseCSV(url) {
     : (dateColumns.length > 0 ? dateColumns[dateColumns.length - 1] : '');
   console.log(`Date columns: [${dateColumns.join(', ')}] | Today: "${todayCol}" | Yesterday: "${yesterdayCol}" (${hasYesterday ? 'found' : 'n/a'}) | Active: "${timeColumnName}"`);
 
-  // Helper: strip leading * from a time value, return { clean, isPick }
-  function stripPick(val) {
-    if (val.startsWith('*')) return { clean: val.slice(1).trim(), isPick: true };
-    return { clean: val, isPick: false };
+  // Helper: strip leading ! and * from a time value
+  // ! = Top Deal, * = Our Pick (can combine: !* or *!)
+  function stripPrefixes(val) {
+    let isPick = false, isTop = false, clean = val;
+    while (clean.startsWith('!') || clean.startsWith('*')) {
+      if (clean.startsWith('!')) { isTop = true; clean = clean.slice(1); }
+      if (clean.startsWith('*')) { isPick = true; clean = clean.slice(1); }
+    }
+    return { clean: clean.trim(), isPick, isTop };
   }
 
   // Helper: extract midnight-crossing ranges from a time string
@@ -1310,22 +1346,27 @@ async function fetchAndParseCSV(url) {
       continue;
     }
 
-    // Build dateWindows: all date columns → time values (strip * prefix)
+    // Build dateWindows + dateFlags: all date columns → time values + pick/top flags
     const dateWindows = {};
+    const dateFlags = {};
     for (const col of dateColumns) {
       const val = (row[col] || '').trim();
-      if (val) dateWindows[col] = stripPick(val).clean;
+      if (val) {
+        const { clean, isPick, isTop } = stripPrefixes(val);
+        dateWindows[col] = clean;
+        dateFlags[col] = { isPick, isTop };
+      }
     }
 
-    // Today's live window — detect * pick prefix
+    // Today's live window — detect ! (top) and * (pick) prefixes
     const todayRaw = (row[timeColumnName] || '').trim();
-    const { clean: todayClean, isPick: pick } = stripPick(todayRaw);
+    const { clean: todayClean, isPick: pick, isTop: top } = stripPrefixes(todayRaw);
     let liveWindow = todayClean;
 
     // Midnight crossover: carry over yesterday's midnight-crossing deals
     if (hasYesterday) {
       const yesterdayRaw = (row[yesterdayCol] || '').trim();
-      const yesterdayClean = stripPick(yesterdayRaw).clean;
+      const yesterdayClean = stripPrefixes(yesterdayRaw).clean;
       const crossovers = getMidnightCrossovers(yesterdayClean);
       if (crossovers.length > 0) {
         // Only add crossovers not already in today's window
@@ -1352,84 +1393,62 @@ async function fetchAndParseCSV(url) {
       venueType,
       link: (row['Link'] || '').trim(),
       notes: (row['Notes'] || '').trim(),
-      top: ['yes','y','true','1','✓','✔','top'].includes((row['Top'] || '').trim().toLowerCase()),
+      top,
       pick,
       liveWindow,
       dateWindows,
+      dateFlags,
     });
   }
 
   return venues;
 }
 
-// --- "On deck" badge inside LATER TODAY button ---
-function updateMoreComingBanner() {
-  const badge = document.getElementById('later-today-badge');
-  if (!badge) return;
-  if (filterMode === 'all' && laterTodayHidden > 0) {
-    badge.textContent = `+${laterTodayHidden} more on deck`;
-    badge.classList.remove('hidden');
-  } else {
-    badge.classList.add('hidden');
-  }
-}
-
 // --- Build GeoJSON from venues ---
 function buildGeoJSON(venues) {
   const { allKeys, todayKey } = getWeekDateKeys();
 
-  let visible = venues.filter(v => {
+  let visible;
+
+  if (filterMode === 'tacotuesday') {
     // --- TACO TUESDAY: Special - TT only ---
-    if (filterMode === 'tacotuesday') {
-      if (v.promotionType !== 'Special - TT') return false;
-      if (!isDealActiveNow(v)) return false;
-      return true;
-    }
-    // --- OUR PICKS: editor picks that are active today ---
-    if (filterMode === 'ourpicks') {
-      if (!v.pick) return false;
-      if (!isDealActiveNow(v)) return false;
-      return true;
-    }
-    // --- THIS WEEK ONLY: Pop-ups with windows today through Sunday ---
-    if (filterMode === 'thisweek') {
-      if (!isPopUp(v.promotionType)) return false;
-      for (const { key } of allKeys) {
-        const w = v.dateWindows?.[key];
-        if (!w) continue;
-        if (key === todayKey) {
-          if (isDealActiveNow({ liveWindow: w }) && !isDealLiveRightNow({ liveWindow: w })) return true;
-        } else {
-          return true;
+    visible = venues.filter(v => v.promotionType === 'Special - TT' && isDealActiveNow(v));
+
+  } else if (filterMode === 'top') {
+    // --- TOP DEALS: venues marked with ! prefix, backfill to 8 ---
+    const todayTop = venues.filter(v => v.top && isDealActiveNow(v));
+    visible = backfillFromTomorrow(todayTop, venues, (v, flags) => flags?.isTop, 8);
+
+  } else if (filterMode === 'ourpicks') {
+    // --- OUR PICKS: editor picks (*) + pop-ups, backfill to 8 ---
+    const todayPicks = venues.filter(v => {
+      if (v.pick && isDealActiveNow(v)) return true;
+      if (isPopUp(v.promotionType)) {
+        for (const { key } of allKeys) {
+          const w = v.dateWindows?.[key];
+          if (!w) continue;
+          if (key === todayKey) {
+            if (isDealActiveNow({ liveWindow: w })) return true;
+          } else {
+            return true; // future pop-up this week
+          }
         }
       }
       return false;
-    }
-    // --- All other modes ---
-    if (isPopUp(v.promotionType)) {
-      if (filterMode === 'active') return v.liveWindow && isDealLiveRightNow(v);
-      return false; // still excluded from LATER TODAY
-    }
-    if (!isDealActiveNow(v)) return false;
-    if (filterMode === 'active') return isDealLiveRightNow(v);
-    if (filterMode === 'all') return !isDealLiveRightNow(v); // TODAY: upcoming only
-    return true;
-  });
-
-  // Cap LATER TODAY to 15 markers, sorted by earliest start time
-  if (filterMode === 'all') {
-    visible.sort((a, b) => {
-      const aStart = parseMinutes((a.liveWindow || '').split(',')[0].split('-')[0]) ?? 1440;
-      const bStart = parseMinutes((b.liveWindow || '').split(',')[0].split('-')[0]) ?? 1440;
-      return aStart - bStart;
     });
-    const total = visible.length;
-    if (total > 15) visible = visible.slice(0, 15);
-    laterTodayHidden = Math.max(0, total - 15);
+    visible = backfillFromTomorrow(todayPicks, venues, (v, flags) => flags?.isPick || isPopUp(v.promotionType), 8);
+
+  } else if (filterMode === 'onnow') {
+    // --- ON NOW: only deals active right now or starting within 15 min ---
+    visible = venues.filter(v => {
+      if (v.promotionType === 'Shoutout') return false;
+      if (!v.liveWindow) return false;
+      return isDealLiveRightNow(v) || isNearStart(v.liveWindow);
+    });
+
   } else {
-    laterTodayHidden = 0;
+    visible = [];
   }
-  updateMoreComingBanner();
 
   console.log(`[${filterMode.toUpperCase()}] Showing ${visible.length} of ${venues.length} deals`);
 
@@ -1449,9 +1468,9 @@ function buildGeoJSON(venues) {
         ? (i - (group.length - 1) / 2) * LNG_OFFSET
         : 0;
 
-      // Build popupTimeDisplay for week/weekend modes
+      // Build popupTimeDisplay for pop-ups in Our Picks
       let popupTimeDisplay = '';
-      if (filterMode === 'thisweek') {
+      if (filterMode === 'ourpicks' && isPopUp(v.promotionType)) {
         const parts = [];
         for (const { key, date } of allKeys) {
           const w = v.dateWindows?.[key];
@@ -1470,11 +1489,9 @@ function buildGeoJSON(venues) {
       }
 
       // Determine if this marker should pulse
-      // - ACTIVE NOW: all pop-ups (they're live right now)
-      // - THIS WEEK ONLY: pop-ups with a window for today
       const shouldPulse = isPopUp(v.promotionType) && (
-        filterMode === 'active' ||
-        (filterMode === 'thisweek' && !!v.dateWindows?.[todayKey])
+        filterMode === 'onnow' ||
+        (filterMode === 'ourpicks' && !!v.dateWindows?.[todayKey])
       );
 
       // Taco Tuesday markers get tricolor glow behind them
@@ -1492,13 +1509,14 @@ function buildGeoJSON(venues) {
           venueType: v.venueType,
           shouldPulse,
           isTacoMarker,
+          isTomorrow: v.isTomorrow || false,
           glowIcon: isTacoMarker ? `glow-${features.length % 5}` : '',
           icon: v.promotionType === 'Shoutout'
             ? `marker-${v.venueType}-shoutout`
             : `marker-${v.venueType}${
                 isNearEnd(v.liveWindow) && v.promotionType !== 'Limited' && v.promotionType !== 'Limited Mo'
                   ? '-alert'
-                  : (filterMode === 'all' && isNearStart(v.liveWindow) ? '-soon' : '')
+                  : (filterMode === 'onnow' && isNearStart(v.liveWindow) ? '-soon' : '')
               }`,
           eventName: v.eventName,
           liveWindow: v.liveWindow,
@@ -1861,15 +1879,6 @@ async function init() {
 
       setupPopups(map);
       setupListToggle(venues, map);
-
-      // --- Show OUR PICKS button only if picks exist ---
-      const hasPicks = venues.some(v => v.pick);
-      if (hasPicks) {
-        document.querySelectorAll('#our-picks-btn, #list-our-picks-btn').forEach(b => b.classList.remove('hidden'));
-        filterMode = 'ourpicks';
-        syncFilterButtons(filterMode);
-        map.getSource(SOURCE_ID).setData(buildGeoJSON(venues));
-      }
 
       // --- Show TACO TUESDAY button on Tuesdays ---
       const isTuesday = getLADateObj().getDay() === 2;

@@ -520,10 +520,7 @@ html, body {
   border-color: #EFEFEF;
 }
 
-/* Force THIS WEEK ONLY + TACO TUESDAY onto second row on mobile */
-.filter-btn[data-mode="thisweek"] {
-  order: 3;
-}
+/* Force TACO TUESDAY onto second row when visible */
 .filter-btn[data-mode="tacotuesday"] {
   order: 4;
   position: relative;
@@ -549,23 +546,7 @@ html, body {
   content: '';
   flex-basis: 100%;
   height: 0;
-  order: 2;
-}
-
-/* --- Badge subtitle inside filter button --- */
-.filter-badge {
-  display: block;
-  font-family: 'DM Mono', monospace;
-  font-size: 8px;
-  font-weight: 400;
-  letter-spacing: 0.02em;
-  color: rgba(239, 239, 239, 0.45);
-  margin-top: 3px;
-  text-transform: none;
-}
-
-.filter-badge.hidden {
-  display: none;
+  order: 3;
 }
 
 /* --- LIST / MAP Toggle Button --- */
