@@ -542,6 +542,18 @@ html, body {
 .filter-btn.hidden {
   display: none;
 }
+.on-deck-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 7.5px;
+  font-weight: 400;
+  letter-spacing: 0.03em;
+  color: rgba(239, 239, 239, 0.4);
+  margin-top: 2px;
+  line-height: 1;
+}
+.on-deck-badge.hidden {
+  display: none;
+}
 #filter-toggle::before {
   content: '';
   flex-basis: 100%;

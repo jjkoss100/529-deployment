@@ -917,7 +917,7 @@ function buildListCardHTML(venue) {
     time = `ends in ${currentMonth}`;
   }
 
-  const useRed = (promoType === 'Happy Hour' || promoType === 'Distinct Menu' || promoType === 'Special' || promoType === 'Special - TT' || isPopUp(promoType)) && isNearEnd(venue.liveWindow);
+  const useRed = isNearEnd(venue.liveWindow);
   const useGreen = isNearStart(venue.liveWindow);
   const timeColor = useRed ? '#FF6E7F' : useGreen ? '#22c55e' : '#333';
 
@@ -1064,6 +1064,25 @@ function buildListView(venues) {
 function syncFilterButtons(mode) {
   document.querySelectorAll('#filter-toggle .filter-btn, #list-filters .filter-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.mode === mode);
+  });
+}
+
+// --- "+X on deck" badge inside ON NOW button ---
+function updateOnDeckBadge(venues) {
+  const onDeckCount = venues.filter(v => {
+    if (v.promotionType === 'Shoutout') return false;
+    if (!v.liveWindow) return false;
+    // Has a deal today, not live yet, not near-start — i.e. coming later
+    return isDealActiveNow(v) && !isDealLiveRightNow(v) && !isNearStart(v.liveWindow);
+  }).length;
+
+  document.querySelectorAll('.on-deck-badge').forEach(badge => {
+    if (onDeckCount > 0 && filterMode === 'onnow') {
+      badge.textContent = `+${onDeckCount} on deck`;
+      badge.classList.remove('hidden');
+    } else {
+      badge.classList.add('hidden');
+    }
   });
 }
 
@@ -1879,6 +1898,7 @@ async function init() {
 
       setupPopups(map);
       setupListToggle(venues, map);
+      updateOnDeckBadge(venues);
 
       // --- Show TACO TUESDAY button on Tuesdays ---
       const isTuesday = getLADateObj().getDay() === 2;
@@ -1898,6 +1918,7 @@ async function init() {
 
         const updated = buildGeoJSON(venues);
         map.getSource(SOURCE_ID).setData(updated);
+        updateOnDeckBadge(venues);
 
         // Rebuild list view if it's currently visible
         const listView = document.getElementById('list-view');
@@ -1922,6 +1943,7 @@ async function init() {
       setInterval(() => {
         const updated = buildGeoJSON(venues);
         map.getSource(SOURCE_ID).setData(updated);
+        updateOnDeckBadge(venues);
         }, REFRESH_INTERVAL);
     });
 
