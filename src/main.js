@@ -1062,7 +1062,7 @@ function buildListView(venues) {
 }
 
 function syncFilterButtons(mode) {
-  document.querySelectorAll('#filter-toggle .filter-btn, #filter-row-2 .filter-btn, #list-filters .filter-btn, #list-filter-row-2 .filter-btn').forEach(b => {
+  document.querySelectorAll('#filter-toggle .filter-btn, #filter-row-2 .filter-btn, #list-filters .filter-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.mode === mode);
   });
 }
@@ -1933,8 +1933,6 @@ async function init() {
       if (filterRow2) filterRow2.addEventListener('click', handleFilterClick);
       const listFilters = document.getElementById('list-filters');
       if (listFilters) listFilters.addEventListener('click', handleFilterClick);
-      const listFilterRow2 = document.getElementById('list-filter-row-2');
-      if (listFilterRow2) listFilterRow2.addEventListener('click', handleFilterClick);
 
       // Fit map to venue bounds
       const bounds = new mapboxgl.LngLatBounds();

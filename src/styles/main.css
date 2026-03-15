@@ -554,8 +554,7 @@ html, body {
 .on-deck-badge.hidden {
   display: none;
 }
-#filter-row-2,
-#list-filter-row-2 {
+#filter-row-2 {
   display: flex;
 }
 
