@@ -16,7 +16,7 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
 
   <!-- App styles -->
-  <link rel="stylesheet" href="src/styles/main.css?v=120">
+  <link rel="stylesheet" href="src/styles/main.css?v=121">
 </head>
 <body>
   <!-- Splash screen -->
@@ -59,8 +59,10 @@
     <div id="filter-toggle">
       <button class="filter-btn active" data-mode="top">TOP DEALS</button>
       <button class="filter-btn" data-mode="ourpicks">OUR PICKS</button>
-      <button class="filter-btn" data-mode="onnow">ON NOW<span class="on-deck-badge hidden"></span></button>
       <button class="filter-btn hidden" data-mode="tacotuesday" id="taco-tuesday-btn">TACO TUESDAY</button>
+    </div>
+    <div id="filter-row-2">
+      <button class="filter-btn" data-mode="onnow">ON NOW<span class="on-deck-badge hidden"></span></button>
     </div>
   </div>
   <button id="list-toggle-btn" class="list-toggle-btn" disabled>LIST VIEW</button>
@@ -75,11 +77,13 @@
     <div id="list-filters">
       <button class="filter-btn active" data-mode="top">TOP DEALS</button>
       <button class="filter-btn" data-mode="ourpicks">OUR PICKS</button>
-      <button class="filter-btn" data-mode="onnow">ON NOW<span class="on-deck-badge hidden"></span></button>
       <button class="filter-btn hidden" data-mode="tacotuesday" id="list-taco-tuesday-btn">TACO TUESDAY</button>
+    </div>
+    <div id="list-filter-row-2">
+      <button class="filter-btn" data-mode="onnow">ON NOW<span class="on-deck-badge hidden"></span></button>
     </div>
     <div id="list-content"></div>
   </div>
-  <script type="module" src="src/main.js?v=164"></script>
+  <script type="module" src="src/main.js?v=165"></script>
 </body>
 </html>
